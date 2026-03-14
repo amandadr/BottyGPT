@@ -130,12 +130,13 @@ jobs:
             TOKEN=$(curl -sS -f -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token")
             ACCESS=$(echo "$TOKEN" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
             echo "$ACCESS" > /tmp/docker-token.$$ && sudo docker login -u oauth2accesstoken --password-stdin "https://${REGISTRY}" < /tmp/docker-token.$$ && rm -f /tmp/docker-token.$$
-            sudo python3 -c "
-            import json
+            sudo REGISTRY="${REGISTRY}" python3 -c "
+            import json, os
             path = '/root/.docker/config.json'
+            reg = os.environ.get('REGISTRY', 'docker.pkg.dev')
             with open(path) as f: c = json.load(f)
             for k in list(c.get('credHelpers', {})):
-                if '${REGISTRY}' in k: del c['credHelpers'][k]
+                if reg in k or 'docker.pkg.dev' in k: del c['credHelpers'][k]
             if c.get('credHelpers') == {}: c.pop('credHelpers', None)
             with open(path, 'w') as f: json.dump(c, f, indent=2)
             "
