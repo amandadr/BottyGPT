@@ -110,6 +110,17 @@ docker compose -f deployment/docker-compose.yaml down
 
 (or use the specific `docker compose down` command shown after running the setup script).
 
+### Deploying on Google Cloud (GCP)
+
+To self-host DocsGPT on GCP with Qdrant (Artifact Registry, Compute Engine, optional load balancing), run the GCP pre-setup **before** the main setup:
+
+```bash
+./scripts/gcp-setup.sh   # configure gcloud, Artifact Registry, optional VM
+./setup.sh               # then run DocsGPT setup (choose Qdrant in advanced settings)
+```
+
+See **[docs/GCP-DEVOPS-SETUP.md](docs/GCP-DEVOPS-SETUP.md)** for the full guide.
+
 > [!Note]
 > For development environment setup instructions, please refer to the [Development Environment Guide](https://docs.docsgpt.cloud/Deploying/Development-Environment).
 

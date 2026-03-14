@@ -76,6 +76,8 @@ class Settings(BaseSettings):
 
     # LLM Cache
     CACHE_REDIS_URL: str = "redis://localhost:6379/2"
+    STARTUP_DEPENDENCY_CHECKS: bool = True
+    STARTUP_CHECK_STRICT: bool = False
 
     API_URL: str = "http://localhost:7091"  # backend url for celery worker
     MCP_OAUTH_REDIRECT_URI: Optional[str] = None  # public callback URL for MCP OAuth

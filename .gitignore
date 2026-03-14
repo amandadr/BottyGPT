@@ -182,3 +182,14 @@ node_modules/
 .vscode/settings.json
 /models/
 model/
+*-key.json
+gcp-sa-key.json
+mrc-sa-key.json
+
+# GCP SDK / archives (local installs, not for repo)
+google-cloud-sdk/
+google-cloud-cli-darwin-arm.tar.gz
+docsgpt-src.tar.gz
+
+# Generated index / data (if present)
+application/index.pkl

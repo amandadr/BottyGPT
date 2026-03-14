@@ -1,0 +1,20 @@
+# Keep backend image context lean
+.git
+.github
+.cursor
+docs
+deployment
+frontend
+google-cloud-sdk
+tests
+venv
+node_modules
+*.md
+**/__pycache__
+*.log
+.DS_Store
+.env
+indexes
+inputs
+vectors
+models

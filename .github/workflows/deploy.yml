@@ -1,0 +1,106 @@
+# Push-to-Deploy: build backend + frontend, push to Artifact Registry, deploy frontend to Cloud Run, deploy backend on VM.
+# Requires: Secrets GCP_SA_KEY, VM_IP, VM_USER, SSH_PRIVATE_KEY. See docs/GH-ACTIONS-DEPLOY.md and docs/CLOUD-RUN-SETUP.md.
+
+name: Deploy to GCP (Cloud Run + VM)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "google-cloud-sdk/**"
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: manny-roy-consulting
+  REGION: northamerica-northeast1
+  REPO_NAME: docsgpt-repo
+  VM_NAME: docsgpt-prod
+  VM_ZONE: northamerica-northeast1-a
+  DEPLOY_PATH: /opt/docsgpt
+  COMPOSE_FILE: docker-compose.gcp.yaml
+  CLOUD_RUN_SERVICE_FE: docsgpt-frontend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+        # For Workload Identity Federation (no key file): use workload_identity_provider and service_account instead.
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Docker auth (Artifact Registry)
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Set image tag
+        id: meta
+        run: echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build and push backend
+        run: |
+          docker buildx create --use --name deploy-builder || true
+          docker buildx build \
+            --platform linux/amd64 \
+            -f application/Dockerfile \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/backend:${{ github.sha }} \
+            --push \
+            application
+
+      - name: Build and push frontend
+        env:
+          VITE_API_HOST: ${{ secrets.VITE_API_HOST }}
+          VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -f frontend/Dockerfile.production \
+            --build-arg VITE_API_HOST="${VITE_API_HOST:-https://assistant-api.mannyroy.com}" \
+            --build-arg VITE_BASE_URL="${VITE_BASE_URL:-https://assistant.mannyroy.com}" \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
+            --push \
+            frontend
+
+      - name: Deploy frontend to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.CLOUD_RUN_SERVICE_FE }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=80 \
+            --quiet
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy on VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_IP }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ env.DEPLOY_PATH }}
+            if grep -q '^IMAGE_TAG=' .env 2>/dev/null; then
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env
+            else
+              echo "IMAGE_TAG=${{ github.sha }}" >> .env
+            fi
+            docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env pull
+            docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env up -d

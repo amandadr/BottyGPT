@@ -9,7 +9,7 @@ services:
       - VITE_API_STREAMING=$VITE_API_STREAMING
       - VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
     ports:
-      - "5173:5173"
+      - "5173:80"
     depends_on:
       - backend
 

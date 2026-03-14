@@ -1,0 +1,61 @@
+name: docsgpt-preflight
+
+services:
+  backend:
+    build:
+      context: ../application
+      dockerfile: Dockerfile
+    environment:
+      - AUTH_TYPE=none
+      - VECTOR_STORE=qdrant
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - MONGO_URI=mongodb://mongo:27017/docsgpt
+      - CACHE_REDIS_URL=redis://redis:6379/2
+      - QDRANT_URL=http://qdrant:6333
+      - DOCSGPT_SERVICE_NAME=docsgpt-backend-preflight
+      - STARTUP_DEPENDENCY_CHECKS=true
+      - STARTUP_CHECK_STRICT=true
+    ports:
+      - "7091:7091"
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "application.healthcheck", "--target", "backend"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    healthcheck:
+      # Qdrant image has no curl/wget; use /readyz and bash TCP (see qdrant/qdrant#4250)
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333 && echo -e \"GET /readyz HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && grep -q \"HTTP/1.1 200\" <&3'"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  redis:
+    image: redis:6-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 8
+      start_period: 10s
+
+  mongo:
+    image: mongo:6
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 20s

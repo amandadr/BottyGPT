@@ -1,6 +1,7 @@
 import os
 import platform
 import uuid
+import logging
 
 import dotenv
 from flask import Flask, jsonify, redirect, request
@@ -8,9 +9,10 @@ from jose import jwt
 
 from application.auth import handle_auth
 
-from application.core.logging_config import setup_logging
+from application.core.logging_config import clear_request_id, set_request_id, setup_logging
 
 setup_logging()
+logger = logging.getLogger(__name__)
 
 from application.api import api  # noqa: E402
 from application.api.answer import answer  # noqa: E402
@@ -18,6 +20,12 @@ from application.api.internal.routes import internal  # noqa: E402
 from application.api.user.routes import user  # noqa: E402
 from application.api.connector.routes import connector  # noqa: E402
 from application.celery_init import celery  # noqa: E402
+from application.core.service_checks import (  # noqa: E402
+    log_startup_diagnostics,
+    required_service_checks,
+    run_startup_dependency_checks,
+    summarize_checks,
+)
 from application.core.settings import settings  # noqa: E402
 
 
@@ -40,6 +48,8 @@ app.config.update(
 )
 celery.config_from_object("application.celeryconfig")
 api.init_app(app)
+log_startup_diagnostics(logger)
+run_startup_dependency_checks(logger)
 
 if settings.AUTH_TYPE in ("simple_jwt", "session_jwt") and not settings.JWT_SECRET_KEY:
     key_file = ".jwt_secret_key"
@@ -77,6 +87,19 @@ def get_config():
     return jsonify(response)
 
 
+@app.route("/api/health")
+def healthcheck():
+    return jsonify({"status": "ok", "service": "backend"})
+
+
+@app.route("/api/ready")
+def readiness_check():
+    checks = required_service_checks()
+    all_ok, payload = summarize_checks(checks)
+    status_code = 200 if all_ok else 503
+    return jsonify({"status": "ready" if all_ok else "degraded", "checks": payload}), status_code
+
+
 @app.route("/api/generate_token")
 def generate_token():
     if settings.AUTH_TYPE == "session_jwt":
@@ -90,6 +113,9 @@ def generate_token():
 
 @app.before_request
 def authenticate_request():
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    set_request_id(request_id)
+    request.request_id = request_id
     if request.method == "OPTIONS":
         return "", 200
     decoded_token = handle_auth(request)
@@ -103,12 +129,26 @@ def authenticate_request():
 
 @app.after_request
 def after_request(response):
+    response.headers.add("X-Request-ID", getattr(request, "request_id", "-"))
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
     response.headers.add(
         "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
     )
+    logger.info(
+        "request completed",
+        extra={
+            "status_code": response.status_code,
+            "method": request.method,
+            "path": request.path,
+        },
+    )
     return response
+
+
+@app.teardown_request
+def teardown_request(_exc):
+    clear_request_id()
 
 
 if __name__ == "__main__":
