@@ -72,5 +72,5 @@ python scripts/test_qdrant_connection.py
 ## 7. Escalation
 
 - If dependency checks pass but requests fail: inspect application logs and `request_id` for that request.
-- If the VM is out of disk: run `docker system prune -a -f` only if you can afford to re-pull images; prefer cleaning logs and old volumes first. To avoid "No space left on device" during pip install or pulls, use a **30GB boot disk**; to resize an existing GCP VM disk to 30GB, see [Resize a persistent disk](https://cloud.google.com/compute/docs/disks/resize-persistent-disk) (resize the disk in GCP, then on the VM run `sudo growpart /dev/sda 1` and `sudo resize2fs /dev/sda1` for the root partition).
+- If the VM is out of disk: run `docker system prune -a -f` only if you can afford to re-pull images; prefer cleaning logs and old volumes first. To avoid "No space left on device" during pip install or pulls, use a **50GB boot disk** (default in `gcp-setup.sh`). To resize an existing GCP VM disk, see [Resize a persistent disk](https://cloud.google.com/compute/docs/disks/resize-persistent-disk) (resize in GCP, then on the VM run `sudo growpart /dev/sda 1` and `sudo resize2fs /dev/sda1` for the root partition).
 - For TLS/domain issues: see [TLS-SETUP.md](TLS-SETUP.md).

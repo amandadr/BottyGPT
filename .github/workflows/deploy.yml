@@ -1,5 +1,6 @@
 # Push-to-Deploy: build backend + frontend, push to Artifact Registry, deploy frontend to Cloud Run, deploy backend on VM.
 # Requires: Secrets GCP_SA_KEY, VM_IP, VM_USER, SSH_PRIVATE_KEY. See docs/GH-ACTIONS-DEPLOY.md and docs/CLOUD-RUN-SETUP.md.
+# Manual run: optionally set "Reuse image tag" to skip build and deploy VM only (e.g. after fixing VM auth).
 
 name: Deploy to GCP (Cloud Run + VM)
 
@@ -11,6 +12,10 @@ on:
       - "docs/**"
       - "google-cloud-sdk/**"
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Reuse image tag (skip build); e.g. 9fe4e5c77af5739962c9a0e1acaa2dae1d01ce41"
+        required: false
 
 env:
   PROJECT_ID: manny-roy-consulting
@@ -23,34 +28,49 @@ env:
   CLOUD_RUN_SERVICE_FE: docsgpt-frontend
 
 jobs:
-  build-and-push:
+  resolve-tag:
     runs-on: ubuntu-latest
     outputs:
-      image_tag: ${{ steps.meta.outputs.sha }}
+      tag: ${{ steps.out.outputs.tag }}
     steps:
+      - id: out
+        run: echo "tag=${{ github.event.inputs.image_tag || github.sha }}" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    needs: resolve-tag
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+    env:
+      RESOLVED_TAG: ${{ needs.resolve-tag.outputs.tag }}
+    steps:
+      - name: Set image tag (reuse or build)
+        id: meta
+        run: echo "image_tag=${{ env.RESOLVED_TAG }}" >> $GITHUB_OUTPUT
+
       - name: Checkout
+        if: env.RESOLVED_TAG == github.sha
         uses: actions/checkout@v4
 
       - name: Authenticate to GCP
+        if: env.RESOLVED_TAG == github.sha
         id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-        # For Workload Identity Federation (no key file): use workload_identity_provider and service_account instead.
 
       - name: Set up Cloud SDK
+        if: env.RESOLVED_TAG == github.sha
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
 
       - name: Docker auth (Artifact Registry)
+        if: env.RESOLVED_TAG == github.sha
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-      - name: Set image tag
-        id: meta
-        run: echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
-
       - name: Build and push backend
+        if: env.RESOLVED_TAG == github.sha
         run: |
           docker buildx create --use --name deploy-builder || true
           docker buildx build \
@@ -61,6 +81,7 @@ jobs:
             application
 
       - name: Build and push frontend
+        if: env.RESOLVED_TAG == github.sha
         env:
           VITE_API_HOST: ${{ secrets.VITE_API_HOST }}
           VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
@@ -75,6 +96,7 @@ jobs:
             frontend
 
       - name: Deploy frontend to Cloud Run
+        if: env.RESOLVED_TAG == github.sha
         run: |
           gcloud run deploy ${{ env.CLOUD_RUN_SERVICE_FE }} \
             --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
@@ -85,7 +107,7 @@ jobs:
             --quiet
 
   deploy:
-    needs: build-and-push
+    needs: [resolve-tag, build-and-push]
     runs-on: ubuntu-latest
     steps:
       - name: Deploy on VM via SSH
@@ -97,10 +119,25 @@ jobs:
           script: |
             set -e
             cd ${{ env.DEPLOY_PATH }}
+            IMAGE_TAG="${{ needs.resolve-tag.outputs.tag }}"
             if grep -q '^IMAGE_TAG=' .env 2>/dev/null; then
-              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/" .env
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
             else
-              echo "IMAGE_TAG=${{ github.sha }}" >> .env
+              echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
             fi
+            # Log in to Artifact Registry as root using VM metadata (daemon uses root's config)
+            REGISTRY="${{ env.REGION }}-docker.pkg.dev"
+            TOKEN=$(curl -sS -f -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token")
+            ACCESS=$(echo "$TOKEN" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+            echo "$ACCESS" > /tmp/docker-token.$$ && sudo docker login -u oauth2accesstoken --password-stdin "https://${REGISTRY}" < /tmp/docker-token.$$ && rm -f /tmp/docker-token.$$
+            sudo python3 -c "
+            import json
+            path = '/root/.docker/config.json'
+            with open(path) as f: c = json.load(f)
+            for k in list(c.get('credHelpers', {})):
+                if '${REGISTRY}' in k: del c['credHelpers'][k]
+            if c.get('credHelpers') == {}: c.pop('credHelpers', None)
+            with open(path, 'w') as f: json.dump(c, f, indent=2)
+            "
             docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env pull
             docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env up -d

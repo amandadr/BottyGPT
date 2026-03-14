@@ -26,7 +26,7 @@ This script will:
 3. Enable Artifact Registry and Compute APIs
 4. Create an Artifact Registry repository (e.g. `docsgpt-repo` in `northamerica-northeast1`, Montréal)
 5. Configure Docker to push to `northamerica-northeast1-docker.pkg.dev`
-6. Optionally create a Compute Engine VM for running the stack (**30GB boot disk** by default; set `VM_BOOT_DISK_GB` to override)
+6. Optionally create a Compute Engine VM for running the stack (**50GB boot disk** by default; set `VM_BOOT_DISK_GB` to override)
 
 **Already ran setup in us-central1 and want to use only Canadian regions?** Delete the US resources, then run the main setup (which uses Canadian regions by default):
 

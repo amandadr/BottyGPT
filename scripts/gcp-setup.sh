@@ -22,7 +22,7 @@ ARTIFACT_REGION="${ARTIFACT_REGION:-northamerica-northeast1}"
 ARTIFACT_REPO_NAME="${ARTIFACT_REPO_NAME:-docsgpt-repo}"
 VM_ZONE="${VM_ZONE:-northamerica-northeast1-a}"
 VM_NAME="${VM_NAME:-docsgpt-prod}"
-VM_BOOT_DISK_GB="${VM_BOOT_DISK_GB:-30}"
+VM_BOOT_DISK_GB="${VM_BOOT_DISK_GB:-50}"
 
 echo -e "${BOLD}DocsGPT – GCP pre-setup (DevOps)${NC}"
 echo "This script configures gcloud and GCP resources before you run ./setup.sh"

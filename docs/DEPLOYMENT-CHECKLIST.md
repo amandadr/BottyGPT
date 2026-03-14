@@ -1,6 +1,6 @@
 # Plan 2.0: Fresh VM deployment checklist
 
-Use this checklist when provisioning a new 30GB VM for the **backend** stack. The **frontend** is deployed to **Cloud Run** by the GitHub Actions workflow; see [CLOUD-RUN-SETUP.md](CLOUD-RUN-SETUP.md). Do **not** build backend/worker on the VM; use CI-built images only.
+Use this checklist when provisioning a new VM for the **backend** stack (50GB boot disk recommended; see `gcp-setup.sh`). The **frontend** is deployed to **Cloud Run** by the GitHub Actions workflow; see [CLOUD-RUN-SETUP.md](CLOUD-RUN-SETUP.md). Do **not** build backend/worker on the VM; use CI-built images only.
 
 ## Continue deployment (after Cloud Run IAM is done)
 
@@ -17,7 +17,7 @@ Use this checklist when provisioning a new 30GB VM for the **backend** stack. Th
 
 ## 1. Provision VM
 
-- [ ] Create a new Compute Engine VM with **30GB boot disk** (e.g. `--boot-disk-size=30GB` if using gcloud; `gcp-setup.sh` uses 30GB by default).
+- [ ] Create a new Compute Engine VM with **50GB boot disk** (e.g. `--boot-disk-size=50GB` if using gcloud; `gcp-setup.sh` uses 50GB by default).
 - [ ] Open firewall for API (e.g. 7091 or 80/443 if nginx/TLS in front). Frontend is on Cloud Run, so VM does not serve the UI.
 - [ ] SSH access configured (e.g. `gcloud compute ssh <instance> --zone=...`).
 

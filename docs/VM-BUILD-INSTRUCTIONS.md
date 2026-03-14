@@ -4,7 +4,7 @@ The **VM runs only the backend stack** (backend, worker, Redis, Mongo, Qdrant). 
 
 ## 1) Provision a fresh VM
 
-- Create a new Compute Engine VM with a **30GB boot disk** (default in `gcp-setup.sh`; avoids "No space left on device" during pulls and container storage).
+- Create a new Compute Engine VM with a **50GB boot disk** (default in `gcp-setup.sh`; avoids "No space left on device" during pulls and container storage).
 - Open firewall for API access (e.g. `7091` if exposing the API directly, or `80`/`443` if you put nginx/TLS in front of the VM). Frontend is on Cloud Run, so the VM does not need to serve port 80 for the UI.
 - Install only runtime tools:
 
