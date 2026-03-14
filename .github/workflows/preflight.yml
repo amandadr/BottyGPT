@@ -15,7 +15,7 @@ permissions:
 
 env:
   PYTHON_VERSION: "3.12"
-  MAX_BACKEND_IMAGE_BYTES: "8000000000"
+  MAX_BACKEND_IMAGE_BYTES: "10000000000"
 
 jobs:
   dependency_and_tests:
