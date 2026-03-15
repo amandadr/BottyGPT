@@ -1,9 +1,9 @@
 {
-  "AIzaSyC6jJpTfbepgS6senaG1iJZlEMqUUANzr8": {
-    "authDomain": "manny-roy-consulting.firebaseapp.com",
+  "YOUR_IAP_API_KEY": {
+    "authDomain": "YOUR_PROJECT_ID.firebaseapp.com",
     "displayMode": "optionFirst",
     "tenants": {
-      "_782077674267": {
+      "_YOUR_PROJECT_NUMBER_OR_TENANT_ID": {
         "displayName": "DocsGPT",
         "iconUrl": "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg",
         "buttonColor": "#4285f4",
