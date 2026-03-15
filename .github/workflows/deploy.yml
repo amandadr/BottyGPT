@@ -142,5 +142,7 @@ jobs:
             "
             sudo systemctl restart docker || true
             sleep 3
-            docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env pull
-            docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env up -d
+            DEPLOY_PATH="${{ env.DEPLOY_PATH }}"
+            COMPOSE_FILE="${{ env.COMPOSE_FILE }}"
+            sudo docker compose -f "${DEPLOY_PATH}/${COMPOSE_FILE}" --env-file "${DEPLOY_PATH}/.env" pull
+            sudo docker compose -f "${DEPLOY_PATH}/${COMPOSE_FILE}" --env-file "${DEPLOY_PATH}/.env" up -d
