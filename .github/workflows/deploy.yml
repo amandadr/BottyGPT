@@ -140,5 +140,7 @@ jobs:
             if c.get('credHelpers') == {}: c.pop('credHelpers', None)
             with open(path, 'w') as f: json.dump(c, f, indent=2)
             "
+            sudo systemctl restart docker || true
+            sleep 3
             docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env pull
             docker compose -f ${{ env.COMPOSE_FILE }} --env-file .env up -d
