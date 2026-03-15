@@ -557,6 +557,11 @@ function Upload({
 
     let configData: Record<string, unknown> = { ...ingestor.config };
 
+    // For crawler/url, only send allowed fields so backend and Celery never receive unknown args (e.g. init_from)
+    if (ingestor.type === 'crawler' || ingestor.type === 'url') {
+      configData = { url: ingestor.config?.url ?? '' };
+    }
+
     if (hasLocalFilePicker) {
       files.forEach((file) => {
         formData.append('file', file);

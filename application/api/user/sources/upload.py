@@ -183,24 +183,26 @@ class UploadRemote(Resource):
             return missing_fields
         try:
             config = json.loads(data["data"])
+            source_type = (data["source"] or "").strip().lower()
             source_data = None
 
-            if data["source"] == "github":
+            if source_type == "github":
                 source_data = config.get("repo_url")
-            elif data["source"] in ["crawler", "url"]:
+            elif source_type in ("crawler", "url"):
+                # Only pass the URL string; ignore extra keys (e.g. init_from) from client
                 source_data = config.get("url")
-            elif data["source"] == "reddit":
+            elif source_type == "reddit":
                 source_data = config
-            elif data["source"] == "s3":
+            elif source_type == "s3":
                 source_data = config
-            elif data["source"] in ConnectorCreator.get_supported_connectors():
+            elif source_type in ConnectorCreator.get_supported_connectors():
                 session_token = config.get("session_token")
                 if not session_token:
                     return make_response(
                         jsonify(
                             {
                                 "success": False,
-                                "error": f"Missing session_token in {data['source']} configuration",
+                                "error": f"Missing session_token in {source_type} configuration",
                             }
                         ),
                         400,
@@ -227,7 +229,7 @@ class UploadRemote(Resource):
                 task = ingest_connector_task.delay(
                     job_name=data["name"],
                     user=decoded_token.get("sub"),
-                    source_type=data["source"],
+                    source_type=source_type,
                     session_token=session_token,
                     file_ids=file_ids,
                     folder_ids=folder_ids,
@@ -237,11 +239,12 @@ class UploadRemote(Resource):
                 return make_response(
                     jsonify({"success": True, "task_id": task.id}), 200
                 )
+            # Pass only the four allowed task args; do not forward extra client keys (e.g. init_from)
             task = ingest_remote.delay(
                 source_data=source_data,
                 job_name=data["name"],
                 user=decoded_token.get("sub"),
-                loader=data["source"],
+                loader=source_type,
             )
         except Exception as err:
             current_app.logger.error(
