@@ -74,5 +74,10 @@ python scripts/test_qdrant_connection.py
 ## 7. Escalation
 
 - If dependency checks pass but requests fail: inspect application logs and `request_id` for that request.
-- If the VM is out of disk: run `docker system prune -a -f` only if you can afford to re-pull images; prefer cleaning logs and old volumes first. To avoid "No space left on device" during pip install or pulls, use a **50GB boot disk** (default in `gcp-setup.sh`). To resize an existing GCP VM disk, see [Resize a persistent disk](https://cloud.google.com/compute/docs/disks/resize-persistent-disk) (resize in GCP, then on the VM run `sudo growpart /dev/sda 1` and `sudo resize2fs /dev/sda1` for the root partition).
+- **If the VM is out of disk** ("no space left on device" during `docker pull` or container start): The backend image includes PyTorch (~2GB+), so old images and layers can fill a 50GB disk. Free space by running on the VM:
+  ```bash
+  sudo docker system prune -af && sudo docker image prune -a -f && sudo docker builder prune -af
+  sudo journalctl --vacuum-time=3d
+  ```
+  Then retry `sudo docker compose pull` and `up -d`. See **scripts/vm-free-disk-space.sh** for a full cleanup script. Use a **50GB boot disk** (default in `gcp-setup.sh`) to reduce how often this happens. To resize an existing GCP VM disk, see [Resize a persistent disk](https://cloud.google.com/compute/docs/disks/resize-persistent-disk) (resize in GCP, then on the VM run `sudo growpart /dev/sda 1` and `sudo resize2fs /dev/sda1`).
 - For TLS/domain issues: see [TLS-SETUP.md](TLS-SETUP.md).
