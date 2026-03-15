@@ -46,7 +46,7 @@ sudo usermod -aG docker "$USER"
 - [ ] `curl -sf http://localhost:7091/api/health` returns 200.
 - [ ] `curl -sf http://localhost:7091/api/ready` returns 200 and `"status":"ready"`.
 - [ ] Run `./scripts/smoke_check.sh http://localhost:7091` from repo (or equivalent on VM if you copy the script).
-- [ ] Backend and worker logs show no ERRORs: `docker compose logs backend worker --tail 50`.
+- [ ] Backend and worker logs show no ERRORs: `sudo docker compose -f docker-compose.gcp.yaml logs backend worker --tail 50`.
 - [ ] Frontend loads (http://VM_IP or your domain on port 80). API at VM:7091 or assistant-api.mannyroy.com.
 - [ ] Optional: create a test source, run a query, confirm vector store and LLM path work.
 
