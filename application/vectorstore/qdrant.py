@@ -4,6 +4,24 @@ from application.core.settings import settings
 from application.vectorstore.document_class import Document
 
 
+def _get_embedding_dimension(embedding):
+    """Return vector size for any embedding type (EmbeddingsWrapper, RemoteEmbeddings, OpenAI, etc.)."""
+    dim = getattr(embedding, "dimension", None)
+    if dim is not None:
+        return dim
+    if getattr(embedding, "client", None) is not None:
+        try:
+            return embedding.client[1].word_embedding_dimension
+        except (AttributeError, IndexError, TypeError):
+            pass
+    # Fallback: embed one token and use length
+    try:
+        vec = embedding.embed_query("x")
+        return len(vec) if vec else 1536
+    except Exception:
+        return 1536
+
+
 def _make_qdrant_client():
     """Build QdrantClient from settings. Prefer url; fall back to location/path for local."""
     from qdrant_client import QdrantClient as QdrantClientClass
@@ -48,7 +66,7 @@ class QdrantStore(BaseVectorStore):
 
         embedding = self._get_embeddings(settings.EMBEDDINGS_NAME, embeddings_key)
         collection_name = settings.QDRANT_COLLECTION_NAME
-        vector_size = embedding.client[1].word_embedding_dimension
+        vector_size = _get_embedding_dimension(embedding)
 
         # Create client and collection ourselves so we never pass init_from (LangChain's
         # construct_instance passes init_from to recreate_collection, which triggers
