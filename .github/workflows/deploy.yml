@@ -104,6 +104,7 @@ jobs:
           host: ${{ secrets.VM_IP }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 20m   # pull + up -d (backend healthcheck) can exceed default 10m
           script: |
             set -e
             cd ${{ env.DEPLOY_PATH }}
