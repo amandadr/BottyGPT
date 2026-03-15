@@ -1,6 +1,7 @@
 """Source document management upload functionality."""
 
 import json
+import logging
 import os
 import tempfile
 import zipfile
@@ -16,6 +17,37 @@ from application.core.settings import settings
 from application.parser.connectors.connector_creator import ConnectorCreator
 from application.storage.storage_creator import StorageCreator
 from application.utils import check_required_fields, safe_filename
+
+logger = logging.getLogger(__name__)
+
+# Allowed config keys per remote source type (prevents unknown args e.g. init_from reaching workers)
+REMOTE_SOURCE_ALLOWED_KEYS = {
+    "reddit": [
+        "client_id",
+        "client_secret",
+        "user_agent",
+        "search_queries",
+        "number_posts",
+        "categories",
+        "mode",
+    ],
+    "s3": [
+        "aws_access_key_id",
+        "aws_secret_access_key",
+        "bucket",
+        "prefix",
+        "region",
+        "endpoint_url",
+    ],
+}
+
+
+def _sanitize_remote_config(source_type: str, config: dict) -> dict:
+    """Return a copy of config with only allowed keys for the given source type."""
+    allowed = REMOTE_SOURCE_ALLOWED_KEYS.get(source_type)
+    if not allowed:
+        return {}
+    return {k: config.get(k) for k in allowed if k in config}
 
 
 sources_upload_ns = Namespace(
@@ -181,10 +213,20 @@ class UploadRemote(Resource):
         missing_fields = check_required_fields(data, required_fields)
         if missing_fields:
             return missing_fields
+        source_type = ""
+        config_keys = []
         try:
             config = json.loads(data["data"])
             source_type = (data["source"] or "").strip().lower()
             source_data = None
+
+            # Log incoming config keys only (no values) to help debug unknown-argument errors
+            config_keys = list(config.keys()) if isinstance(config, dict) else []
+            logger.info(
+                "Remote upload: source_type=%s, config_keys=%s",
+                source_type,
+                config_keys,
+            )
 
             if source_type == "github":
                 source_data = config.get("repo_url")
@@ -192,9 +234,10 @@ class UploadRemote(Resource):
                 # Only pass the URL string; ignore extra keys (e.g. init_from) from client
                 source_data = config.get("url")
             elif source_type == "reddit":
-                source_data = config
+                # Reddit loader expects a JSON string
+                source_data = json.dumps(_sanitize_remote_config(source_type, config))
             elif source_type == "s3":
-                source_data = config
+                source_data = _sanitize_remote_config(source_type, config)
             elif source_type in ConnectorCreator.get_supported_connectors():
                 session_token = config.get("session_token")
                 if not session_token:
@@ -239,7 +282,24 @@ class UploadRemote(Resource):
                 return make_response(
                     jsonify({"success": True, "task_id": task.id}), 200
                 )
-            # Pass only the four allowed task args; do not forward extra client keys (e.g. init_from)
+            # Fallback for other remote types (e.g. sitemap): pass only URL string to avoid unknown args
+            if source_data is None and isinstance(config, dict):
+                source_data = config.get("url") or config.get("repo_url")
+
+            # Log what we pass to the task to help debug "Unknown arguments" errors
+            if isinstance(source_data, dict):
+                logger.info(
+                    "Remote upload: calling ingest_remote loader=%s source_data_keys=%s",
+                    source_type,
+                    list(source_data.keys()),
+                )
+            else:
+                logger.info(
+                    "Remote upload: calling ingest_remote loader=%s source_data_type=%s",
+                    source_type,
+                    type(source_data).__name__,
+                )
+
             task = ingest_remote.delay(
                 source_data=source_data,
                 job_name=data["name"],
@@ -248,9 +308,19 @@ class UploadRemote(Resource):
             )
         except Exception as err:
             current_app.logger.error(
-                f"Error uploading remote source: {err}", exc_info=True
+                "Error uploading remote source: %s (source_type=%s, config_keys=%s)",
+                err,
+                source_type,
+                config_keys,
+                exc_info=True,
             )
-            return make_response(jsonify({"success": False}), 400)
+            return make_response(
+                jsonify({
+                    "success": False,
+                    "error": str(err),
+                }),
+                400,
+            )
         return make_response(jsonify({"success": True, "task_id": task.id}), 200)
 
 

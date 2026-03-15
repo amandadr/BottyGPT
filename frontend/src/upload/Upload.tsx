@@ -555,18 +555,25 @@ function Upload({
       (field: FormField) => field.type === 'share_point_picker',
     );
 
-    let configData: Record<string, unknown> = { ...ingestor.config };
-
-    // For crawler/url, only send allowed fields so backend and Celery never receive unknown args (e.g. init_from)
-    if (ingestor.type === 'crawler' || ingestor.type === 'url') {
-      configData = { url: ingestor.config?.url ?? '' };
+    // Build config from schema fields only so we never send unknown keys (e.g. init_from)
+    let configData: Record<string, unknown> = {};
+    for (const field of schema) {
+      const value =
+        ingestor.config?.[field.name as keyof typeof ingestor.config];
+      if (value !== undefined && value !== null) {
+        configData[field.name] = value;
+      }
     }
 
     if (hasLocalFilePicker) {
       files.forEach((file) => {
         formData.append('file', file);
       });
-    } else if (hasRemoteFilePicker || hasGoogleDrivePicker || hasSharePointPicker) {
+    } else if (
+      hasRemoteFilePicker ||
+      hasGoogleDrivePicker ||
+      hasSharePointPicker
+    ) {
       const sessionToken = getSessionToken(ingestor.type as string);
       configData = {
         provider: ingestor.type as string,
@@ -635,11 +642,30 @@ function Upload({
           handleTaskFailure(clientTaskId);
         }
       } else {
-        handleTaskFailure(clientTaskId, xhr.statusText || undefined);
+        let errorMessage = xhr.statusText || `HTTP ${xhr.status}`;
+        try {
+          const body = JSON.parse(xhr.responseText) as {
+            error?: string;
+            message?: string;
+          };
+          if (body.error) errorMessage = body.error;
+          else if (body.message) errorMessage = body.message;
+        } catch {
+          if (xhr.responseText) errorMessage = xhr.responseText.slice(0, 200);
+        }
+        console.error(
+          '[Upload] Add source failed:',
+          xhr.status,
+          errorMessage,
+          'response:',
+          xhr.responseText?.slice(0, 500),
+        );
+        handleTaskFailure(clientTaskId, errorMessage);
       }
     };
 
     xhr.onerror = () => {
+      console.error('[Upload] Add source network error for', ingestor.type);
       handleTaskFailure(clientTaskId);
     };
 
@@ -750,7 +776,11 @@ function Upload({
       if (files.length === 0) {
         return true;
       }
-    } else if (hasRemoteFilePicker || hasGoogleDrivePicker || hasSharePointPicker) {
+    } else if (
+      hasRemoteFilePicker ||
+      hasGoogleDrivePicker ||
+      hasSharePointPicker
+    ) {
       if (selectedFiles.length === 0 && selectedFolders.length === 0) {
         return true;
       }

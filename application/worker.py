@@ -929,9 +929,25 @@ def remote_worker(
     if not os.path.exists(full_path):
         os.makedirs(full_path)
     self.update_state(state="PROGRESS", meta={"current": 1})
+
+    # Log payload shape to debug "Unknown arguments" and similar errors
+    if isinstance(source_data, dict):
+        logging.info(
+            "remote_worker: loader=%s source_data type=dict keys=%s",
+            loader,
+            list(source_data.keys()),
+        )
+    else:
+        logging.info(
+            "remote_worker: loader=%s source_data type=%s",
+            loader,
+            type(source_data).__name__,
+        )
+
     try:
         logging.info("Initializing remote loader with type: %s", loader)
         remote_loader = RemoteCreator.create_loader(loader)
+        logging.info("Calling remote_loader.load_data for loader=%s", loader)
         raw_docs = remote_loader.load_data(source_data)
 
         chunker = Chunker(
@@ -1046,7 +1062,14 @@ def remote_worker(
             file_data["last_sync"] = datetime.datetime.now()
         upload_index(full_path, file_data)
     except Exception as e:
-        logging.error("Error in remote_worker task: %s", str(e), exc_info=True)
+        logging.error(
+            "Error in remote_worker task: loader=%s error=%s (source_data type=%s%s)",
+            loader,
+            str(e),
+            type(source_data).__name__,
+            f" keys={list(source_data.keys())}" if isinstance(source_data, dict) else "",
+            exc_info=True,
+        )
         raise
     finally:
         if os.path.exists(full_path):

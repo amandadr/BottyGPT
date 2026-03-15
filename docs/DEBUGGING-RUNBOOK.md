@@ -68,7 +68,25 @@ Optional: run the standalone Qdrant script from repo root (with `.env`):
 python scripts/test_qdrant_connection.py
 ```
 
-## 6. Common failure patterns
+## 6. Debugging "Add source" / remote upload errors
+
+If adding a source fails (e.g. **"Unknown arguments: ['init_from']"** or similar):
+
+1. **Backend logs** (Compose or Cloud Logging): Look for:
+   - `Remote upload: source_type=... config_keys=[...]` — confirms what the API received.
+   - `Remote upload: calling ingest_remote loader=... source_data_keys=...` or `source_data_type=...` — confirms what is sent to the Celery task.
+   - `Error uploading remote source: ... (source_type=..., config_keys=[...])` — full exception and context.
+
+2. **Worker logs**: Look for:
+   - `remote_worker: loader=... source_data type=dict keys=[...]` or `source_data type=...` — payload shape received by the worker.
+   - `Calling remote_loader.load_data for loader=...` — just before the loader runs.
+   - `Error in remote_worker task: loader=... error=...` — failure and source_data shape.
+
+3. **Frontend**: Open DevTools → Console. On failure you’ll see `[Upload] Add source failed:` with status, error message, and a short response snippet. The UI should show the backend error message when the API returns `error` or `message` in the JSON body.
+
+4. **Fix**: The backend only allows known config keys per source type (e.g. crawler/url → `url` only; reddit/s3 → whitelisted keys). If you still see unknown-argument errors, check that no extra keys (e.g. `init_from`) are sent: frontend builds payload from schema fields only; backend sanitizes for reddit/s3 and passes only URL string for url/crawler/sitemap.
+
+## 7. Common failure patterns
 
 | Symptom | Likely cause | Action |
 |--------|---------------|--------|
@@ -77,11 +95,11 @@ python scripts/test_qdrant_connection.py
 | `api/ready` returns 503 | One of redis/mongo/qdrant failed | Use `api/ready` JSON to see which check failed; fix that service or its URL. |
 | Permission errors on indexes/inputs/vectors | Volume owned by root, container runs as non-root | Use `user: "0"` for backend/worker in Compose if required, or pre-create volumes with correct ownership. |
 
-## 7. Rotating secrets (Secret Manager)
+## 8. Rotating secrets (Secret Manager)
 
 If **USE_SECRET_MANAGER** is enabled, app secrets live in GCP Secret Manager (`docsgpt-env`). To rotate: add a new version of the secret in **Secret Manager** in the console (or `gcloud secrets versions add docsgpt-env --data-file=- < .env`). The next deploy will use the new version. To apply without a code deploy, on the VM run: `gcloud secrets versions access latest --secret=docsgpt-env --project=manny-roy-consulting > /opt/docsgpt/.env` then restart the stack. See [SECRET-MANAGER-SETUP.md](SECRET-MANAGER-SETUP.md).
 
-## 8. Escalation
+## 9. Escalation
 
 - If dependency checks pass but requests fail: inspect application logs and `request_id` for that request.
 - **If the VM is out of disk** ("no space left on device" during `docker pull` or container start): The backend image includes PyTorch (~2GB+), so old images and layers can fill a 50GB disk. Free space by running on the VM:
