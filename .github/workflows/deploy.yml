@@ -107,6 +107,10 @@ jobs:
           script: |
             set -e
             cd ${{ env.DEPLOY_PATH }}
+            if [ "${{ secrets.USE_SECRET_MANAGER }}" = "true" ]; then
+              gcloud secrets versions access latest --secret=docsgpt-env --project=${{ env.PROJECT_ID }} > .env
+              chmod 600 .env
+            fi
             IMAGE_TAG="${{ needs.resolve-tag.outputs.tag }}"
             if grep -q '^IMAGE_TAG=' .env 2>/dev/null; then
               sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env
