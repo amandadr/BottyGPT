@@ -2,6 +2,8 @@
 
 Use Nginx as a reverse proxy with Let's Encrypt. After setup, users use **https://assistant.mannyroy.com** and **https://assistant-api.mannyroy.com** (no port in the URL).
 
+**If you deploy with `docker-compose.gcp.yaml` instead:** That stack binds the frontend to host port **80**. You cannot run **both** `docker-compose.vm-tls.yaml` (nginx on 80) and gcp compose frontend on 80. Either stop the TLS stack (`sudo docker compose -f docker-compose.vm-tls.yaml down`) before using gcp compose on 80, or keep TLS and proxy to the gcp stack (see [VM-PORT-80.md](VM-PORT-80.md)).
+
 ## Prerequisites
 
 - DNS: `assistant.mannyroy.com` and `assistant-api.mannyroy.com` point to the VM's external IP.

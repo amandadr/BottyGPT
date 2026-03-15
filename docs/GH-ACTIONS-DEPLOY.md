@@ -35,7 +35,17 @@ The VM runs the **full stack**: frontend (port 80), backend (7091), worker, Redi
    - `docker-compose.gcp.yaml` (full stack). Copy from repo `deployment/docker-compose.gcp.yaml`.
 2. **Docker:** Docker and Docker Compose plugin installed; the deploy user can run `docker compose` (workflow uses `sudo docker compose`).
 3. **Artifact Registry:** VM can pull backend and frontend images. See **Troubleshooting** below if `docker compose pull` fails with auth errors.
-4. **Firewall:** Open port 80 (and 7091 if you expose the API directly) or put a reverse proxy/load balancer in front.
+4. **Firewall:** Open port 80 (or whatever you set in `FRONTEND_HOST_PORT`, default 80) and 7091 if you expose the API directly, or put a reverse proxy in front.
+
+### Port 80 already in use
+
+If deploy fails with `Bind for :::80 failed: port is already allocated`, something else (e.g. nginx for TLS) owns port 80. On the VM, add to `.env`:
+
+```env
+FRONTEND_HOST_PORT=8080
+```
+
+Then `sudo docker compose ... up -d` again. Open the UI at `http://VM_IP:8080`, or point nginx at `127.0.0.1:8080` instead of 80.
 
 ## Troubleshooting
 
