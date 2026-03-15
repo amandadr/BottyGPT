@@ -1,6 +1,12 @@
 # Enable TLS (HTTPS) for DocsGPT on the VM
 
-Use Nginx as a reverse proxy with Let's Encrypt. After setup, users use **https://assistant.mannyroy.com** and **https://assistant-api.mannyroy.com** (no port in the URL).
+Use Nginx as a reverse proxy with Let's Encrypt. After setup, users use **https://assistant.mannyroy.com** (UI) and **https://assistant-api.mannyroy.com** (API, no port in the URL).
+
+**Quick checklist for API at https://assistant-api.mannyroy.com and redeploy:**  
+1. **GitHub secrets:** Set `VITE_API_HOST=https://assistant-api.mannyroy.com` and `VITE_BASE_URL=https://assistant.mannyroy.com` (no trailing slash, no `:7091`).  
+2. **VM:** Get Let's Encrypt certs (steps 1–2 below), copy `deployment/docker-compose.gcp-tls.yaml` and `deployment/nginx/` to `/opt/docsgpt`.  
+3. **GitHub secret:** Add `USE_TLS` = `true` so the deploy workflow uses the TLS compose.  
+4. **Redeploy:** `git push` to `main`; the workflow will build the frontend with the correct API URL and deploy the TLS stack on the VM.
 
 **If you deploy with `docker-compose.gcp.yaml` instead:** That stack binds the frontend to host port **80**. You cannot run **both** `docker-compose.vm-tls.yaml` (nginx on 80) and gcp compose frontend on 80. Either stop the TLS stack (`sudo docker compose -f docker-compose.vm-tls.yaml down`) before using gcp compose on 80, or keep TLS and proxy to the gcp stack (see [VM-PORT-80.md](VM-PORT-80.md)).
 
@@ -11,10 +17,11 @@ Use Nginx as a reverse proxy with Let's Encrypt. After setup, users use **https:
 
 ## 1. Copy TLS files to the VM
 
-On your **Mac** (from repo root):
+On your **Mac** (from repo root). For the **GCP stack** (recommended) use `docker-compose.gcp-tls.yaml`; it uses the same images as `docker-compose.gcp.yaml` with Nginx in front:
 
 ```bash
-gcloud compute scp deployment/nginx/nginx-tls.conf deployment/docker-compose.vm-tls.yaml docsgpt-prod:/opt/docsgpt/ --zone=northamerica-northeast1-a
+gcloud compute scp deployment/nginx/nginx-tls.conf docsgpt-prod:/opt/docsgpt/ --zone=northamerica-northeast1-a
+gcloud compute scp deployment/docker-compose.gcp-tls.yaml docsgpt-prod:/opt/docsgpt/ --zone=northamerica-northeast1-a
 ```
 
 On the **VM**:
@@ -56,13 +63,17 @@ Replace `YOUR_EMAIL@example.com` with your email. Certs will be in `/etc/letsenc
 
 ## 3. Start the stack with TLS
 
-If you use a TLS overlay compose (e.g. `docker-compose.vm-tls.yaml` with Nginx in front of the app):
+**GCP stack (recommended):** Use `docker-compose.gcp-tls.yaml`. It uses the same backend/frontend images (set `IMAGE_TAG` in `.env`). Nginx listens on 80 and 443 and proxies to the frontend and backend containers:
 
 ```bash
-sudo docker compose -f docker-compose.vm-tls.yaml --env-file .env up -d
+cd /opt/docsgpt
+sudo docker compose -f docker-compose.gcp-tls.yaml --env-file .env up -d
 ```
 
-Nginx serves HTTPS on 443 and proxies to the frontend (port 80) and backend (7091). Open **https://assistant.mannyroy.com** in the browser. If you only have the main stack (`docker-compose.gcp.yaml`), start that after certbot; for HTTPS you would add an Nginx sidecar or reverse proxy and a TLS compose overlay.
+- **https://assistant.mannyroy.com** → frontend (no port in URL).
+- **https://assistant-api.mannyroy.com** → API (no port in URL; Nginx proxies to backend:7091).
+
+To have **GitHub Actions** deploy with TLS on every push, add secret **USE_TLS** = `true`. The workflow will then use `docker-compose.gcp-tls.yaml`; ensure the VM has this file and the `nginx/` directory.
 
 ## 4. Renew certs (automate)
 
@@ -70,7 +81,7 @@ Let's Encrypt certs expire in 90 days. Renew with webroot (Nginx can stay up):
 
 ```bash
 sudo certbot renew --webroot -w /var/www/certbot --quiet
-sudo docker compose -f /opt/docsgpt/docker-compose.vm-tls.yaml exec nginx nginx -s reload
+sudo docker compose -f /opt/docsgpt/docker-compose.gcp-tls.yaml exec nginx nginx -s reload
 ```
 
 Add a cron job on the VM (e.g. twice monthly):
@@ -82,7 +93,7 @@ sudo crontab -e
 Add:
 
 ```
-0 3 1,15 * * certbot renew --webroot -w /var/www/certbot --quiet && sudo docker compose -f /opt/docsgpt/docker-compose.vm-tls.yaml exec nginx nginx -s reload
+0 3 1,15 * * certbot renew --webroot -w /var/www/certbot --quiet && sudo docker compose -f /opt/docsgpt/docker-compose.gcp-tls.yaml exec nginx nginx -s reload
 ```
 
 ## 5. Frontend API URL (no port)

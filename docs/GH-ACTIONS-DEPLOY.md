@@ -23,8 +23,9 @@ Optional (for frontend build; used as build-args for the frontend image):
 
 | Secret | Description |
 |--------|-------------|
-| `VITE_API_HOST` | API URL the browser will use (default `https://assistant-api.mannyroy.com`). |
-| `VITE_BASE_URL` | App URL for redirects/cookies (default `https://assistant.mannyroy.com`). |
+| `VITE_API_HOST` | API base URL with **no port** (e.g. `https://assistant-api.mannyroy.com`). The frontend will call this for all API requests (e.g. `https://assistant-api.mannyroy.com/api/...`). Default `https://assistant-api.mannyroy.com`. |
+| `VITE_BASE_URL` | App URL for redirects/cookies (e.g. `https://assistant.mannyroy.com`). Default `https://assistant.mannyroy.com`. |
+| `USE_TLS` | Set to `true` to deploy with **docker-compose.gcp-tls.yaml** (Nginx on 80/443, HTTPS for both hostnames). Requires Let's Encrypt certs and `deployment/nginx/` on the VM; see [TLS-SETUP.md](TLS-SETUP.md). |
 
 ## VM setup
 
