@@ -67,7 +67,7 @@ When you reach **Advanced settings**:
 | Service | Purpose |
 |--------|---------|
 | **Artifact Registry** | Store your built Docker images (frontend, backend, etc.) |
-| **Compute Engine (VM)** | Run the multi-container DocsGPT stack (app + Qdrant + Redis + Mongo) |
+| **Compute Engine (VM)** | Run the full DocsGPT stack (frontend + backend + worker + Qdrant + Redis + Mongo) |
 | **Cloud Load Balancing + Managed Certificates** (optional) | HTTPS for your domains without managing Let’s Encrypt on the VM |
 | **Cloud SQL** (optional) | Only if you switch from Qdrant to **PGVector** |
 
@@ -85,13 +85,13 @@ If you run Qdrant elsewhere, set `QDRANT_URL` to that host (e.g. `http://<qdrant
 
 ## Step 3: Deploying on the VM with Qdrant
 
-Use the compose file that includes the Qdrant service:
+Use the compose file that includes the full stack (frontend, backend, worker, Qdrant, Redis, Mongo). Images are pulled from Artifact Registry using `IMAGE_TAG` in `.env` (set by CI or manually):
 
 ```bash
-docker compose -f deployment/docker-compose.gcp.yaml --env-file .env up -d
+sudo docker compose -f deployment/docker-compose.gcp.yaml --env-file .env up -d
 ```
 
-That file defines the `qdrant` service and sets backend/worker to use `http://qdrant:6333`.
+That file defines frontend (port 80), backend (7091), worker, `qdrant`, Redis, and Mongo; backend/worker use `http://qdrant:6333`.
 
 ## Step 4: CORS when embedding on your domains
 
@@ -129,11 +129,11 @@ The repo includes:
 - **`frontend/Dockerfile.production`** – multi-stage: Node build → Nginx serving static files
 - **`frontend/nginx.conf`** – SPA fallback (`try_files ... /index.html`) and gzip
 
-**GCP compose:** `deployment/docker-compose.gcp.yaml` builds the frontend with `Dockerfile.production` and exposes port 80. Override URLs with env when building:
+**GCP compose:** `deployment/docker-compose.gcp.yaml` uses **pre-built** frontend and backend images from Artifact Registry (tagged with `IMAGE_TAG` from `.env`). The frontend image is built in CI (or locally) with `VITE_API_HOST` and `VITE_BASE_URL` as build args; the compose file does not build, it only pulls and runs. On the VM:
 
 ```bash
-VITE_API_HOST=https://assistant-api.mannyroy.com VITE_BASE_URL=https://assistant.mannyroy.com \
-  docker compose -f deployment/docker-compose.gcp.yaml --env-file .env up -d --build
+sudo docker compose -f deployment/docker-compose.gcp.yaml --env-file .env pull
+sudo docker compose -f deployment/docker-compose.gcp.yaml --env-file .env up -d
 ```
 
 **Widget embed:** For Ghost and Docusaurus, the embed script should point to your backend or to the widget asset served by your stack (e.g. from the same Nginx or backend).
@@ -204,5 +204,5 @@ This shows you can deploy and maintain an LLM app on GCP with production-style t
 |------|-------------------|
 | GCP pre-setup | `./scripts/gcp-setup.sh` |
 | DocsGPT setup | `./setup.sh` → Advanced → Vector Store: Qdrant, `QDRANT_URL=http://qdrant:6333` |
-| Compose on VM | `docker compose -f deployment/docker-compose.gcp.yaml --env-file .env up -d` |
+| Deploy on VM | `sudo docker compose -f deployment/docker-compose.gcp.yaml --env-file .env up -d` (full stack) |
 | CORS (if supported) | `ALLOWED_ORIGINS=https://mannyroy.com,https://docs.mannyroy.com` |

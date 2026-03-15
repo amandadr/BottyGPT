@@ -1,36 +1,38 @@
 # First 10 minutes of debugging (Plan 2.0)
 
-Use this runbook when the stack is unhealthy or you need to find a failing dependency quickly.
+Use this runbook when the stack is unhealthy or you need to find a failing dependency quickly. The stack includes **frontend** (port 80), **backend** (7091), **worker**, Redis, Mongo, and Qdrant. On the VM, use **`sudo docker compose`** (or run as a user in the `docker` group).
 
 ## 1. Check container health (0–2 min)
 
-From the host where Compose runs:
+From the host where Compose runs (on VM use `sudo`):
 
 ```bash
-docker compose -f deployment/docker-compose.gcp.yaml ps
+sudo docker compose -f deployment/docker-compose.gcp.yaml ps
 ```
 
-Look for `unhealthy` or `restarting`. Note which service is failing.
+Look for `unhealthy` or `restarting`. Note which service is failing (frontend, backend, worker, redis, mongo, qdrant).
 
 ## 2. Hit readiness and health endpoints (1 min)
 
-If the backend port is exposed:
+If the backend port is exposed (default 7091):
 
 ```bash
 curl -s http://localhost:7091/api/health
 curl -s http://localhost:7091/api/ready
 ```
 
+If the frontend does not load, check that the frontend container is running and port 80 is open: `curl -s -o /dev/null -w "%{http_code}" http://localhost:80`.
+
 - `api/health`: liveness; expect `{"status":"ok","service":"backend"}`.
 - `api/ready`: dependency checks; expect `{"status":"ready","checks":{...}}`. If `"status":"degraded"`, inspect `checks` for which service failed (redis, mongo, qdrant).
 
 ## 3. Run healthcheck inside backend or worker (1 min)
 
-From host:
+From host (on VM use `sudo`):
 
 ```bash
-docker compose -f deployment/docker-compose.gcp.yaml exec backend python -m application.healthcheck --target dependencies
-docker compose -f deployment/docker-compose.gcp.yaml exec worker python -m application.healthcheck --target worker
+sudo docker compose -f deployment/docker-compose.gcp.yaml exec backend python -m application.healthcheck --target dependencies
+sudo docker compose -f deployment/docker-compose.gcp.yaml exec worker python -m application.healthcheck --target worker
 ```
 
 Exit code 0 means all dependency checks passed. Non-zero or JSON with `"healthy": false` indicates which service failed.
@@ -40,8 +42,8 @@ Exit code 0 means all dependency checks passed. Non-zero or JSON with `"healthy"
 Backend and worker emit JSON lines (timestamp, level, service, request_id, message). Use `request_id` to trace a single request.
 
 ```bash
-docker compose -f deployment/docker-compose.gcp.yaml logs --tail 100 backend
-docker compose -f deployment/docker-compose.gcp.yaml logs --tail 100 worker
+sudo docker compose -f deployment/docker-compose.gcp.yaml logs --tail 100 backend
+sudo docker compose -f deployment/docker-compose.gcp.yaml logs --tail 100 worker
 ```
 
 Search for `"level":"ERROR"` or `"exception"`. Confirm `service` (e.g. `docsgpt-backend` vs `docsgpt-worker`) and timestamps.

@@ -24,11 +24,11 @@ sudo mv /opt/docsgpt/nginx-tls.conf /opt/docsgpt/nginx/
 
 ## 2. Get Let's Encrypt certs (first time)
 
-SSH to the VM. Free port 80 so certbot can use it:
+SSH to the VM. Free port 80 so certbot can use it (the main stack uses port 80 for the frontend):
 
 ```bash
 cd /opt/docsgpt
-docker compose -f docker-compose.vm.yaml down
+sudo docker compose -f docker-compose.gcp.yaml down
 ```
 
 Install certbot:
@@ -54,11 +54,13 @@ Replace `YOUR_EMAIL@example.com` with your email. Certs will be in `/etc/letsenc
 
 ## 3. Start the stack with TLS
 
+If you use a TLS overlay compose (e.g. `docker-compose.vm-tls.yaml` with Nginx in front of the app):
+
 ```bash
-docker compose -f docker-compose.vm-tls.yaml --env-file .env up -d
+sudo docker compose -f docker-compose.vm-tls.yaml --env-file .env up -d
 ```
 
-Nginx will serve HTTPS on 443 and proxy to the frontend and backend. Open **https://assistant.mannyroy.com** in the browser.
+Nginx serves HTTPS on 443 and proxies to the frontend (port 80) and backend (7091). Open **https://assistant.mannyroy.com** in the browser. If you only have the main stack (`docker-compose.gcp.yaml`), start that after certbot; for HTTPS you would add an Nginx sidecar or reverse proxy and a TLS compose overlay.
 
 ## 4. Renew certs (automate)
 
@@ -66,7 +68,7 @@ Let's Encrypt certs expire in 90 days. Renew with webroot (Nginx can stay up):
 
 ```bash
 sudo certbot renew --webroot -w /var/www/certbot --quiet
-docker compose -f /opt/docsgpt/docker-compose.vm-tls.yaml exec nginx nginx -s reload
+sudo docker compose -f /opt/docsgpt/docker-compose.vm-tls.yaml exec nginx nginx -s reload
 ```
 
 Add a cron job on the VM (e.g. twice monthly):
@@ -78,7 +80,7 @@ sudo crontab -e
 Add:
 
 ```
-0 3 1,15 * * certbot renew --webroot -w /var/www/certbot --quiet && docker compose -f /opt/docsgpt/docker-compose.vm-tls.yaml exec nginx nginx -s reload
+0 3 1,15 * * certbot renew --webroot -w /var/www/certbot --quiet && sudo docker compose -f /opt/docsgpt/docker-compose.vm-tls.yaml exec nginx nginx -s reload
 ```
 
 ## 5. Frontend API URL (no port)
@@ -93,4 +95,4 @@ Also keep backend service identity explicit in runtime env:
 - `DOCSGPT_SERVICE_NAME=docsgpt-backend`
 - `DOCSGPT_SERVICE_NAME=docsgpt-worker` (worker service)
 
-Then redeploy the frontend and backend/worker containers so HTTPS routes and structured service logs are aligned.
+Redeploy the frontend image (CI or local build with those env vars) and backend/worker so HTTPS routes and structured service logs are aligned. The main stack is defined in `deployment/docker-compose.gcp.yaml` (frontend + backend + worker + infra).

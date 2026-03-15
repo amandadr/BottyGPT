@@ -1,5 +1,5 @@
 # Push-to-Deploy: build backend + frontend, push to Artifact Registry, deploy full stack (frontend + backend + worker + infra) on VM.
-# Requires: Secrets GCP_SA_KEY, VM_IP, VM_USER, SSH_PRIVATE_KEY, VITE_API_HOST, VITE_BASE_URL. See docs/GH-ACTIONS-DEPLOY.md.
+# Requires: Secrets GCP_SA_KEY, VM_IP, VM_USER, SSH_PRIVATE_KEY. Optional: VITE_API_HOST, VITE_BASE_URL. See docs/GH-ACTIONS-DEPLOY.md.
 # Manual run: optionally set "Reuse image tag" to skip build and deploy VM only.
 
 name: Deploy to GCP (VM)

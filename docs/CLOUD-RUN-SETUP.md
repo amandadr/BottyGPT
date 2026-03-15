@@ -72,16 +72,16 @@ To serve the frontend at e.g. **[https://assistant.mannyroy.com](https://assista
 2. Add `assistant.mannyroy.com` and follow the prompts (map to the Cloud Run service, then add the DNS records shown).
 3. Ensure **VITE_BASE_URL** (and any redirect/cookie config) uses `https://assistant.mannyroy.com` so the app knows its public URL. Set the secret **VITE_BASE_URL** in GitHub to match.
 
-## 5. Architecture summary
+## 5. Architecture summary (when using Cloud Run for frontend)
 
+If you follow this optional setup, the layout is:
 
 | Component                                     | Where it runs | URL / access                                                                                       |
 | --------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
 | Frontend                                      | Cloud Run     | `https://docsgpt-frontend-xxx.run.app` or custom domain                                            |
 | Backend API + worker + Redis + Mongo + Qdrant | VM (Compose)  | API at VM IP:7091 or e.g. [https://assistant-api.mannyroy.com](https://assistant-api.mannyroy.com) |
 
-
-The frontend is built with **VITE_API_HOST** pointing at your backend (e.g. `https://assistant-api.mannyroy.com`). CORS is allowed on the backend, so the browser can call the API from the Cloud Run origin.
+The frontend is built with **VITE_API_HOST** pointing at your backend. CORS is allowed on the backend. **Default in this repo:** frontend and backend both run on the VM; see [GH-ACTIONS-DEPLOY.md](GH-ACTIONS-DEPLOY.md).
 
 ## 6. "You don't have access" when opening the frontend URL
 
