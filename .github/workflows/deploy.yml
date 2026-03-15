@@ -1,8 +1,8 @@
-# Push-to-Deploy: build backend + frontend, push to Artifact Registry, deploy frontend to Cloud Run, deploy backend on VM.
-# Requires: Secrets GCP_SA_KEY, VM_IP, VM_USER, SSH_PRIVATE_KEY. See docs/GH-ACTIONS-DEPLOY.md and docs/CLOUD-RUN-SETUP.md.
-# Manual run: optionally set "Reuse image tag" to skip build and deploy VM only (e.g. after fixing VM auth).
+# Push-to-Deploy: build backend + frontend, push to Artifact Registry, deploy full stack (frontend + backend + worker + infra) on VM.
+# Requires: Secrets GCP_SA_KEY, VM_IP, VM_USER, SSH_PRIVATE_KEY, VITE_API_HOST, VITE_BASE_URL. See docs/GH-ACTIONS-DEPLOY.md.
+# Manual run: optionally set "Reuse image tag" to skip build and deploy VM only.
 
-name: Deploy to GCP (Cloud Run + VM)
+name: Deploy to GCP (VM)
 
 on:
   push:
@@ -25,7 +25,6 @@ env:
   VM_ZONE: northamerica-northeast1-a
   DEPLOY_PATH: /opt/docsgpt
   COMPOSE_FILE: docker-compose.gcp.yaml
-  CLOUD_RUN_SERVICE_FE: docsgpt-frontend
 
 jobs:
   resolve-tag:
@@ -94,17 +93,6 @@ jobs:
             -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
             --push \
             frontend
-
-      - name: Deploy frontend to Cloud Run
-        if: env.RESOLVED_TAG == github.sha
-        run: |
-          gcloud run deploy ${{ env.CLOUD_RUN_SERVICE_FE }} \
-            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/frontend:${{ github.sha }} \
-            --region=${{ env.REGION }} \
-            --platform=managed \
-            --allow-unauthenticated \
-            --port=80 \
-            --quiet
 
   deploy:
     needs: [resolve-tag, build-and-push]

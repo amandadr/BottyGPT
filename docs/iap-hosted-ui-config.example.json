@@ -1,0 +1,15 @@
+{
+  "AIzaSyC6jJpTfbepgS6senaG1iJZlEMqUUANzr8": {
+    "authDomain": "manny-roy-consulting.firebaseapp.com",
+    "displayMode": "optionFirst",
+    "tenants": {
+      "_782077674267": {
+        "displayName": "DocsGPT",
+        "iconUrl": "https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg",
+        "buttonColor": "#4285f4",
+        "signInFlow": "popup",
+        "signInOptions": ["google.com"]
+      }
+    }
+  }
+}

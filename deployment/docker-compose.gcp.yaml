@@ -1,4 +1,4 @@
-# DocsGPT stack for GCP VM: backend + worker + infra only. Frontend is hosted on Cloud Run.
+# DocsGPT stack for GCP VM: frontend + backend + worker + infra. All on VM.
 # Use with: docker compose -f deployment/docker-compose.gcp.yaml --env-file .env up -d
 # Ensure .env has: VECTOR_STORE=qdrant, QDRANT_URL=http://qdrant:6333, IMAGE_TAG=<sha>.
 
@@ -10,6 +10,16 @@ x-logging-defaults: &logging_defaults
     max-file: "3"
 
 services:
+  frontend:
+    image: northamerica-northeast1-docker.pkg.dev/manny-roy-consulting/docsgpt-repo/frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    logging: *logging_defaults
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
   backend:
     image: northamerica-northeast1-docker.pkg.dev/manny-roy-consulting/docsgpt-repo/backend:${IMAGE_TAG:-latest}
     user: "0"
