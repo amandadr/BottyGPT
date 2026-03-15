@@ -2,6 +2,8 @@
 
 The **Deploy to GCP (VM)** workflow (`.github/workflows/deploy.yml`) builds backend and frontend, pushes both to Artifact Registry, then deploys the **full stack on the VM** (frontend + backend + worker + Redis + Mongo + Qdrant) via SSH and Docker Compose.
 
+**Production:** [Secret Manager](SECRET-MANAGER-SETUP.md) is used when `USE_SECRET_MANAGER=true` (workflow fetches `docsgpt-env` into `.env` on the VM before compose). [Cloud Logging](CLOUD-LOGGING-SETUP.md) is enabled via the Ops Agent on the VM for centralized logs.
+
 ## Flow
 
 1. **Trigger:** Push to `main` (or run manually via **Actions → Deploy to GCP (VM) → Run workflow**). Paths under `docs/**`, `**.md`, and `google-cloud-sdk/**` are ignored. On manual run you can set **Reuse image tag** to skip build and only run VM deploy.
@@ -27,6 +29,8 @@ Optional (for frontend build; used as build-args for the frontend image):
 | `VITE_BASE_URL` | App URL for redirects/cookies (e.g. `https://assistant.mannyroy.com`). Default `https://assistant.mannyroy.com`. |
 | `USE_TLS` | Set to `true` to deploy with **docker-compose.gcp-tls.yaml** (Nginx on 80/443, HTTPS for both hostnames). Requires Let's Encrypt certs and `deployment/nginx/` on the VM; see [TLS-SETUP.md](TLS-SETUP.md). |
 | `USE_SECRET_MANAGER` | Set to `true` to fetch app secrets from GCP Secret Manager (secret `docsgpt-env`) into `.env` on the VM before each deploy. See [SECRET-MANAGER-SETUP.md](SECRET-MANAGER-SETUP.md). |
+
+**Where the GCP key is held:** `GCP_SA_KEY` exists only in **GitHub** (Settings → Secrets and variables → Actions). You paste the full contents of your service account JSON key file there. The key is not in the repo and is not committed. For a stronger setup, use Workload Identity Federation so no long-lived key is stored; see below.
 
 ## VM setup
 
@@ -75,6 +79,17 @@ Every deploy uses the commit SHA as the image tag. To roll back:
 - Set `IMAGE_TAG=<previous-sha>` in `.env` on the VM and run:
   `sudo docker compose -f docker-compose.gcp.yaml --env-file .env up -d`
 
-## Switching to Workload Identity Federation
+## Switching to Workload Identity Federation (recommended)
 
-To avoid storing a JSON key in `GCP_SA_KEY`, use [Workload Identity Federation](https://github.com/google-github-actions/auth#usage-with-workload-identity-federation). In the workflow, replace the `auth` step with the OIDC variant and remove `GCP_SA_KEY` from secrets.
+Storing a JSON key in `GCP_SA_KEY` works but is a long-lived secret you must rotate manually. **Workload Identity Federation (WIF)** lets GitHub Actions use OIDC to obtain short-lived GCP credentials; no JSON key in GitHub.
+
+1. **Create a WIF pool and provider** (one-time, in GCP):
+   - [Google Cloud docs](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-providers#github-actions) or [google-github-actions/auth](https://github.com/google-github-actions/auth#usage-with-workload-identity-federation).
+   - Create a Workload Identity Pool and an OIDC provider for `https://token.actions.githubusercontent.com` with your repo (e.g. `repo:owner/docsgpt`).
+
+2. **Allow the pool to impersonate your CI service account:**
+   - Grant the WIF provider’s principal (e.g. `principalSet://iam.googleapis.com/.../attribute.repository/owner-docsgpt`) the role **Workload Identity User** on the same service account you use today for `GCP_SA_KEY` (e.g. `gh-actions-sa@...`). That SA still needs Artifact Registry Writer (and any other roles the workflow needs).
+
+3. **Update the workflow:** Replace the `Authenticate to GCP` step with the OIDC-based auth (same `google-github-actions/auth` action, with `workload_identity_provider` and `service_account` instead of `credentials_json`). Remove `GCP_SA_KEY` from GitHub Secrets.
+
+After that, you can delete the JSON key from the service account in GCP and from the `GCP_SA_KEY` secret in GitHub.

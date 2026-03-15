@@ -2,6 +2,8 @@
 
 Use this runbook when the stack is unhealthy or you need to find a failing dependency quickly. The stack includes **frontend** (port 80), **backend** (7091), **worker**, Redis, Mongo, and Qdrant. On the VM, use **`sudo docker compose`** (or run as a user in the `docker` group).
 
+**Production:** App secrets are managed via [Secret Manager](SECRET-MANAGER-SETUP.md) (when `USE_SECRET_MANAGER=true`). Container logs are sent to [Cloud Logging](CLOUD-LOGGING-SETUP.md) via the Ops Agent—use **Logging → Logs Explorer** in GCP Console to search by severity, service, or message.
+
 ## 1. Check container health (0–2 min)
 
 From the host where Compose runs (on VM use `sudo`):
@@ -39,14 +41,18 @@ Exit code 0 means all dependency checks passed. Non-zero or JSON with `"healthy"
 
 ## 4. Inspect structured logs (2–3 min)
 
-Backend and worker emit JSON lines (timestamp, level, service, request_id, message). Use `request_id` to trace a single request.
+Backend and worker emit JSON lines (timestamp, severity, level, service, request_id, message). Use `request_id` to trace a single request.
+
+**On the VM:**
 
 ```bash
 sudo docker compose -f deployment/docker-compose.gcp.yaml logs --tail 100 backend
 sudo docker compose -f deployment/docker-compose.gcp.yaml logs --tail 100 worker
 ```
 
-Search for `"level":"ERROR"` or `"exception"`. Confirm `service` (e.g. `docsgpt-backend` vs `docsgpt-worker`) and timestamps.
+**In Cloud Logging (production):** Open **Logging → Logs Explorer**, select resource type **GCE VM instance** and your instance. Filter by `jsonPayload.log=~"ERROR"` or `jsonPayload.severity="ERROR"` to find errors. Use `jsonPayload.service` to distinguish backend vs worker.
+
+Search for `"level":"ERROR"` or `"exception"` in either place. Confirm `service` (e.g. `docsgpt-backend` vs `docsgpt-worker`) and timestamps.
 
 ## 5. Confirm environment and connectivity (2 min)
 
@@ -71,7 +77,11 @@ python scripts/test_qdrant_connection.py
 | `api/ready` returns 503 | One of redis/mongo/qdrant failed | Use `api/ready` JSON to see which check failed; fix that service or its URL. |
 | Permission errors on indexes/inputs/vectors | Volume owned by root, container runs as non-root | Use `user: "0"` for backend/worker in Compose if required, or pre-create volumes with correct ownership. |
 
-## 7. Escalation
+## 7. Rotating secrets (Secret Manager)
+
+If **USE_SECRET_MANAGER** is enabled, app secrets live in GCP Secret Manager (`docsgpt-env`). To rotate: add a new version of the secret in **Secret Manager** in the console (or `gcloud secrets versions add docsgpt-env --data-file=- < .env`). The next deploy will use the new version. To apply without a code deploy, on the VM run: `gcloud secrets versions access latest --secret=docsgpt-env --project=manny-roy-consulting > /opt/docsgpt/.env` then restart the stack. See [SECRET-MANAGER-SETUP.md](SECRET-MANAGER-SETUP.md).
+
+## 8. Escalation
 
 - If dependency checks pass but requests fail: inspect application logs and `request_id` for that request.
 - **If the VM is out of disk** ("no space left on device" during `docker pull` or container start): The backend image includes PyTorch (~2GB+), so old images and layers can fill a 50GB disk. Free space by running on the VM:
@@ -81,3 +91,4 @@ python scripts/test_qdrant_connection.py
   ```
   Then retry `sudo docker compose pull` and `up -d`. See **scripts/vm-free-disk-space.sh** for a full cleanup script. Use a **50GB boot disk** (default in `gcp-setup.sh`) to reduce how often this happens. To resize an existing GCP VM disk, see [Resize a persistent disk](https://cloud.google.com/compute/docs/disks/resize-persistent-disk) (resize in GCP, then on the VM run `sudo growpart /dev/sda 1` and `sudo resize2fs /dev/sda1`).
 - For TLS/domain issues: see [TLS-SETUP.md](TLS-SETUP.md).
+- For log-based metrics or alerting in Cloud Logging: see [CLOUD-LOGGING-SETUP.md](CLOUD-LOGGING-SETUP.md#6-log-based-metrics-and-alerting-optional).

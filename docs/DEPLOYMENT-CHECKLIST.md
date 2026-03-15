@@ -2,10 +2,12 @@
 
 Use this checklist when provisioning a new VM for the **full stack** (frontend + backend + worker + Redis + Mongo + Qdrant). The GitHub Actions workflow builds both images, pushes to Artifact Registry, and deploys everything on the VM. Do **not** build backend/frontend on the VM; use CI-built images only.
 
+**Production setup in use:** [Secret Manager](SECRET-MANAGER-SETUP.md) (app secrets fetched on deploy when `USE_SECRET_MANAGER=true`) and [Cloud Logging](CLOUD-LOGGING-SETUP.md) (Ops Agent sends Docker container logs to Cloud Logging).
+
 ## Continue deployment
 
-1. **GitHub secrets** – In the repo: **Settings → Secrets and variables → Actions**. Ensure you have: `GCP_SA_KEY` (JSON for CI service account), `VM_IP`, `VM_USER`, `SSH_PRIVATE_KEY`. Optional: `VITE_API_HOST`, `VITE_BASE_URL`.
-2. **VM ready** – VM exists, Docker + Compose installed, `/opt/docsgpt` has `.env` and `docker-compose.gcp.yaml` (full stack from repo). The user that `VM_USER` logs in as can run `docker compose` (e.g. in `docker` group). VM can pull from Artifact Registry (default Compute SA has Artifact Registry Reader, or use metadata-based login).
+1. **GitHub secrets** – In the repo: **Settings → Secrets and variables → Actions**. Required: `GCP_SA_KEY`, `VM_IP`, `VM_USER`, `SSH_PRIVATE_KEY`. Optional: `VITE_API_HOST`, `VITE_BASE_URL`, `USE_TLS`, **`USE_SECRET_MANAGER`** (set to `true` to fetch app secrets from Secret Manager on each deploy; see [SECRET-MANAGER-SETUP.md](SECRET-MANAGER-SETUP.md)).
+2. **VM ready** – VM exists, Docker + Compose installed, `/opt/docsgpt` has `.env` and `docker-compose.gcp.yaml` (full stack from repo). If **USE_SECRET_MANAGER** is true, the workflow populates `.env` from Secret Manager; otherwise ensure `.env` is present. The user that `VM_USER` logs in as can run `docker compose` (e.g. in `docker` group). VM can pull from Artifact Registry (default Compute SA has Artifact Registry Reader, or use metadata-based login).
 3. **Trigger deploy** – Push to `main` or go to **Actions → Deploy to GCP (VM) → Run workflow**. The workflow will build both images, then SSH to the VM and run `compose pull` / `up -d`.
 4. **Validate** – Open the frontend (VM IP:80 or your domain), hit the API (VM IP:7091 or assistant-api.mannyroy.com), run the acceptance checks below.
 
@@ -70,6 +72,7 @@ sudo usermod -aG docker "$USER"
 | Frontend   | Port 80 (nginx in container) |
 | Backend logs | `sudo docker compose -f docker-compose.gcp.yaml logs -f backend` |
 | Worker logs  | `sudo docker compose -f docker-compose.gcp.yaml logs -f worker` |
+| Cloud Logging | **Logging → Logs Explorer** in GCP Console (resource: GCE VM instance). See [CLOUD-LOGGING-SETUP.md](CLOUD-LOGGING-SETUP.md). |
 | Stop       | `sudo docker compose -f docker-compose.gcp.yaml down` |
 
-For debugging, see [DEBUGGING-RUNBOOK.md](DEBUGGING-RUNBOOK.md) if present.
+For debugging, see [DEBUGGING-RUNBOOK.md](DEBUGGING-RUNBOOK.md). To rotate app secrets, update the secret in Secret Manager and redeploy (or run the fetch script on the VM); see [SECRET-MANAGER-SETUP.md](SECRET-MANAGER-SETUP.md).

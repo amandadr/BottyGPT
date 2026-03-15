@@ -2,6 +2,8 @@
 
 This is a quick review of the current GCP VM + GitHub Actions setup against common best practices. Most of the setup is conventional; the items below are where it diverges or could be improved.
 
+**Enabled in production:** [Secret Manager](SECRET-MANAGER-SETUP.md) (app secrets in `docsgpt-env`, fetched on deploy when `USE_SECRET_MANAGER=true`) and [Cloud Logging](CLOUD-LOGGING-SETUP.md) (Ops Agent on VM sends Docker container logs to Cloud Logging).
+
 ---
 
 ## What is conventional and good
@@ -24,8 +26,7 @@ This is a quick review of the current GCP VM + GitHub Actions setup against comm
 
 ### 2. **Secrets on the VM: `.env` file**
 
-- **Current:** App secrets can live in `/opt/docsgpt/.env` on the VM and are mounted into containers.
-- **Improvement (implemented):** You can use **GCP Secret Manager**: store the full `.env` payload in a secret `docsgpt-env`, grant the VM's service account `roles/secretmanager.secretAccessor`, and set GitHub secret **USE_SECRET_MANAGER** = `true`. The deploy workflow will fetch the secret into `.env` on each deploy. See [SECRET-MANAGER-SETUP.md](SECRET-MANAGER-SETUP.md).
+- **In use:** **GCP Secret Manager** is enabled: app secrets are stored in `docsgpt-env`, the VM's service account has `roles/secretmanager.secretAccessor`, and with GitHub secret **USE_SECRET_MANAGER** = `true` the deploy workflow fetches the secret into `.env` on each deploy. See [SECRET-MANAGER-SETUP.md](SECRET-MANAGER-SETUP.md).
 
 ### 3. **Containers running as root**
 
@@ -52,23 +53,22 @@ This is a quick review of the current GCP VM + GitHub Actions setup against comm
 - **Current:** `PROJECT_ID`, `REGION`, `VM_NAME`, etc. are in the workflow `env`.
 - **Best practice:** For reuse across projects, move these to **GitHub variables** or **secrets** (e.g. `GCP_PROJECT_ID`, `GCP_REGION`). Minor; only matters if you clone the repo for another project.
 
-### 8. **No structured production monitoring**
+### 8. **Structured production monitoring**
 
-- **Current:** Logs are local (Docker json-file); no centralized logging or metrics.
-- **Best practice:** For production, add **Cloud Logging** (Fluent Bit or Google's agent) and optional **metrics/alerting** (e.g. uptime checks, alert on health endpoint failure). Not required for a small deployment but expected in larger or compliance-sensitive setups.
+- **In use:** **Cloud Logging** is enabled: the **Ops Agent** runs on the VM with `deployment/ops-agent/config.yaml`, collecting Docker container logs and sending them to Cloud Logging. Backend and worker emit structured JSON with `severity`, `message`, and `service`. View logs in **Logging → Logs Explorer** (resource: GCE VM instance). See [CLOUD-LOGGING-SETUP.md](CLOUD-LOGGING-SETUP.md). Optional: log-based metrics and alerting (e.g. error count, uptime checks on the health endpoint).
 
 ---
 
 ## Summary
 
-| Area              | Conventional? | Suggestion                                      |
-|-------------------|---------------|--------------------------------------------------|
-| Architecture      | Yes           | Optional: staging env, approval gate             |
-| TLS / Nginx       | Yes           | Optional: deploy-hook for reload                 |
-| CI/CD             | Yes           | Prefer WIF over JSON key; optional env vars     |
-| Secrets on VM     | Acceptable    | Optional: Secret Manager                         |
-| Root in containers| Common        | Optional: non-root + fix volume ownership        |
-| Internal ports    | Acceptable    | Optional: use expose only for Redis/Mongo/Qdrant  |
-| Monitoring        | Minimal       | Optional: Cloud Logging + alerts                 |
+| Area              | Conventional? | Status / suggestion                                      |
+|-------------------|---------------|----------------------------------------------------------|
+| Architecture      | Yes           | Optional: staging env, approval gate                     |
+| TLS / Nginx       | Yes           | Optional: deploy-hook for reload                         |
+| CI/CD             | Yes           | Prefer WIF over JSON key; optional env vars               |
+| Secrets on VM     | Yes           | **Secret Manager enabled** (docsgpt-env, fetch on deploy) |
+| Root in containers| Common        | Optional: non-root + fix volume ownership                 |
+| Internal ports    | Acceptable    | Optional: use expose only for Redis/Mongo/Qdrant         |
+| Monitoring        | Yes           | **Cloud Logging enabled** (Ops Agent, Docker logs)        |
 
 Overall the setup is **conventional and appropriate** for a single-VM deployment. The items above are incremental improvements you can adopt as the project or team grows.

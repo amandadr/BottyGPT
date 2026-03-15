@@ -31,6 +31,7 @@ class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         payload = {
             "timestamp": datetime.now(UTC).isoformat(),
+            "severity": record.levelname,
             "level": record.levelname,
             "logger": record.name,
             "service": getattr(record, "service", "docsgpt-backend"),

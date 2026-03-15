@@ -1,0 +1,23 @@
+# Ops Agent override: send Docker container logs to Cloud Logging.
+# Copy to the VM: /etc/google-cloud-ops-agent/config.yaml (or merge into existing).
+# Requires: Ops Agent installed on the VM; VM SA has roles/logging.logWriter.
+# See docs/CLOUD-LOGGING-SETUP.md.
+
+logging:
+  receivers:
+    docker_containers:
+      type: files
+      include_paths:
+        - /var/lib/docker/containers/*/*-json.log
+      record_log_file_path: true
+      wildcard_refresh_interval: 30s
+  processors:
+    docker_parse:
+      type: parse_json
+      time_key: time
+      time_format: "%Y-%m-%dT%H:%M:%S.%LZ"
+  service:
+    pipelines:
+      docker_pipeline:
+        receivers: [docker_containers]
+        processors: [docker_parse]
