@@ -16,6 +16,8 @@ ENV VITE_API_STREAMING=$VITE_API_STREAMING
 ENV VITE_BASE_URL=$VITE_BASE_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npx vite build
+# Remove source maps to reduce layer size and avoid overlayfs extraction errors on some runtimes
+RUN find /app/dist -name '*.map' -delete
 
 # Stage 2: Production
 FROM nginx:stable-alpine AS production-stage

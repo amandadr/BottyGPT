@@ -15,7 +15,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
+    // Disable source maps in production to avoid image layer extraction issues (overlayfs lchown on .js.map)
+    sourcemap: false,
   },
   server: {
     proxy: {
