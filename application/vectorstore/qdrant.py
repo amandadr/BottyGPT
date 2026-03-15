@@ -4,6 +4,31 @@ from application.core.settings import settings
 from application.vectorstore.document_class import Document
 
 
+def _make_qdrant_client():
+    """Build QdrantClient from settings. Prefer url; fall back to location/path for local."""
+    from qdrant_client import QdrantClient as QdrantClientClass
+
+    if settings.QDRANT_URL:
+        return QdrantClientClass(
+            url=settings.QDRANT_URL,
+            api_key=settings.QDRANT_API_KEY,
+            timeout=settings.QDRANT_TIMEOUT,
+            prefix=settings.QDRANT_PREFIX,
+            https=settings.QDRANT_HTTPS,
+        )
+    if settings.QDRANT_LOCATION:
+        return QdrantClientClass(
+            location=settings.QDRANT_LOCATION,
+            path=settings.QDRANT_PATH,
+        )
+    # Default for Docker/Compose
+    return QdrantClientClass(
+        url=settings.QDRANT_URL or "http://qdrant:6333",
+        api_key=settings.QDRANT_API_KEY,
+        timeout=settings.QDRANT_TIMEOUT,
+    )
+
+
 class QdrantStore(BaseVectorStore):
     def __init__(self, source_id: str = "", embeddings_key: str = "embeddings"):
         from qdrant_client import models
@@ -11,7 +36,7 @@ class QdrantStore(BaseVectorStore):
 
         # Store the source_id for use in add_chunk
         self._source_id = str(source_id).replace("application/indexes/", "").rstrip("/")
-        
+
         self._filter = models.Filter(
             must=[
                 models.FieldCondition(
@@ -21,49 +46,48 @@ class QdrantStore(BaseVectorStore):
             ]
         )
 
-        embedding=self._get_embeddings(settings.EMBEDDINGS_NAME, embeddings_key)
-        self._docsearch = Qdrant.construct_instance(
-            ["TEXT_TO_OBTAIN_EMBEDDINGS_DIMENSION"],
-            embedding=embedding,
-            collection_name=settings.QDRANT_COLLECTION_NAME,
-            location=settings.QDRANT_LOCATION,
-            url=settings.QDRANT_URL,
-            port=settings.QDRANT_PORT,
-            grpc_port=settings.QDRANT_GRPC_PORT,
-            https=settings.QDRANT_HTTPS,
-            prefer_grpc=settings.QDRANT_PREFER_GRPC,
-            api_key=settings.QDRANT_API_KEY,
-            prefix=settings.QDRANT_PREFIX,
-            timeout=settings.QDRANT_TIMEOUT,
-            path=settings.QDRANT_PATH,
-            distance_func=settings.QDRANT_DISTANCE_FUNC,
-        )
+        embedding = self._get_embeddings(settings.EMBEDDINGS_NAME, embeddings_key)
+        collection_name = settings.QDRANT_COLLECTION_NAME
+        vector_size = embedding.client[1].word_embedding_dimension
+
+        # Create client and collection ourselves so we never pass init_from (LangChain's
+        # construct_instance passes init_from to recreate_collection, which triggers
+        # qdrant_client's "Unknown arguments" assert).
+        client = _make_qdrant_client()
         try:
-            collections = self._docsearch.client.get_collections()
-            collection_exists = settings.QDRANT_COLLECTION_NAME in [
-                collection.name for collection in collections.collections
-            ]
-            
-            if not collection_exists:
-                self._docsearch.client.recreate_collection(
-                    collection_name=settings.QDRANT_COLLECTION_NAME,
-                    vectors_config=models.VectorParams(size=embedding.client[1].word_embedding_dimension, distance=models.Distance.COSINE),
+            client.get_collection(collection_name=collection_name)
+        except Exception:
+            # Collection missing: create with only supported args (no init_from)
+            distance_name = (settings.QDRANT_DISTANCE_FUNC or "Cosine").strip().upper()
+            distance = getattr(models.Distance, distance_name, models.Distance.COSINE)
+            client.recreate_collection(
+                collection_name=collection_name,
+                vectors_config=models.VectorParams(
+                    size=vector_size,
+                    distance=distance,
+                ),
+            )
+
+        try:
+            client.create_payload_index(
+                collection_name=collection_name,
+                field_name="metadata.source_id",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+            )
+        except Exception as index_error:
+            if "already exists" not in str(index_error).lower():
+                logging.warning(
+                    "Could not create index for metadata.source_id: %s", index_error
                 )
-            
-            # Ensure the required index exists for metadata.source_id
-            try:
-                self._docsearch.client.create_payload_index(
-                    collection_name=settings.QDRANT_COLLECTION_NAME,
-                    field_name="metadata.source_id",
-                    field_schema=models.PayloadSchemaType.KEYWORD,
-                )
-            except Exception as index_error:
-                # Index might already exist, which is fine
-                if "already exists" not in str(index_error).lower():
-                    logging.warning(f"Could not create index for metadata.source_id: {index_error}")
-                    
-        except Exception as e:
-            logging.warning(f"Could not check for collection: {e}")
+
+        # Wrap with LangChain Qdrant using our client (no construct_instance)
+        distance_strategy = (settings.QDRANT_DISTANCE_FUNC or "Cosine").strip()
+        self._docsearch = Qdrant(
+            client=client,
+            collection_name=collection_name,
+            embeddings=embedding,
+            distance_strategy=distance_strategy,
+        )
 
     def search(self, *args, **kwargs):
         return self._docsearch.similarity_search(filter=self._filter, *args, **kwargs)
