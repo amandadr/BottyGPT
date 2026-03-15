@@ -70,21 +70,21 @@ python scripts/test_qdrant_connection.py
 
 ## 6. Debugging "Add source" / remote upload errors
 
-If adding a source fails (e.g. **"Unknown arguments: ['init_from']"** or similar):
+If adding a source fails with **"Unknown arguments: ['init_from']"** (or similar):
+
+**Cause:** The error is raised by the **Qdrant client** (vector store), not by the crawler or API. Document metadata is passed into the vector store; if it contains unknown keys (e.g. `init_from`), the Qdrant client rejects them.
 
 1. **Backend logs** (Compose or Cloud Logging): Look for:
-   - `Remote upload: source_type=... config_keys=[...]` — confirms what the API received.
-   - `Remote upload: calling ingest_remote loader=... source_data_keys=...` or `source_data_type=...` — confirms what is sent to the Celery task.
-   - `Error uploading remote source: ... (source_type=..., config_keys=[...])` — full exception and context.
+   - `Remote upload: source_type=... config_keys=[...]` — what the API received.
+   - `Remote upload: calling ingest_remote loader=...` — what is sent to the Celery task.
 
 2. **Worker logs**: Look for:
-   - `remote_worker: loader=... source_data type=dict keys=[...]` or `source_data type=...` — payload shape received by the worker.
-   - `Calling remote_loader.load_data for loader=...` — just before the loader runs.
+   - `remote_worker: loader=... source_data type=...` — payload shape.
    - `Error in remote_worker task: loader=... error=...` — failure and source_data shape.
 
-3. **Frontend**: Open DevTools → Console. On failure you’ll see `[Upload] Add source failed:` with status, error message, and a short response snippet. The UI should show the backend error message when the API returns `error` or `message` in the JSON body.
+3. **Fix (code):** The embedding pipeline sanitizes document metadata before calling the vector store: only `source_id`, `source`, `file_path`, `title`, `key` are passed. Ensure you’re on a version that includes this and that no code path adds extra keys to doc metadata before `embed_and_store_documents`.
 
-4. **Fix**: The backend only allows known config keys per source type (e.g. crawler/url → `url` only; reddit/s3 → whitelisted keys). If you still see unknown-argument errors, check that no extra keys (e.g. `init_from`) are sent: frontend builds payload from schema fields only; backend sanitizes for reddit/s3 and passes only URL string for url/crawler/sitemap.
+4. **Frontend**: DevTools → Console shows `[Upload] Add source failed:` with status and message. The UI shows the backend error when the API returns `error` or `message` in the JSON body.
 
 ## 7. Common failure patterns
 

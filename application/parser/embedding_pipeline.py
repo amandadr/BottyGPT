@@ -1,10 +1,19 @@
 import os
 import logging
-from typing import List, Any
+from typing import List, Any, Dict
 from retry import retry
 from tqdm import tqdm
 from application.core.settings import settings
 from application.vectorstore.vector_creator import VectorCreator
+
+# Metadata keys allowed when storing in vector stores (Qdrant etc. reject unknown kwargs)
+ALLOWED_VECTORSTORE_METADATA_KEYS = frozenset({
+    "source_id",
+    "source",
+    "file_path",
+    "title",
+    "key",
+})
 
 
 def sanitize_content(content: str) -> str:
@@ -37,9 +46,16 @@ def add_text_to_store_with_retry(store: Any, doc: Any, source_id: str) -> None:
     try:
         # Sanitize content to remove NUL characters that cause ingestion failures
         doc.page_content = sanitize_content(doc.page_content)
-        
-        doc.metadata["source_id"] = str(source_id)
-        store.add_texts([doc.page_content], metadatas=[doc.metadata])
+
+        # Only pass allowed metadata keys to avoid "Unknown arguments" from Qdrant/client
+        metadata = dict(doc.metadata) if doc.metadata else {}
+        metadata["source_id"] = str(source_id)
+        sanitized_metadata: Dict[str, Any] = {
+            k: v for k, v in metadata.items()
+            if k in ALLOWED_VECTORSTORE_METADATA_KEYS
+        }
+
+        store.add_texts([doc.page_content], metadatas=[sanitized_metadata])
     except Exception as e:
         logging.error(f"Failed to add document with retry: {e}", exc_info=True)
         raise
