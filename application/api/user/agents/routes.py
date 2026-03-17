@@ -219,7 +219,7 @@ class GetAgent(Resource):
                 "id": str(agent["_id"]),
                 "name": agent["name"],
                 "description": agent.get("description", ""),
-                "image": (generate_image_url(agent["image"]) if agent.get("image") else ""),
+                "image": (generate_image_url(agent["image"], req=request) if agent.get("image") else ""),
                 "source": (
                     str(source_doc["_id"])
                     if isinstance(agent.get("source"), DBRef) and (source_doc := db.dereference(agent.get("source")))
@@ -282,7 +282,7 @@ class GetAgents(Resource):
                     "id": str(agent["_id"]),
                     "name": agent["name"],
                     "description": agent.get("description", ""),
-                    "image": (generate_image_url(agent["image"]) if agent.get("image") else ""),
+                    "image": (generate_image_url(agent["image"], req=request) if agent.get("image") else ""),
                     "source": (
                         str(source_doc["_id"])
                         if isinstance(agent.get("source"), DBRef)
@@ -1059,7 +1059,7 @@ class PinnedAgents(Resource):
                     "id": str(agent["_id"]),
                     "name": agent.get("name", ""),
                     "description": agent.get("description", ""),
-                    "image": (generate_image_url(agent["image"]) if agent.get("image") else ""),
+                    "image": (generate_image_url(agent["image"], req=request) if agent.get("image") else ""),
                     "source": (
                         str(db.dereference(agent["source"])["_id"])
                         if "source" in agent

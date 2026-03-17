@@ -176,7 +176,7 @@ def validate_function_name(function_name):
     return True
 
 
-def generate_image_url(image_path):
+def generate_image_url(image_path, req=None):
     if isinstance(image_path, str) and (image_path.startswith("http://") or image_path.startswith("https://")):
         return image_path
     strategy = getattr(settings, "URL_STRATEGY", "backend")
@@ -186,6 +186,14 @@ def generate_image_url(image_path):
         return f"https://{bucket_name}.s3.{region_name}.amazonaws.com/{image_path}"
     else:
         base_url = getattr(settings, "API_URL", "http://localhost:7091")
+        if req is not None:
+            try:
+                from application.core.public_url import get_public_base_url
+
+                base_url = get_public_base_url(req, fallback_base_url=base_url)
+            except Exception:
+                # Never fail URL generation due to header parsing issues
+                pass
         return f"{base_url}/api/images/{image_path}"
 
 

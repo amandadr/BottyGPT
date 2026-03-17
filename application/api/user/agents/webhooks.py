@@ -10,6 +10,7 @@ from application.api import api
 from application.api.user.base import agents_collection, require_agent
 from application.api.user.tasks import process_agent_webhook
 from application.core.settings import settings
+from application.core.public_url import get_public_base_url
 
 
 agents_webhooks_ns = Namespace("agents", description="Agent management operations", path="/api")
@@ -40,7 +41,7 @@ class AgentWebhook(Resource):
                     {"_id": ObjectId(agent_id), "user": user},
                     {"$set": {"incoming_webhook_token": webhook_token}},
                 )
-            base_url = settings.API_URL.rstrip("/")
+            base_url = get_public_base_url(request, fallback_base_url=settings.API_URL)
             full_webhook_url = f"{base_url}/api/webhooks/agents/{webhook_token}"
         except Exception as err:
             current_app.logger.error(f"Error generating webhook URL: {err}", exc_info=True)

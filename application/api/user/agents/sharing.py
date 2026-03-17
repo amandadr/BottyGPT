@@ -52,7 +52,9 @@ class SharedAgent(Resource):
                 "id": agent_id,
                 "user": shared_agent.get("user", ""),
                 "name": shared_agent.get("name", ""),
-                "image": (generate_image_url(shared_agent["image"]) if shared_agent.get("image") else ""),
+                "image": (
+                    generate_image_url(shared_agent["image"], req=request) if shared_agent.get("image") else ""
+                ),
                 "description": shared_agent.get("description", ""),
                 "source": (
                     str(source_doc["_id"])
@@ -134,7 +136,7 @@ class SharedAgents(Resource):
                     "id": str(agent["_id"]),
                     "name": agent.get("name", ""),
                     "description": agent.get("description", ""),
-                    "image": (generate_image_url(agent["image"]) if agent.get("image") else ""),
+                    "image": (generate_image_url(agent["image"], req=request) if agent.get("image") else ""),
                     "tools": agent.get("tools", []),
                     "tool_details": resolve_tool_details(agent.get("tools", [])),
                     "agent_type": agent.get("agent_type", ""),
