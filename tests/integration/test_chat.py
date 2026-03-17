@@ -572,7 +572,7 @@ This is test documentation for integration tests.
         current_conv_id = None
 
         for i in range(10):
-            question = f"Tell me about Python topic {i+1}: data structures, decorators, async, testing. Provide a comprehensive explanation."
+            question = f"Tell me about Python topic {i + 1}: data structures, decorators, async, testing. Provide a comprehensive explanation."
 
             payload = {
                 "question": question,
@@ -590,17 +590,17 @@ This is test documentation for integration tests.
                     result = response.json()
                     current_conv_id = result.get("conversation_id", current_conv_id)
                     answer_preview = (result.get("answer") or "")[:80]
-                    self.print_success(f"Request {i+1}/10 completed")
+                    self.print_success(f"Request {i + 1}/10 completed")
                     self.print_info(f"  Answer: {answer_preview}...")
                 else:
-                    self.print_error(f"Request {i+1}/10 failed: status {response.status_code}")
-                    self.record_result(test_name, False, f"Request {i+1} failed")
+                    self.print_error(f"Request {i + 1}/10 failed: status {response.status_code}")
+                    self.record_result(test_name, False, f"Request {i + 1} failed")
                     return False
 
                 time.sleep(2)
 
             except Exception as e:
-                self.print_error(f"Request {i+1}/10 failed: {str(e)}")
+                self.print_error(f"Request {i + 1}/10 failed: {str(e)}")
                 self.record_result(test_name, False, str(e))
                 return False
 
@@ -629,10 +629,12 @@ This is test documentation for integration tests.
 
         # Step 1: Send general questions
         self.print_info("Step 1: Sending general questions...")
-        for i, question in enumerate([
-            "Tell me about Python best practices in detail",
-            "Explain Python data structures comprehensively",
-        ]):
+        for i, question in enumerate(
+            [
+                "Tell me about Python best practices in detail",
+                "Explain Python data structures comprehensively",
+            ]
+        ):
             payload = {
                 "question": question,
                 "history": "[]",
@@ -646,7 +648,7 @@ This is test documentation for integration tests.
                 if response.status_code == 200:
                     result = response.json()
                     conversation_id = result.get("conversation_id", conversation_id)
-                    self.print_success(f"General question {i+1}/2 completed")
+                    self.print_success(f"General question {i + 1}/2 completed")
                 else:
                     self.print_error(f"Request failed: status {response.status_code}")
                     self.record_result(test_name, False, "General questions failed")
@@ -691,10 +693,12 @@ This is test documentation for integration tests.
 
         # Step 3: Bury with more questions
         self.print_info("Step 3: Sending more questions to bury critical info...")
-        for i, question in enumerate([
-            "Explain Python decorators in great detail",
-            "Tell me about Python async programming comprehensively",
-        ]):
+        for i, question in enumerate(
+            [
+                "Explain Python decorators in great detail",
+                "Tell me about Python async programming comprehensively",
+            ]
+        ):
             payload = {
                 "question": question,
                 "history": "[]",
@@ -707,7 +711,7 @@ This is test documentation for integration tests.
                 if response.status_code == 200:
                     result = response.json()
                     conversation_id = result.get("conversation_id", conversation_id)
-                    self.print_success(f"Burying question {i+1}/2 completed")
+                    self.print_success(f"Burying question {i + 1}/2 completed")
                 else:
                     self.record_result(test_name, False, "Burying questions failed")
                     return False

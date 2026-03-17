@@ -29,10 +29,8 @@ class SharePointAuth(BaseConnectorAuth):
         self.client_secret = settings.MICROSOFT_CLIENT_SECRET
 
         if not self.client_id:
-            raise ValueError(
-                "Microsoft OAuth credentials not configured. Please set MICROSOFT_CLIENT_ID in settings."
-            )
-        
+            raise ValueError("Microsoft OAuth credentials not configured. Please set MICROSOFT_CLIENT_ID in settings.")
+
         if not self.client_secret:
             raise ValueError(
                 "Microsoft OAuth credentials not configured. Please set MICROSOFT_CLIENT_SECRET in settings."
@@ -43,9 +41,7 @@ class SharePointAuth(BaseConnectorAuth):
         self.authority = getattr(settings, "MICROSOFT_AUTHORITY", f"https://login.microsoftonline.com/{self.tenant_id}")
 
         self.auth_app = ConfidentialClientApplication(
-            client_id=self.client_id,
-            client_credential=self.client_secret,
-            authority=self.authority
+            client_id=self.client_id, client_credential=self.client_secret, authority=self.authority
         )
 
     def get_authorization_url(self, state: Optional[str] = None) -> str:
@@ -55,9 +51,7 @@ class SharePointAuth(BaseConnectorAuth):
 
     def exchange_code_for_tokens(self, authorization_code: str) -> Dict[str, Any]:
         result = self.auth_app.acquire_token_by_authorization_code(
-            code=authorization_code,
-            scopes=self.SCOPES,
-            redirect_uri=self.redirect_uri
+            code=authorization_code, scopes=self.SCOPES, redirect_uri=self.redirect_uri
         )
 
         if "error" in result:
@@ -97,12 +91,16 @@ class SharePointAuth(BaseConnectorAuth):
                 raise ValueError("Invalid token information")
 
             required_fields = ["access_token", "refresh_token"]
-            missing_fields = [field for field in required_fields if field not in token_info or not token_info.get(field)]
+            missing_fields = [
+                field for field in required_fields if field not in token_info or not token_info.get(field)
+            ]
             if missing_fields:
                 raise ValueError(f"Missing required token fields: {missing_fields}")
 
-            if 'token_uri' not in token_info:
-                token_info['token_uri'] = f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/token"
+            if "token_uri" not in token_info:
+                token_info["token_uri"] = (
+                    f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/token"
+                )
 
             return token_info
 

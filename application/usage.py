@@ -94,9 +94,7 @@ def update_token_usage(decoded_token, user_api_key, token_usage, agent_id=None):
     normalized_agent_id = str(agent_id) if agent_id else None
 
     if not user_id and not user_api_key and not normalized_agent_id:
-        logger.warning(
-            "Skipping token usage insert: missing user_id, api_key, and agent_id"
-        )
+        logger.warning("Skipping token usage insert: missing user_id, api_key, and agent_id")
         return
 
     usage_data = {

@@ -76,9 +76,7 @@ class PromptRenderer:
         """Check if prompt uses Jinja2 template syntax"""
         return "{{" in prompt_content and "}}" in prompt_content
 
-    def _apply_legacy_substitutions(
-        self, prompt_content: str, docs_together: Optional[str] = None
-    ) -> str:
+    def _apply_legacy_substitutions(self, prompt_content: str, docs_together: Optional[str] = None) -> str:
         """
         Apply backward-compatible substitutions for old prompt format.
 

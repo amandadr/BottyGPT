@@ -247,7 +247,7 @@ class ToolsTests(DocsGPTTestBase):
                 self.print_success(f"Retrieved {len(result)} available tool types")
                 if result:
                     first = result[0]
-                    name = first.get('name', first) if isinstance(first, dict) else first
+                    name = first.get("name", first) if isinstance(first, dict) else first
                     self.print_info(f"First: {name}")
                 self.record_result(test_name, True, f"Count: {len(result)}")
             elif isinstance(result, dict):

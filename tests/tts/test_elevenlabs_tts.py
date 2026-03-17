@@ -58,4 +58,3 @@ def test_elevenlabs_text_to_speech_monkeypatched_client(monkeypatch):
     ]
     assert lang == "en"
     assert base64.b64decode(audio_base64.encode()) == b"chunk-onechunk-two"
-

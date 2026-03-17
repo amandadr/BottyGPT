@@ -6,9 +6,7 @@ from application.llm.handlers.base import LLMHandler, LLMResponse, ToolCall
 
 class TestToolCall:
     def test_tool_call_creation(self):
-        tool_call = ToolCall(
-            id="test_id", name="test_function", arguments={"arg1": "value1"}, index=0
-        )
+        tool_call = ToolCall(id="test_id", name="test_function", arguments={"arg1": "value1"}, index=0)
         assert tool_call.id == "test_id"
         assert tool_call.name == "test_function"
         assert tool_call.arguments == {"arg1": "value1"}
@@ -61,9 +59,7 @@ class TestLLMResponse:
         assert response.requires_tool_call is True
 
     def test_requires_tool_call_false_no_tools(self):
-        response = LLMResponse(
-            content="Hello", tool_calls=[], finish_reason="stop", raw_response={}
-        )
+        response = LLMResponse(content="Hello", tool_calls=[], finish_reason="stop", raw_response={})
         assert response.requires_tool_call is False
 
     def test_requires_tool_call_false_wrong_finish_reason(self):
@@ -118,9 +114,7 @@ class TestLLMHandler:
         mock_agent.llm.prepare_messages_with_attachments.return_value = messages
 
         result = handler.prepare_messages(mock_agent, messages, attachments)
-        mock_agent.llm.prepare_messages_with_attachments.assert_called_once_with(
-            messages, attachments
-        )
+        mock_agent.llm.prepare_messages_with_attachments.assert_called_once_with(messages, attachments)
         assert result == messages
 
     @patch("application.llm.handlers.base.logger")
@@ -132,9 +126,7 @@ class TestLLMHandler:
         mock_agent = Mock()
         mock_agent.llm.get_supported_attachment_types.return_value = ["image/png"]
 
-        with patch.object(
-            handler, "_append_unsupported_attachments", return_value=messages
-        ) as mock_append:
+        with patch.object(handler, "_append_unsupported_attachments", return_value=messages) as mock_append:
             result = handler.prepare_messages(mock_agent, messages, attachments)
             mock_append.assert_called_once_with(messages, attachments)
             assert result == messages
@@ -151,9 +143,7 @@ class TestLLMHandler:
         mock_agent.llm.get_supported_attachment_types.return_value = ["image/png"]
         mock_agent.llm.prepare_messages_with_attachments.return_value = messages
 
-        with patch.object(
-            handler, "_append_unsupported_attachments", return_value=messages
-        ) as mock_append:
+        with patch.object(handler, "_append_unsupported_attachments", return_value=messages) as mock_append:
             result = handler.prepare_messages(mock_agent, messages, attachments)
 
             mock_agent.llm.prepare_messages_with_attachments.assert_called_once()
@@ -167,20 +157,12 @@ class TestLLMHandler:
         tools_dict = {}
         messages = [{"role": "user", "content": "Hello"}]
 
-        with patch.object(
-            handler, "prepare_messages", return_value=messages
-        ) as mock_prepare:
-            with patch.object(
-                handler, "handle_non_streaming", return_value="final"
-            ) as mock_handle:
-                result = handler.process_message_flow(
-                    mock_agent, initial_response, tools_dict, messages, stream=False
-                )
+        with patch.object(handler, "prepare_messages", return_value=messages) as mock_prepare:
+            with patch.object(handler, "handle_non_streaming", return_value="final") as mock_handle:
+                result = handler.process_message_flow(mock_agent, initial_response, tools_dict, messages, stream=False)
 
                 mock_prepare.assert_called_once_with(mock_agent, messages, None)
-                mock_handle.assert_called_once_with(
-                    mock_agent, initial_response, tools_dict, messages
-                )
+                mock_handle.assert_called_once_with(mock_agent, initial_response, tools_dict, messages)
                 assert result == "final"
 
     def test_process_message_flow_streaming(self):
@@ -194,20 +176,12 @@ class TestLLMHandler:
             yield "chunk1"
             yield "chunk2"
 
-        with patch.object(
-            handler, "prepare_messages", return_value=messages
-        ) as mock_prepare:
-            with patch.object(
-                handler, "handle_streaming", return_value=mock_generator()
-            ) as mock_handle:
-                result = handler.process_message_flow(
-                    mock_agent, initial_response, tools_dict, messages, stream=True
-                )
+        with patch.object(handler, "prepare_messages", return_value=messages) as mock_prepare:
+            with patch.object(handler, "handle_streaming", return_value=mock_generator()) as mock_handle:
+                result = handler.process_message_flow(mock_agent, initial_response, tools_dict, messages, stream=True)
 
                 mock_prepare.assert_called_once_with(mock_agent, messages, None)
-                mock_handle.assert_called_once_with(
-                    mock_agent, initial_response, tools_dict, messages
-                )
+                mock_handle.assert_called_once_with(mock_agent, initial_response, tools_dict, messages)
 
                 chunks = list(result)
                 assert chunks == ["chunk1", "chunk2"]

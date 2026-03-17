@@ -43,9 +43,7 @@ class CompressionService:
         self.llm = llm
         self.model_id = model_id
         self.conversation_service = conversation_service
-        self.prompt_builder = prompt_builder or CompressionPromptBuilder(
-            version=settings.COMPRESSION_PROMPT_VERSION
-        )
+        self.prompt_builder = prompt_builder or CompressionPromptBuilder(version=settings.COMPRESSION_PROMPT_VERSION)
 
     def compress_conversation(
         self,
@@ -70,22 +68,18 @@ class CompressionService:
 
             if compress_up_to_index < 0 or compress_up_to_index >= len(queries):
                 raise ValueError(
-                    f"Invalid compress_up_to_index: {compress_up_to_index} "
-                    f"(conversation has {len(queries)} queries)"
+                    f"Invalid compress_up_to_index: {compress_up_to_index} (conversation has {len(queries)} queries)"
                 )
 
             # Get queries to compress
             queries_to_compress = queries[: compress_up_to_index + 1]
 
             # Check if there are existing compressions
-            existing_compressions = conversation.get("compression_metadata", {}).get(
-                "compression_points", []
-            )
+            existing_compressions = conversation.get("compression_metadata", {}).get("compression_points", [])
 
             if existing_compressions:
                 logger.info(
-                    f"Found {len(existing_compressions)} previous compression(s) - "
-                    f"will incorporate into new summary"
+                    f"Found {len(existing_compressions)} previous compression(s) - will incorporate into new summary"
                 )
 
             # Calculate original token count
@@ -95,9 +89,7 @@ class CompressionService:
             self._log_tool_call_stats(queries_to_compress)
 
             # Build compression prompt
-            messages = self.prompt_builder.build_prompt(
-                queries_to_compress, existing_compressions
-            )
+            messages = self.prompt_builder.build_prompt(queries_to_compress, existing_compressions)
 
             # Call LLM to generate compression
             logger.info(
@@ -106,22 +98,16 @@ class CompressionService:
                 f"using model {self.model_id}"
             )
 
-            response = self.llm.gen(
-                model=self.model_id, messages=messages, max_tokens=4000
-            )
+            response = self.llm.gen(model=self.model_id, messages=messages, max_tokens=4000)
 
             # Extract summary from response
             compressed_summary = self._extract_summary(response)
 
             # Calculate compressed token count
-            compressed_tokens = TokenCounter.count_message_tokens(
-                [{"content": compressed_summary}]
-            )
+            compressed_tokens = TokenCounter.count_message_tokens([{"content": compressed_summary}])
 
             # Calculate compression ratio
-            compression_ratio = (
-                original_tokens / compressed_tokens if compressed_tokens > 0 else 0
-            )
+            compression_ratio = original_tokens / compressed_tokens if compressed_tokens > 0 else 0
 
             logger.info(
                 f"Compression complete: {original_tokens} → {compressed_tokens} tokens "
@@ -167,25 +153,19 @@ class CompressionService:
             ValueError: If conversation_service not provided or invalid index
         """
         if not self.conversation_service:
-            raise ValueError(
-                "conversation_service required for compress_and_save operation"
-            )
+            raise ValueError("conversation_service required for compress_and_save operation")
 
         # Perform compression
         metadata = self.compress_conversation(conversation, compress_up_to_index)
 
         # Save to database
-        self.conversation_service.update_compression_metadata(
-            conversation_id, metadata.to_dict()
-        )
+        self.conversation_service.update_compression_metadata(conversation_id, metadata.to_dict())
 
         logger.info(f"Compression metadata saved to database for {conversation_id}")
 
         return metadata
 
-    def get_compressed_context(
-        self, conversation: Dict[str, Any]
-    ) -> tuple[Optional[str], List[Dict[str, Any]]]:
+    def get_compressed_context(self, conversation: Dict[str, Any]) -> tuple[Optional[str], List[Dict[str, Any]]]:
         """
         Get compressed summary + recent uncompressed messages.
 
@@ -237,9 +217,7 @@ class CompressionService:
             return compressed_summary, recent_queries
 
         except Exception as e:
-            logger.error(
-                f"Error getting compressed context: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error getting compressed context: {str(e)}", exc_info=True)
             queries = conversation.get("queries", [])
             if queries is None:
                 return None, []
@@ -257,17 +235,13 @@ class CompressionService:
         """
         try:
             # Try to extract content within <summary> tags
-            summary_match = re.search(
-                r"<summary>(.*?)</summary>", llm_response, re.DOTALL
-            )
+            summary_match = re.search(r"<summary>(.*?)</summary>", llm_response, re.DOTALL)
 
             if summary_match:
                 summary = summary_match.group(1).strip()
             else:
                 # If no summary tags, remove analysis tags and use the rest
-                summary = re.sub(
-                    r"<analysis>.*?</analysis>", "", llm_response, flags=re.DOTALL
-                ).strip()
+                summary = re.sub(r"<analysis>.*?</analysis>", "", llm_response, flags=re.DOTALL).strip()
 
             return summary
 
@@ -295,10 +269,7 @@ class CompressionService:
                     total_tool_result_chars += len(str(result))
 
         if total_tool_calls > 0:
-            tool_breakdown_str = ", ".join(
-                f"{tool}({count})"
-                for tool, count in sorted(tool_call_breakdown.items())
-            )
+            tool_breakdown_str = ", ".join(f"{tool}({count})" for tool, count in sorted(tool_call_breakdown.items()))
             tool_result_kb = total_tool_result_chars / 1024
             logger.info(
                 f"Tool call breakdown: {tool_breakdown_str} "

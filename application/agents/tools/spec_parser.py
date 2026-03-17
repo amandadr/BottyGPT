@@ -14,9 +14,7 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_METHODS = frozenset(
-    {"get", "post", "put", "delete", "patch", "head", "options"}
-)
+SUPPORTED_METHODS = frozenset({"get", "post", "put", "delete", "patch", "head", "options"})
 
 
 def parse_spec(spec_content: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
@@ -67,9 +65,7 @@ def _validate_spec(spec: Dict[str, Any]) -> None:
     swagger_version = spec.get("swagger", "")
 
     if not (openapi_version.startswith("3.") or swagger_version == "2.0"):
-        raise ValueError(
-            "Unsupported specification version. Expected OpenAPI 3.x or Swagger 2.0"
-        )
+        raise ValueError("Unsupported specification version. Expected OpenAPI 3.x or Swagger 2.0")
     if "paths" not in spec or not spec["paths"]:
         raise ValueError("No API paths defined in the specification")
 
@@ -134,9 +130,7 @@ def _extract_actions(spec: Dict[str, Any], is_swagger: bool) -> List[Dict[str, A
                 )
                 actions.append(action)
             except Exception as e:
-                logger.warning(
-                    f"Failed to parse operation {method.upper()} {path}: {e}"
-                )
+                logger.warning(f"Failed to parse operation {method.upper()} {path}: {e}")
                 continue
     return actions
 
@@ -158,9 +152,7 @@ def _build_action(
     all_params = path_params + operation.get("parameters", [])
     query_params, headers = _categorize_parameters(all_params, components, definitions)
 
-    body, body_content_type = _extract_request_body(
-        operation, components, definitions, is_swagger
-    )
+    body, body_content_type = _extract_request_body(operation, components, definitions, is_swagger)
 
     description = operation.get("summary", "") or operation.get("description", "")
 
@@ -246,9 +238,7 @@ def _extract_request_body(
 
     if is_swagger:
         consumes = operation.get("consumes", [])
-        body_param = next(
-            (p for p in operation.get("parameters", []) if p.get("in") == "body"), None
-        )
+        body_param = next((p for p in operation.get("parameters", []) if p.get("in") == "body"), None)
         if not body_param:
             return {}, "application/json"
         selected_type = consumes[0] if consumes else "application/json"

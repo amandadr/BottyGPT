@@ -18,9 +18,7 @@ class ConversationService:
         self.conversations_collection = db["conversations"]
         self.agents_collection = db["agents"]
 
-    def get_conversation(
-        self, conversation_id: str, user_id: str
-    ) -> Optional[Dict[str, Any]]:
+    def get_conversation(self, conversation_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve a conversation with proper access control"""
         if not conversation_id or not user_id:
             return None
@@ -33,9 +31,7 @@ class ConversationService:
             )
 
             if not conversation:
-                logger.warning(
-                    f"Conversation not found or unauthorized - ID: {conversation_id}, User: {user_id}"
-                )
+                logger.warning(f"Conversation not found or unauthorized - ID: {conversation_id}, User: {user_id}")
                 return None
             conversation["_id"] = str(conversation["_id"])
             return conversation
@@ -149,9 +145,7 @@ class ConversationService:
                 },
             ]
 
-            completion = llm.gen(
-                model=model_id, messages=messages_summary, max_tokens=500
-            )
+            completion = llm.gen(model=model_id, messages=messages_summary, max_tokens=500)
 
             if not completion or not completion.strip():
                 completion = question[:50] if question else "New Conversation"
@@ -186,9 +180,7 @@ class ConversationService:
             result = self.conversations_collection.insert_one(conversation_data)
             return str(result.inserted_id)
 
-    def update_compression_metadata(
-        self, conversation_id: str, compression_metadata: Dict[str, Any]
-    ) -> None:
+    def update_compression_metadata(self, conversation_id: str, compression_metadata: Dict[str, Any]) -> None:
         """
         Update conversation with compression metadata.
 
@@ -206,9 +198,7 @@ class ConversationService:
                 {
                     "$set": {
                         "compression_metadata.is_compressed": True,
-                        "compression_metadata.last_compression_at": compression_metadata.get(
-                            "timestamp"
-                        ),
+                        "compression_metadata.last_compression_at": compression_metadata.get("timestamp"),
                     },
                     "$push": {
                         "compression_metadata.compression_points": {
@@ -218,18 +208,12 @@ class ConversationService:
                     },
                 },
             )
-            logger.info(
-                f"Updated compression metadata for conversation {conversation_id}"
-            )
+            logger.info(f"Updated compression metadata for conversation {conversation_id}")
         except Exception as e:
-            logger.error(
-                f"Error updating compression metadata: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error updating compression metadata: {str(e)}", exc_info=True)
             raise
 
-    def append_compression_message(
-        self, conversation_id: str, compression_metadata: Dict[str, Any]
-    ) -> None:
+    def append_compression_message(self, conversation_id: str, compression_metadata: Dict[str, Any]) -> None:
         """
         Append a synthetic compression summary entry into the conversation history.
         This makes the summary visible in the DB alongside normal queries.
@@ -259,13 +243,9 @@ class ConversationService:
             )
             logger.info(f"Appended compression summary to conversation {conversation_id}")
         except Exception as e:
-            logger.error(
-                f"Error appending compression summary: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error appending compression summary: {str(e)}", exc_info=True)
 
-    def get_compression_metadata(
-        self, conversation_id: str
-    ) -> Optional[Dict[str, Any]]:
+    def get_compression_metadata(self, conversation_id: str) -> Optional[Dict[str, Any]]:
         """
         Get compression metadata for a conversation.
 
@@ -281,7 +261,5 @@ class ConversationService:
             )
             return conversation.get("compression_metadata") if conversation else None
         except Exception as e:
-            logger.error(
-                f"Error getting compression metadata: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error getting compression metadata: {str(e)}", exc_info=True)
             return None

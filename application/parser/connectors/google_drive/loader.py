@@ -17,35 +17,34 @@ from application.parser.schema.base import Document
 
 
 class GoogleDriveLoader(BaseConnectorLoader):
-
     SUPPORTED_MIME_TYPES = {
-        'application/pdf': '.pdf',
-        'application/vnd.google-apps.document': '.docx',
-        'application/vnd.google-apps.presentation': '.pptx',
-        'application/vnd.google-apps.spreadsheet': '.xlsx',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
-        'application/msword': '.doc',
-        'application/vnd.ms-powerpoint': '.ppt',
-        'application/vnd.ms-excel': '.xls',
-        'text/plain': '.txt',
-        'text/csv': '.csv',
-        'text/html': '.html',
-        'text/markdown': '.md',
-        'text/x-rst': '.rst',
-        'application/json': '.json',
-        'application/epub+zip': '.epub',
-        'application/rtf': '.rtf',
-        'image/jpeg': '.jpg',
-        'image/jpg': '.jpg',
-        'image/png': '.png',
+        "application/pdf": ".pdf",
+        "application/vnd.google-apps.document": ".docx",
+        "application/vnd.google-apps.presentation": ".pptx",
+        "application/vnd.google-apps.spreadsheet": ".xlsx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+        "application/msword": ".doc",
+        "application/vnd.ms-powerpoint": ".ppt",
+        "application/vnd.ms-excel": ".xls",
+        "text/plain": ".txt",
+        "text/csv": ".csv",
+        "text/html": ".html",
+        "text/markdown": ".md",
+        "text/x-rst": ".rst",
+        "application/json": ".json",
+        "application/epub+zip": ".epub",
+        "application/rtf": ".rtf",
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/png": ".png",
     }
 
     EXPORT_FORMATS = {
-        'application/vnd.google-apps.document': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.google-apps.presentation': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     }
 
     def __init__(self, session_token: str):
@@ -63,68 +62,60 @@ class GoogleDriveLoader(BaseConnectorLoader):
 
         self.next_page_token = None
 
-
-
     def _process_file(self, file_metadata: Dict[str, Any], load_content: bool = True) -> Optional[Document]:
         try:
-            file_id = file_metadata.get('id')
-            file_name = file_metadata.get('name', 'Unknown')
-            mime_type = file_metadata.get('mimeType', 'application/octet-stream')
+            file_id = file_metadata.get("id")
+            file_name = file_metadata.get("name", "Unknown")
+            mime_type = file_metadata.get("mimeType", "application/octet-stream")
 
-            if mime_type not in self.SUPPORTED_MIME_TYPES and not mime_type.startswith('application/vnd.google-apps.'):
+            if mime_type not in self.SUPPORTED_MIME_TYPES and not mime_type.startswith("application/vnd.google-apps."):
                 return None
-            if mime_type not in self.SUPPORTED_MIME_TYPES and not mime_type.startswith('application/vnd.google-apps.'):
+            if mime_type not in self.SUPPORTED_MIME_TYPES and not mime_type.startswith("application/vnd.google-apps."):
                 logging.info(f"Skipping unsupported file type: {mime_type} for file {file_name}")
                 return None
             # Google Drive provides timezone-aware ISO8601 dates
             doc_metadata = {
-                'file_name': file_name,
-                'mime_type': mime_type,
-                'size': file_metadata.get('size', None),
-                'created_time': file_metadata.get('createdTime'),
-                'modified_time': file_metadata.get('modifiedTime'),
-                'parents': file_metadata.get('parents', []),
-                'source': 'google_drive'
+                "file_name": file_name,
+                "mime_type": mime_type,
+                "size": file_metadata.get("size", None),
+                "created_time": file_metadata.get("createdTime"),
+                "modified_time": file_metadata.get("modifiedTime"),
+                "parents": file_metadata.get("parents", []),
+                "source": "google_drive",
             }
 
             if not load_content:
-                return Document(
-                    text="",
-                    doc_id=file_id,
-                    extra_info=doc_metadata
-                )
+                return Document(text="", doc_id=file_id, extra_info=doc_metadata)
 
             content = self._download_file_content(file_id, mime_type)
             if content is None:
                 logging.warning(f"Could not load content for file {file_name} ({file_id})")
                 return None
 
-            return Document(
-                text=content,
-                doc_id=file_id,
-                extra_info=doc_metadata
-            )
+            return Document(text=content, doc_id=file_id, extra_info=doc_metadata)
 
         except Exception as e:
             logging.error(f"Error processing file: {e}")
             return None
 
     def load_data(self, inputs: Dict[str, Any]) -> List[Document]:
-        session_token = inputs.get('session_token')
+        session_token = inputs.get("session_token")
         if session_token and session_token != self.session_token:
-            logging.warning("Session token in inputs differs from loader's session token. Using loader's session token.")
+            logging.warning(
+                "Session token in inputs differs from loader's session token. Using loader's session token."
+            )
         self.config = inputs
 
         try:
             documents: List[Document] = []
 
-            folder_id = inputs.get('folder_id')
-            file_ids = inputs.get('file_ids', [])
-            limit = inputs.get('limit', 100)
-            list_only = inputs.get('list_only', False)
+            folder_id = inputs.get("folder_id")
+            file_ids = inputs.get("file_ids", [])
+            limit = inputs.get("limit", 100)
+            list_only = inputs.get("list_only", False)
             load_content = not list_only
-            page_token = inputs.get('page_token')
-            search_query = inputs.get('search_query')
+            page_token = inputs.get("page_token")
+            search_query = inputs.get("search_query")
             self.next_page_token = None
 
             if file_ids:
@@ -134,16 +125,15 @@ class GoogleDriveLoader(BaseConnectorLoader):
                         doc = self._load_file_by_id(file_id, load_content=load_content)
                         if doc:
                             if not search_query or (
-                                search_query.lower() in doc.extra_info.get('file_name', '').lower()
+                                search_query.lower() in doc.extra_info.get("file_name", "").lower()
                             ):
                                 documents.append(doc)
-                        elif hasattr(self, '_credential_refreshed') and self._credential_refreshed:
+                        elif hasattr(self, "_credential_refreshed") and self._credential_refreshed:
                             self._credential_refreshed = False
                             logging.info(f"Retrying load of file {file_id} after credential refresh")
                             doc = self._load_file_by_id(file_id, load_content=load_content)
                             if doc and (
-                                not search_query or 
-                                search_query.lower() in doc.extra_info.get('file_name', '').lower()
+                                not search_query or search_query.lower() in doc.extra_info.get("file_name", "").lower()
                             ):
                                 documents.append(doc)
                     except Exception as e:
@@ -151,13 +141,9 @@ class GoogleDriveLoader(BaseConnectorLoader):
                         continue
             else:
                 # Browsing mode: list immediate children of provided folder or root
-                parent_id = folder_id if folder_id else 'root'
+                parent_id = folder_id if folder_id else "root"
                 documents = self._list_items_in_parent(
-                    parent_id, 
-                    limit=limit, 
-                    load_content=load_content, 
-                    page_token=page_token,
-                    search_query=search_query
+                    parent_id, limit=limit, load_content=load_content, page_token=page_token, search_query=search_query
                 )
 
             logging.info(f"Loaded {len(documents)} documents from Google Drive")
@@ -167,16 +153,15 @@ class GoogleDriveLoader(BaseConnectorLoader):
             logging.error(f"Error loading data from Google Drive: {e}", exc_info=True)
             raise
 
-
-
     def _load_file_by_id(self, file_id: str, load_content: bool = True) -> Optional[Document]:
         self._ensure_service()
 
         try:
-            file_metadata = self.service.files().get(
-                fileId=file_id,
-                fields='id,name,mimeType,size,createdTime,modifiedTime,parents'
-            ).execute()
+            file_metadata = (
+                self.service.files()
+                .get(fileId=file_id, fields="id,name,mimeType,size,createdTime,modifiedTime,parents")
+                .execute()
+            )
 
             return self._process_file(file_metadata, load_content=load_content)
 
@@ -184,9 +169,10 @@ class GoogleDriveLoader(BaseConnectorLoader):
             logging.error(f"HTTP error loading file {file_id}: {e.resp.status} - {e.content}")
 
             if e.resp.status in [401, 403]:
-                if hasattr(self.credentials, 'refresh_token') and self.credentials.refresh_token:
+                if hasattr(self.credentials, "refresh_token") and self.credentials.refresh_token:
                     try:
                         from google.auth.transport.requests import Request
+
                         self.credentials.refresh(Request())
                         self._ensure_service()
                         return None
@@ -200,8 +186,14 @@ class GoogleDriveLoader(BaseConnectorLoader):
             logging.error(f"Error loading file {file_id}: {e}")
             return None
 
-
-    def _list_items_in_parent(self, parent_id: str, limit: int = 100, load_content: bool = False, page_token: Optional[str] = None, search_query: Optional[str] = None) -> List[Document]:
+    def _list_items_in_parent(
+        self,
+        parent_id: str,
+        limit: int = 100,
+        load_content: bool = False,
+        page_token: Optional[str] = None,
+        search_query: Optional[str] = None,
+    ) -> List[Document]:
         self._ensure_service()
 
         documents: List[Document] = []
@@ -223,39 +215,43 @@ class GoogleDriveLoader(BaseConnectorLoader):
                         break
                     page_size = min(100, remaining)
 
-                results = self.service.files().list(
-                    q=query,
-                    fields='nextPageToken,files(id,name,mimeType,size,createdTime,modifiedTime,parents)',
-                    pageToken=page_token,
-                    pageSize=page_size,
-                    orderBy='name'
-                ).execute()
+                results = (
+                    self.service.files()
+                    .list(
+                        q=query,
+                        fields="nextPageToken,files(id,name,mimeType,size,createdTime,modifiedTime,parents)",
+                        pageToken=page_token,
+                        pageSize=page_size,
+                        orderBy="name",
+                    )
+                    .execute()
+                )
 
-                items = results.get('files', [])
+                items = results.get("files", [])
                 for item in items:
-                    mime_type = item.get('mimeType')
-                    if mime_type == 'application/vnd.google-apps.folder':
+                    mime_type = item.get("mimeType")
+                    if mime_type == "application/vnd.google-apps.folder":
                         doc_metadata = {
-                            'file_name': item.get('name', 'Unknown'),
-                            'mime_type': mime_type,
-                            'size': item.get('size', None),
-                            'created_time': item.get('createdTime'),
-                            'modified_time': item.get('modifiedTime'),
-                            'parents': item.get('parents', []),
-                            'source': 'google_drive',
-                            'is_folder': True
+                            "file_name": item.get("name", "Unknown"),
+                            "mime_type": mime_type,
+                            "size": item.get("size", None),
+                            "created_time": item.get("createdTime"),
+                            "modified_time": item.get("modifiedTime"),
+                            "parents": item.get("parents", []),
+                            "source": "google_drive",
+                            "is_folder": True,
                         }
-                        documents.append(Document(text="", doc_id=item.get('id'), extra_info=doc_metadata))
+                        documents.append(Document(text="", doc_id=item.get("id"), extra_info=doc_metadata))
                     else:
                         doc = self._process_file(item, load_content=load_content)
                         if doc:
                             documents.append(doc)
 
                     if limit and len(documents) >= limit:
-                        self.next_page_token = results.get('nextPageToken')
+                        self.next_page_token = results.get("nextPageToken")
                         return documents
 
-                page_token = results.get('nextPageToken')
+                page_token = results.get("nextPageToken")
                 next_token_out = page_token
                 if not page_token:
                     break
@@ -266,15 +262,13 @@ class GoogleDriveLoader(BaseConnectorLoader):
             logging.error(f"Error listing items under parent {parent_id}: {e}")
             return documents
 
-
-
-
     def _download_file_content(self, file_id: str, mime_type: str) -> Optional[str]:
         if not self.credentials.token:
             logging.warning("No access token in credentials, attempting to refresh")
-            if hasattr(self.credentials, 'refresh_token') and self.credentials.refresh_token:
+            if hasattr(self.credentials, "refresh_token") and self.credentials.refresh_token:
                 try:
                     from google.auth.transport.requests import Request
+
                     self.credentials.refresh(Request())
                     logging.info("Credentials refreshed successfully")
                     self._ensure_service()
@@ -287,9 +281,10 @@ class GoogleDriveLoader(BaseConnectorLoader):
 
         if self.credentials.expired:
             logging.warning("Credentials are expired, attempting to refresh")
-            if hasattr(self.credentials, 'refresh_token') and self.credentials.refresh_token:
+            if hasattr(self.credentials, "refresh_token") and self.credentials.refresh_token:
                 try:
                     from google.auth.transport.requests import Request
+
                     self.credentials.refresh(Request())
                     logging.info("Credentials refreshed successfully")
                     self._ensure_service()
@@ -303,10 +298,7 @@ class GoogleDriveLoader(BaseConnectorLoader):
         try:
             if mime_type in self.EXPORT_FORMATS:
                 export_mime_type = self.EXPORT_FORMATS[mime_type]
-                request = self.service.files().export_media(
-                    fileId=file_id,
-                    mimeType=export_mime_type
-                )
+                request = self.service.files().export_media(fileId=file_id, mimeType=export_mime_type)
             else:
                 request = self.service.files().get_media(fileId=file_id)
 
@@ -327,7 +319,7 @@ class GoogleDriveLoader(BaseConnectorLoader):
             content_bytes = file_io.getvalue()
 
             try:
-                return content_bytes.decode('utf-8')
+                return content_bytes.decode("utf-8")
             except UnicodeDecodeError:
                 logging.error(f"Could not decode file {file_id} as text")
                 return None
@@ -338,10 +330,11 @@ class GoogleDriveLoader(BaseConnectorLoader):
             if e.resp.status in [401, 403]:
                 logging.error(f"Authentication error downloading file {file_id}")
 
-                if hasattr(self.credentials, 'refresh_token') and self.credentials.refresh_token:
+                if hasattr(self.credentials, "refresh_token") and self.credentials.refresh_token:
                     logging.info(f"Attempting to refresh credentials for file {file_id}")
                     try:
                         from google.auth.transport.requests import Request
+
                         self.credentials.refresh(Request())
                         logging.info("Credentials refreshed successfully")
                         self._credential_refreshed = True
@@ -359,7 +352,6 @@ class GoogleDriveLoader(BaseConnectorLoader):
             logging.error(f"Error downloading file {file_id}: {e}")
             return None
 
-
     def _download_file_to_directory(self, file_id: str, local_dir: str) -> bool:
         try:
             self._ensure_service()
@@ -376,15 +368,12 @@ class GoogleDriveLoader(BaseConnectorLoader):
                 raise ValueError(f"Cannot access Google Drive: {e}")
 
     def _download_single_file(self, file_id: str, local_dir: str) -> bool:
-        file_metadata = self.service.files().get(
-            fileId=file_id,
-            fields='name,mimeType'
-        ).execute()
+        file_metadata = self.service.files().get(fileId=file_id, fields="name,mimeType").execute()
 
-        file_name = file_metadata['name']
-        mime_type = file_metadata['mimeType']
+        file_name = file_metadata["name"]
+        mime_type = file_metadata["mimeType"]
 
-        if mime_type not in self.SUPPORTED_MIME_TYPES and not mime_type.startswith('application/vnd.google-apps.'):
+        if mime_type not in self.SUPPORTED_MIME_TYPES and not mime_type.startswith("application/vnd.google-apps."):
             return False
 
         os.makedirs(local_dir, exist_ok=True)
@@ -392,17 +381,14 @@ class GoogleDriveLoader(BaseConnectorLoader):
 
         if mime_type in self.EXPORT_FORMATS:
             export_mime_type = self.EXPORT_FORMATS[mime_type]
-            request = self.service.files().export_media(
-                fileId=file_id,
-                mimeType=export_mime_type
-            )
+            request = self.service.files().export_media(fileId=file_id, mimeType=export_mime_type)
             extension = self._get_extension_for_mime_type(export_mime_type)
             if not full_path.endswith(extension):
                 full_path += extension
         else:
             request = self.service.files().get_media(fileId=file_id)
 
-        with open(full_path, 'wb') as f:
+        with open(full_path, "wb") as f:
             downloader = MediaIoBaseDownload(f, request)
             done = False
             while not done:
@@ -419,31 +405,28 @@ class GoogleDriveLoader(BaseConnectorLoader):
             page_token = None
 
             while True:
-                results = self.service.files().list(
-                    q=query,
-                    fields='nextPageToken, files(id, name, mimeType)',
-                    pageToken=page_token,
-                    pageSize=1000
-                ).execute()
+                results = (
+                    self.service.files()
+                    .list(
+                        q=query, fields="nextPageToken, files(id, name, mimeType)", pageToken=page_token, pageSize=1000
+                    )
+                    .execute()
+                )
 
-                items = results.get('files', [])
+                items = results.get("files", [])
                 logging.info(f"Found {len(items)} items in folder {folder_id}")
 
                 for item in items:
-                    item_name = item['name']
-                    item_id = item['id']
-                    mime_type = item['mimeType']
+                    item_name = item["name"]
+                    item_id = item["id"]
+                    mime_type = item["mimeType"]
 
-                    if mime_type == 'application/vnd.google-apps.folder':
+                    if mime_type == "application/vnd.google-apps.folder":
                         if recursive:
                             # Create subfolder and recurse
                             subfolder_path = os.path.join(local_dir, item_name)
                             os.makedirs(subfolder_path, exist_ok=True)
-                            subfolder_files = self._download_folder_recursive(
-                                item_id,
-                                subfolder_path,
-                                recursive
-                            )
+                            subfolder_files = self._download_folder_recursive(item_id, subfolder_path, recursive)
                             files_downloaded += subfolder_files
                             logging.info(f"Downloaded {subfolder_files} files from subfolder {item_name}")
                     else:
@@ -455,7 +438,7 @@ class GoogleDriveLoader(BaseConnectorLoader):
                         else:
                             logging.warning(f"Failed to download file: {item_name}")
 
-                page_token = results.get('nextPageToken')
+                page_token = results.get("nextPageToken")
                 if not page_token:
                     break
 
@@ -467,15 +450,15 @@ class GoogleDriveLoader(BaseConnectorLoader):
 
     def _get_extension_for_mime_type(self, mime_type: str) -> str:
         extensions = {
-            'application/pdf': '.pdf',
-            'text/plain': '.txt',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
-            'text/html': '.html',
-            'text/markdown': '.md',
+            "application/pdf": ".pdf",
+            "text/plain": ".txt",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+            "text/html": ".html",
+            "text/markdown": ".md",
         }
-        return extensions.get(mime_type, '.bin')
+        return extensions.get(mime_type, ".bin")
 
     def _download_folder_contents(self, folder_id: str, local_dir: str, recursive: bool = True) -> int:
         try:
@@ -489,13 +472,13 @@ class GoogleDriveLoader(BaseConnectorLoader):
         if source_config is None:
             source_config = {}
 
-        config = source_config if source_config else getattr(self, 'config', {})
+        config = source_config if source_config else getattr(self, "config", {})
         files_downloaded = 0
 
         try:
-            folder_ids = config.get('folder_ids', [])
-            file_ids = config.get('file_ids', [])
-            recursive = config.get('recursive', True)
+            folder_ids = config.get("folder_ids", [])
+            file_ids = config.get("file_ids", [])
+            recursive = config.get("recursive", True)
 
             self._ensure_service()
 
@@ -514,19 +497,12 @@ class GoogleDriveLoader(BaseConnectorLoader):
 
                 for folder_id in folder_ids:
                     try:
-                        folder_metadata = self.service.files().get(
-                            fileId=folder_id,
-                            fields='name'
-                        ).execute()
-                        folder_name = folder_metadata.get('name', '')
+                        folder_metadata = self.service.files().get(fileId=folder_id, fields="name").execute()
+                        folder_name = folder_metadata.get("name", "")
                         folder_path = os.path.join(local_dir, folder_name)
                         os.makedirs(folder_path, exist_ok=True)
 
-                        folder_files = self._download_folder_recursive(
-                            folder_id,
-                            folder_path,
-                            recursive
-                        )
+                        folder_files = self._download_folder_recursive(folder_id, folder_path, recursive)
                         files_downloaded += folder_files
                         logging.info(f"Downloaded {folder_files} files from folder {folder_name}")
                     except Exception as e:
@@ -540,7 +516,7 @@ class GoogleDriveLoader(BaseConnectorLoader):
                 "directory_path": local_dir,
                 "empty_result": files_downloaded == 0,
                 "source_type": "google_drive",
-                "config_used": config
+                "config_used": config,
             }
 
         except Exception as e:
@@ -550,5 +526,5 @@ class GoogleDriveLoader(BaseConnectorLoader):
                 "empty_result": True,
                 "source_type": "google_drive",
                 "config_used": config,
-                "error": str(e)
+                "error": str(e),
             }

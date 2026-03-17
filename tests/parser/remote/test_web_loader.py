@@ -37,6 +37,7 @@ class TestWebLoaderInitialization:
         """Test WebLoader initialization."""
         assert web_loader.loader is not None
         from langchain_community.document_loaders import WebBaseLoader
+
         assert web_loader.loader == WebBaseLoader
 
 
@@ -89,7 +90,7 @@ class TestWebLoaderLoadData:
 
     def test_load_data_multiple_urls_list(self, web_loader):
         """Test loading data from multiple URLs passed as list."""
-        
+
         doc1 = MagicMock(spec=LCDocument)
         doc1.page_content = "Content from site 1"
         doc1.metadata = {"source": "https://site1.com"}
@@ -98,7 +99,6 @@ class TestWebLoaderLoadData:
         doc2.page_content = "Content from site 2"
         doc2.metadata = {"source": "https://site2.com"}
 
-       
         mock_loader_instance1 = MagicMock()
         mock_loader_instance1.load.return_value = [doc1]
 
@@ -189,7 +189,7 @@ class TestWebLoaderLoadData:
 class TestWebLoaderErrorHandling:
     """Test WebLoader error handling."""
 
-    @patch('application.parser.remote.web_loader.logging')
+    @patch("application.parser.remote.web_loader.logging")
     def test_load_data_single_url_error(self, mock_logging, web_loader):
         """Test error handling for single URL that fails to load."""
         mock_loader_instance = MagicMock()
@@ -208,7 +208,7 @@ class TestWebLoaderErrorHandling:
         assert "Error processing URL https://invalid-url.com" in error_call[0][0]
         assert error_call[1]["exc_info"] is True
 
-    @patch('application.parser.remote.web_loader.logging')
+    @patch("application.parser.remote.web_loader.logging")
     def test_load_data_partial_failure(self, mock_logging, web_loader):
         """Test partial failure - some URLs succeed, some fail."""
         doc1 = MagicMock(spec=LCDocument)
@@ -278,11 +278,12 @@ class TestWebLoaderIntegration:
     def test_inherits_from_base_remote(self, web_loader):
         """Test that WebLoader inherits from BaseRemote."""
         from application.parser.remote.base import BaseRemote
+
         assert isinstance(web_loader, BaseRemote)
 
     def test_implements_load_data_method(self, web_loader):
         """Test that WebLoader implements required load_data method."""
-        assert hasattr(web_loader, 'load_data')
+        assert hasattr(web_loader, "load_data")
         assert callable(web_loader.load_data)
 
     def test_load_langchain_documents_method(self, web_loader, mock_langchain_document):

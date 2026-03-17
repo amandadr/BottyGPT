@@ -21,9 +21,7 @@ def test_workflow_template_supports_agent_namespace_and_legacy_variables():
     engine = create_engine()
     engine.state = {"query": "Hello", "chat_history": "[]", "ticket_id": 42}
 
-    rendered = engine._format_template(
-        "{{ agent.query }}|{{ agent.ticket_id }}|{{ query }}|{{ ticket_id }}"
-    )
+    rendered = engine._format_template("{{ agent.query }}|{{ agent.ticket_id }}|{{ query }}|{{ ticket_id }}")
 
     assert rendered == "Hello|42|Hello|42"
 
@@ -32,9 +30,7 @@ def test_workflow_template_supports_global_namespaces():
     engine = create_engine()
     engine.state = {"query": "Hello"}
 
-    rendered = engine._format_template(
-        "{{ source.count }}|{{ source.summaries }}|{{ system.request_id }}"
-    )
+    rendered = engine._format_template("{{ source.count }}|{{ source.summaries }}|{{ system.request_id }}")
 
     assert rendered.startswith("2|")
     assert "Doc A" in rendered
@@ -46,9 +42,7 @@ def test_workflow_template_handles_namespace_conflicts_with_agent_prefix():
     engine = create_engine()
     engine.state = {"source": "user-defined-source"}
 
-    rendered = engine._format_template(
-        "{{ agent.source }}|{{ agent_source }}|{{ source.count }}"
-    )
+    rendered = engine._format_template("{{ agent.source }}|{{ agent_source }}|{{ source.count }}")
 
     assert rendered.startswith("user-defined-source|user-defined-source|")
 

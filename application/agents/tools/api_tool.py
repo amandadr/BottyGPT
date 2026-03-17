@@ -91,13 +91,9 @@ class APITool(Tool):
                 for match in re.finditer(r"\{([^}]+)\}", request_url):
                     param_name = match.group(1)
                     if param_name in query_params:
-                        request_url = request_url.replace(
-                            f"{{{param_name}}}", str(query_params[param_name])
-                        )
+                        request_url = request_url.replace(f"{{{param_name}}}", str(query_params[param_name]))
                         path_params_used.add(param_name)
-            remaining_params = {
-                k: v for k, v in query_params.items() if k not in path_params_used
-            }
+            remaining_params = {k: v for k, v in query_params.items() if k not in path_params_used}
             if remaining_params:
                 query_string = urlencode(remaining_params)
                 separator = "&" if "?" in request_url else "?"
@@ -118,9 +114,7 @@ class APITool(Tool):
 
             if body and body != {}:
                 try:
-                    serialized_body, body_headers = RequestBodySerializer.serialize(
-                        body, content_type, encoding_rules
-                    )
+                    serialized_body, body_headers = RequestBodySerializer.serialize(body, content_type, encoding_rules)
                     request_headers.update(body_headers)
                 except ValueError as e:
                     logger.error(f"Body serialization failed: {str(e)}")
@@ -142,9 +136,7 @@ class APITool(Tool):
             )
 
             if method.upper() == "GET":
-                response = requests.get(
-                    request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT
-                )
+                response = requests.get(request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT)
             elif method.upper() == "POST":
                 response = requests.post(
                     request_url,
@@ -160,9 +152,7 @@ class APITool(Tool):
                     timeout=DEFAULT_TIMEOUT,
                 )
             elif method.upper() == "DELETE":
-                response = requests.delete(
-                    request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT
-                )
+                response = requests.delete(request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT)
             elif method.upper() == "PATCH":
                 response = requests.patch(
                     request_url,
@@ -171,13 +161,9 @@ class APITool(Tool):
                     timeout=DEFAULT_TIMEOUT,
                 )
             elif method.upper() == "HEAD":
-                response = requests.head(
-                    request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT
-                )
+                response = requests.head(request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT)
             elif method.upper() == "OPTIONS":
-                response = requests.options(
-                    request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT
-                )
+                response = requests.options(request_url, headers=request_headers, timeout=DEFAULT_TIMEOUT)
             else:
                 return {
                     "status_code": None,

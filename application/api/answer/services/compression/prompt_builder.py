@@ -68,8 +68,7 @@ class CompressionPromptBuilder:
         existing_compression_context = ""
         if existing_compressions and len(existing_compressions) > 0:
             existing_compression_context = (
-                "\n\nIMPORTANT: This conversation has been compressed before. "
-                "Previous compression summaries:\n\n"
+                "\n\nIMPORTANT: This conversation has been compressed before. Previous compression summaries:\n\n"
             )
             for i, comp in enumerate(existing_compressions):
                 existing_compression_context += (
@@ -83,11 +82,7 @@ class CompressionPromptBuilder:
                 "compressions and new messages.\n\n"
             )
 
-        user_prompt = (
-            f"{existing_compression_context}"
-            f"Here is the conversation to summarize:\n\n"
-            f"{conversation_text}"
-        )
+        user_prompt = f"{existing_compression_context}Here is the conversation to summarize:\n\n{conversation_text}"
 
         messages = [
             {"role": "system", "content": self.system_prompt},
@@ -126,10 +121,7 @@ class CompressionPromptBuilder:
                     status = tc.get("status", "unknown")
 
                     # Include full tool result for complete compression context
-                    conversation_lines.append(
-                        f"  - {tool_name}.{action_name}({arguments}) "
-                        f"[{status}] → {result}"
-                    )
+                    conversation_lines.append(f"  - {tool_name}.{action_name}({arguments}) [{status}] → {result}")
 
             # Add agent thought if present
             thought = query.get("thought", "")

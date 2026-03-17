@@ -136,12 +136,14 @@ Examples:
     )
 
     parser.add_argument(
-        "--module", "-m",
+        "--module",
+        "-m",
         help="Specific module(s) to run, comma-separated (e.g., 'chat,agents')",
     )
 
     parser.add_argument(
-        "--list", "-l",
+        "--list",
+        "-l",
         action="store_true",
         help="List available test modules",
     )

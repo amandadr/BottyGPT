@@ -9,10 +9,4 @@ from .base import BaseConnectorAuth, BaseConnectorLoader
 from .connector_creator import ConnectorCreator
 from .google_drive import GoogleDriveAuth, GoogleDriveLoader
 
-__all__ = [
-    'BaseConnectorAuth',
-    'BaseConnectorLoader',
-    'ConnectorCreator',
-    'GoogleDriveAuth',
-    'GoogleDriveLoader'
-]
+__all__ = ["BaseConnectorAuth", "BaseConnectorLoader", "ConnectorCreator", "GoogleDriveAuth", "GoogleDriveLoader"]

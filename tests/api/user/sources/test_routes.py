@@ -101,9 +101,7 @@ class TestSyncSourceEndpoint:
 
         app = Flask(__name__)
 
-        with app.test_request_context(
-            "/api/sync_source", method="POST", json={"source_id": "123"}
-        ):
+        with app.test_request_context("/api/sync_source", method="POST", json={"source_id": "123"}):
             from flask import request
 
             request.decoded_token = None
@@ -136,9 +134,7 @@ class TestSyncSourceEndpoint:
 
         app = Flask(__name__)
 
-        with app.test_request_context(
-            "/api/sync_source", method="POST", json={"source_id": "invalid"}
-        ):
+        with app.test_request_context("/api/sync_source", method="POST", json={"source_id": "invalid"}):
             from flask import request
 
             request.decoded_token = {"sub": "test_user"}
@@ -148,9 +144,7 @@ class TestSyncSourceEndpoint:
             assert _get_response_status(response) == 400
             assert "Invalid source ID" in _get_response_json(response)["message"]
 
-    def test_sync_source_returns_404_for_nonexistent_source(
-        self, flask_app, mock_mongo_db
-    ):
+    def test_sync_source_returns_404_for_nonexistent_source(self, flask_app, mock_mongo_db):
         """Should return 404 when source doesn't exist."""
         from flask import Flask
         from application.api.user.sources.routes import SyncSource
@@ -158,9 +152,7 @@ class TestSyncSourceEndpoint:
         app = Flask(__name__)
         source_id = str(ObjectId())
 
-        with app.test_request_context(
-            "/api/sync_source", method="POST", json={"source_id": source_id}
-        ):
+        with app.test_request_context("/api/sync_source", method="POST", json={"source_id": source_id}):
             from flask import request
 
             request.decoded_token = {"sub": "test_user"}
@@ -175,9 +167,7 @@ class TestSyncSourceEndpoint:
                 assert _get_response_status(response) == 404
                 assert "not found" in _get_response_json(response)["message"]
 
-    def test_sync_source_returns_400_for_connector_type(
-        self, flask_app, mock_mongo_db, mock_sources_collection
-    ):
+    def test_sync_source_returns_400_for_connector_type(self, flask_app, mock_mongo_db, mock_sources_collection):
         """Should return 400 for connector sources."""
         from flask import Flask
         from application.api.user.sources.routes import SyncSource
@@ -195,9 +185,7 @@ class TestSyncSourceEndpoint:
             }
         )
 
-        with app.test_request_context(
-            "/api/sync_source", method="POST", json={"source_id": str(source_id)}
-        ):
+        with app.test_request_context("/api/sync_source", method="POST", json={"source_id": str(source_id)}):
             from flask import request
 
             request.decoded_token = {"sub": "test_user"}
@@ -212,9 +200,7 @@ class TestSyncSourceEndpoint:
                 assert _get_response_status(response) == 400
                 assert "Connector sources" in _get_response_json(response)["message"]
 
-    def test_sync_source_returns_400_for_non_syncable_source(
-        self, flask_app, mock_mongo_db, mock_sources_collection
-    ):
+    def test_sync_source_returns_400_for_non_syncable_source(self, flask_app, mock_mongo_db, mock_sources_collection):
         """Should return 400 when source has no remote_data."""
         from flask import Flask
         from application.api.user.sources.routes import SyncSource
@@ -233,9 +219,7 @@ class TestSyncSourceEndpoint:
             }
         )
 
-        with app.test_request_context(
-            "/api/sync_source", method="POST", json={"source_id": str(source_id)}
-        ):
+        with app.test_request_context("/api/sync_source", method="POST", json={"source_id": str(source_id)}):
             from flask import request
 
             request.decoded_token = {"sub": "test_user"}
@@ -250,9 +234,7 @@ class TestSyncSourceEndpoint:
                 assert _get_response_status(response) == 400
                 assert "not syncable" in _get_response_json(response)["message"]
 
-    def test_sync_source_triggers_sync_task(
-        self, flask_app, mock_mongo_db, mock_sources_collection
-    ):
+    def test_sync_source_triggers_sync_task(self, flask_app, mock_mongo_db, mock_sources_collection):
         """Should trigger sync task for valid syncable source."""
         from flask import Flask
         from application.api.user.sources.routes import SyncSource
@@ -283,9 +265,7 @@ class TestSyncSourceEndpoint:
         mock_task = MagicMock()
         mock_task.id = "task-123"
 
-        with app.test_request_context(
-            "/api/sync_source", method="POST", json={"source_id": str(source_id)}
-        ):
+        with app.test_request_context("/api/sync_source", method="POST", json={"source_id": str(source_id)}):
             from flask import request
 
             request.decoded_token = {"sub": "test_user"}
@@ -294,9 +274,7 @@ class TestSyncSourceEndpoint:
                 "application.api.user.sources.routes.sources_collection",
                 mock_sources_collection,
             ):
-                with patch(
-                    "application.api.user.sources.routes.sync_source"
-                ) as mock_sync:
+                with patch("application.api.user.sources.routes.sync_source") as mock_sync:
                     mock_sync.delay.return_value = mock_task
 
                     resource = SyncSource()
@@ -312,9 +290,7 @@ class TestSyncSourceEndpoint:
                     assert call_kwargs["loader"] == "s3"
                     assert call_kwargs["doc_id"] == str(source_id)
 
-    def test_sync_source_handles_task_error(
-        self, flask_app, mock_mongo_db, mock_sources_collection
-    ):
+    def test_sync_source_handles_task_error(self, flask_app, mock_mongo_db, mock_sources_collection):
         """Should return 400 when task fails to start."""
         from flask import Flask
         from application.api.user.sources.routes import SyncSource
@@ -334,9 +310,7 @@ class TestSyncSourceEndpoint:
             }
         )
 
-        with app.test_request_context(
-            "/api/sync_source", method="POST", json={"source_id": str(source_id)}
-        ):
+        with app.test_request_context("/api/sync_source", method="POST", json={"source_id": str(source_id)}):
             from flask import request
 
             request.decoded_token = {"sub": "test_user"}
@@ -345,9 +319,7 @@ class TestSyncSourceEndpoint:
                 "application.api.user.sources.routes.sources_collection",
                 mock_sources_collection,
             ):
-                with patch(
-                    "application.api.user.sources.routes.sync_source"
-                ) as mock_sync:
+                with patch("application.api.user.sources.routes.sync_source") as mock_sync:
                     mock_sync.delay.side_effect = Exception("Celery error")
 
                     resource = SyncSource()

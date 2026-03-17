@@ -88,9 +88,7 @@ class TestAgentTokenTracking:
 
     @patch("application.core.model_utils.get_token_limit")
     @patch("application.core.settings.settings")
-    def test_check_context_limit_below_threshold(
-        self, mock_settings, mock_get_token_limit, mock_agent
-    ):
+    def test_check_context_limit_below_threshold(self, mock_settings, mock_get_token_limit, mock_agent):
         """Test context limit check when below threshold"""
         mock_get_token_limit.return_value = 128000
         mock_settings.COMPRESSION_THRESHOLD_PERCENTAGE = 0.8
@@ -110,9 +108,7 @@ class TestAgentTokenTracking:
 
     @patch("application.core.model_utils.get_token_limit")
     @patch("application.core.settings.settings")
-    def test_check_context_limit_above_threshold(
-        self, mock_settings, mock_get_token_limit, mock_agent
-    ):
+    def test_check_context_limit_above_threshold(self, mock_settings, mock_get_token_limit, mock_agent):
         """Test context limit check when above threshold"""
         mock_get_token_limit.return_value = 100  # Very small limit for testing
         mock_settings.COMPRESSION_THRESHOLD_PERCENTAGE = 0.8
@@ -131,9 +127,7 @@ class TestAgentTokenTracking:
     def test_check_context_limit_error_handling(self, mock_logger, mock_agent):
         """Test error handling in context limit check"""
         # Force an error by making get_token_limit fail
-        with patch(
-            "application.core.model_utils.get_token_limit", side_effect=Exception("Test error")
-        ):
+        with patch("application.core.model_utils.get_token_limit", side_effect=Exception("Test error")):
             messages = [{"role": "user", "content": "test"}]
 
             result = mock_agent._check_context_limit(messages)
@@ -185,9 +179,7 @@ class TestLLMHandlerTokenTracking:
             return call_count[0] >= 2
 
         mock_agent._check_context_limit = Mock(side_effect=check_limit_side_effect)
-        mock_agent._execute_tool_action = Mock(
-            return_value=iter([{"type": "tool_call", "data": {}}])
-        )
+        mock_agent._execute_tool_action = Mock(return_value=iter([{"type": "tool_call", "data": {}}]))
 
         # Create multiple tool calls
         tool_calls = [
@@ -206,7 +198,9 @@ class TestLLMHandlerTokenTracking:
         assert mock_agent._execute_tool_action.call_count == 1
 
         # Should have yielded skip messages for tools 2 and 3
-        skip_messages = [r for r in results if r.get("type") == "tool_call" and r.get("data", {}).get("status") == "skipped"]
+        skip_messages = [
+            r for r in results if r.get("type") == "tool_call" and r.get("data", {}).get("status") == "skipped"
+        ]
         assert len(skip_messages) == 2
 
         # Should have set the flag
@@ -235,9 +229,7 @@ class TestLLMHandlerTokenTracking:
         mock_agent = Mock()
         mock_agent.context_limit_reached = False
         mock_agent._check_context_limit = Mock(return_value=False)
-        mock_agent._execute_tool_action = Mock(
-            return_value=iter([{"type": "tool_call", "data": {}}])
-        )
+        mock_agent._execute_tool_action = Mock(return_value=iter([{"type": "tool_call", "data": {}}]))
 
         tool_calls = [
             ToolCall(id="1", name="tool1", arguments={}),
@@ -303,9 +295,7 @@ class TestLLMHandlerTokenTracking:
             return []
 
         # Mock handle_tool_calls to return messages and set flag
-        with patch.object(
-            handler, "handle_tool_calls", return_value=tool_handler_gen()
-        ):
+        with patch.object(handler, "handle_tool_calls", return_value=tool_handler_gen()):
             messages = []
             tools_dict = {}
 

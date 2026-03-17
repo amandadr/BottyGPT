@@ -18,9 +18,7 @@ class ToolFilterMixin:
         if not self._allowed_tool_ids:
             return {}
         filtered_tools = {
-            tool_id: tool
-            for tool_id, tool in all_tools.items()
-            if str(tool.get("_id", "")) in self._allowed_tool_ids
+            tool_id: tool for tool_id, tool in all_tools.items() if str(tool.get("_id", "")) in self._allowed_tool_ids
         }
         return filtered_tools
 
@@ -29,15 +27,12 @@ class ToolFilterMixin:
         if not self._allowed_tool_ids:
             return {}
         filtered_tools = {
-            tool_id: tool
-            for tool_id, tool in all_tools.items()
-            if str(tool.get("_id", "")) in self._allowed_tool_ids
+            tool_id: tool for tool_id, tool in all_tools.items() if str(tool.get("_id", "")) in self._allowed_tool_ids
         }
         return filtered_tools
 
 
 class WorkflowNodeClassicAgent(ToolFilterMixin, ClassicAgent):
-
     def __init__(
         self,
         endpoint: str,
@@ -58,7 +53,6 @@ class WorkflowNodeClassicAgent(ToolFilterMixin, ClassicAgent):
 
 
 class WorkflowNodeReActAgent(ToolFilterMixin, ReActAgent):
-
     def __init__(
         self,
         endpoint: str,
@@ -79,7 +73,6 @@ class WorkflowNodeReActAgent(ToolFilterMixin, ReActAgent):
 
 
 class WorkflowNodeAgentFactory:
-
     _agents: Dict[AgentType, Type[BaseAgent]] = {
         AgentType.CLASSIC: WorkflowNodeClassicAgent,
         AgentType.REACT: WorkflowNodeReActAgent,

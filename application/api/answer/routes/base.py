@@ -36,9 +36,7 @@ class BaseAnswerResource:
         self.default_model_id = get_default_model_id()
         self.conversation_service = ConversationService()
 
-    def validate_request(
-        self, data: Dict[str, Any], require_conversation_id: bool = False
-    ) -> Optional[Response]:
+    def validate_request(self, data: Dict[str, Any], require_conversation_id: bool = False) -> Optional[Response]:
         """Common request validation"""
         required_fields = ["question"]
         if require_conversation_id:
@@ -85,16 +83,12 @@ class BaseAnswerResource:
         agent = agents_collection.find_one({"key": api_key})
 
         if not agent:
-            return make_response(
-                jsonify({"success": False, "message": "Invalid API key."}), 401
-            )
+            return make_response(jsonify({"success": False, "message": "Invalid API key."}), 401)
         limited_token_mode_raw = agent.get("limited_token_mode", False)
         limited_request_mode_raw = agent.get("limited_request_mode", False)
 
         limited_token_mode = (
-            limited_token_mode_raw
-            if isinstance(limited_token_mode_raw, bool)
-            else limited_token_mode_raw == "True"
+            limited_token_mode_raw if isinstance(limited_token_mode_raw, bool) else limited_token_mode_raw == "True"
         )
         limited_request_mode = (
             limited_request_mode_raw
@@ -102,12 +96,8 @@ class BaseAnswerResource:
             else limited_request_mode_raw == "True"
         )
 
-        token_limit = int(
-            agent.get("token_limit", settings.DEFAULT_AGENT_LIMITS["token_limit"])
-        )
-        request_limit = int(
-            agent.get("request_limit", settings.DEFAULT_AGENT_LIMITS["request_limit"])
-        )
+        token_limit = int(agent.get("token_limit", settings.DEFAULT_AGENT_LIMITS["token_limit"]))
+        request_limit = int(agent.get("request_limit", settings.DEFAULT_AGENT_LIMITS["request_limit"]))
 
         token_usage_collection = self.db["token_usage"]
 
@@ -125,9 +115,7 @@ class BaseAnswerResource:
                 {
                     "$group": {
                         "_id": None,
-                        "total_tokens": {
-                            "$sum": {"$add": ["$prompt_tokens", "$generated_tokens"]}
-                        },
+                        "total_tokens": {"$sum": {"$add": ["$prompt_tokens", "$generated_tokens"]}},
                     }
                 },
             ]
@@ -141,14 +129,8 @@ class BaseAnswerResource:
             daily_request_usage = 0
         if not limited_token_mode and not limited_request_mode:
             return None
-        token_exceeded = (
-            limited_token_mode and token_limit > 0 and daily_token_usage >= token_limit
-        )
-        request_exceeded = (
-            limited_request_mode
-            and request_limit > 0
-            and daily_request_usage >= request_limit
-        )
+        token_exceeded = limited_token_mode and token_limit > 0 and daily_token_usage >= token_limit
+        request_exceeded = limited_request_mode and request_limit > 0 and daily_request_usage >= request_limit
 
         if token_exceeded or request_exceeded:
             return make_response(
@@ -223,14 +205,10 @@ class BaseAnswerResource:
                     for source in line["sources"]:
                         truncated_source = source.copy()
                         if "text" in truncated_source:
-                            truncated_source["text"] = (
-                                truncated_source["text"][:100].strip() + "..."
-                            )
+                            truncated_source["text"] = truncated_source["text"][:100].strip() + "..."
                         truncated_sources.append(truncated_source)
                     if truncated_sources:
-                        data = json.dumps(
-                            {"type": "source", "source": truncated_sources}
-                        )
+                        data = json.dumps({"type": "source", "source": truncated_sources})
                         yield f"data: {data}\n\n"
                 elif "tool_calls" in line:
                     tool_calls = line["tool_calls"]
@@ -244,7 +222,7 @@ class BaseAnswerResource:
                     if line.get("type") == "error":
                         sanitized_error = {
                             "type": "error",
-                            "error": sanitize_api_error(line.get("error", "An error occurred"))
+                            "error": sanitize_api_error(line.get("error", "An error occurred")),
                         }
                         data = json.dumps(sanitized_error)
                     else:
@@ -262,11 +240,7 @@ class BaseAnswerResource:
             if isNoneDoc:
                 for doc in source_log_docs:
                     doc["source"] = "None"
-            provider = (
-                get_provider_from_model_id(model_id)
-                if model_id
-                else settings.LLM_PROVIDER
-            )
+            provider = get_provider_from_model_id(model_id) if model_id else settings.LLM_PROVIDER
             system_api_key = get_api_key_for_provider(provider or settings.LLM_PROVIDER)
 
             llm = LLMCreator.create_llm(
@@ -301,16 +275,10 @@ class BaseAnswerResource:
                 compression_saved = getattr(agent, "compression_saved", False)
                 if conversation_id and compression_meta and not compression_saved:
                     try:
-                        self.conversation_service.update_compression_metadata(
-                            conversation_id, compression_meta
-                        )
-                        self.conversation_service.append_compression_message(
-                            conversation_id, compression_meta
-                        )
+                        self.conversation_service.update_compression_metadata(conversation_id, compression_meta)
+                        self.conversation_service.append_compression_message(conversation_id, compression_meta)
                         agent.compression_saved = True
-                        logger.info(
-                            f"Persisted compression metadata for conversation {conversation_id}"
-                        )
+                        logger.info(f"Persisted compression metadata for conversation {conversation_id}")
                     except Exception as e:
                         logger.error(
                             f"Failed to persist compression metadata: {str(e)}",
@@ -389,12 +357,8 @@ class BaseAnswerResource:
                     compression_saved = getattr(agent, "compression_saved", False)
                     if conversation_id and compression_meta and not compression_saved:
                         try:
-                            self.conversation_service.update_compression_metadata(
-                                conversation_id, compression_meta
-                            )
-                            self.conversation_service.append_compression_message(
-                                conversation_id, compression_meta
-                            )
+                            self.conversation_service.update_compression_metadata(conversation_id, compression_meta)
+                            self.conversation_service.append_compression_message(conversation_id, compression_meta)
                             agent.compression_saved = True
                             logger.info(
                                 f"Persisted compression metadata for conversation {conversation_id} (partial stream)"
@@ -405,9 +369,7 @@ class BaseAnswerResource:
                                 exc_info=True,
                             )
                 except Exception as e:
-                    logger.error(
-                        f"Error saving partial response: {str(e)}", exc_info=True
-                    )
+                    logger.error(f"Error saving partial response: {str(e)}", exc_info=True)
             raise
         except Exception as e:
             logger.error(f"Error in stream: {str(e)}", exc_info=True)

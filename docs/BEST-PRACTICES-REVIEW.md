@@ -2,7 +2,7 @@
 
 This is a quick review of the current GCP VM + GitHub Actions setup against common best practices. Most of the setup is conventional; the items below are where it diverges or could be improved.
 
-**Enabled in production:** [Secret Manager](SECRET-MANAGER-SETUP.md) (app secrets in `docsgpt-env`, fetched on deploy when `USE_SECRET_MANAGER=true`) and [Cloud Logging](CLOUD-LOGGING-SETUP.md) (Ops Agent on VM sends Docker container logs to Cloud Logging).
+**Enabled in production:** [Secret Manager](SECRET-MANAGER-SETUP.md) (app secrets in `docsgpt-env`, fetched on deploy when `USE_SECRET_MANAGER=true`) and [Cloud Logging](CLOUD-LOGGING-SETUP.md) (Ops Agent on VM sends Docker container logs to Cloud Logging). For the rationale behind these and other decisions (Canadian region, single VM, TLS, CI/CD), see [ARCHITECTURE-DECISIONS.md](ARCHITECTURE-DECISIONS.md).
 
 ---
 

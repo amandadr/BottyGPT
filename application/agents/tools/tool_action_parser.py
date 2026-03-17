@@ -23,9 +23,7 @@ class ToolActionParser:
 
             # If the tool name doesn't contain an underscore, it's likely a hallucinated tool
             if len(tool_parts) < 2:
-                logger.warning(
-                    f"Invalid tool name format: {call.name}. Expected format: action_name_tool_id"
-                )
+                logger.warning(f"Invalid tool name format: {call.name}. Expected format: action_name_tool_id")
                 return None, None, None
 
             tool_id = tool_parts[-1]
@@ -33,9 +31,7 @@ class ToolActionParser:
 
             # Validate that tool_id looks like a numerical ID
             if not tool_id.isdigit():
-                logger.warning(
-                    f"Tool ID '{tool_id}' is not numerical. This might be a hallucinated tool call."
-                )
+                logger.warning(f"Tool ID '{tool_id}' is not numerical. This might be a hallucinated tool call.")
 
         except (AttributeError, TypeError, json.JSONDecodeError) as e:
             logger.error(f"Error parsing OpenAI LLM call: {e}")
@@ -49,9 +45,7 @@ class ToolActionParser:
 
             # If the tool name doesn't contain an underscore, it's likely a hallucinated tool
             if len(tool_parts) < 2:
-                logger.warning(
-                    f"Invalid tool name format: {call.name}. Expected format: action_name_tool_id"
-                )
+                logger.warning(f"Invalid tool name format: {call.name}. Expected format: action_name_tool_id")
                 return None, None, None
 
             tool_id = tool_parts[-1]
@@ -59,9 +53,7 @@ class ToolActionParser:
 
             # Validate that tool_id looks like a numerical ID
             if not tool_id.isdigit():
-                logger.warning(
-                    f"Tool ID '{tool_id}' is not numerical. This might be a hallucinated tool call."
-                )
+                logger.warning(f"Tool ID '{tool_id}' is not numerical. This might be a hallucinated tool call.")
 
         except (AttributeError, TypeError) as e:
             logger.error(f"Error parsing Google LLM call: {e}")

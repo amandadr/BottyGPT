@@ -9,7 +9,6 @@ from application.parser.embedding_pipeline import (
 )
 
 
-
 def test_sanitize_content_removes_nulls():
     content = "This\x00is\x00a\x00test"
     result = sanitize_content(content)
@@ -22,7 +21,6 @@ def test_sanitize_content_empty_or_none():
     assert sanitize_content(None) is None
 
 
-
 def test_add_text_to_store_with_retry_success():
     store = MagicMock()
     doc = MagicMock()
@@ -31,28 +29,21 @@ def test_add_text_to_store_with_retry_success():
 
     add_text_to_store_with_retry(store, doc, "123")
 
-    store.add_texts.assert_called_once_with(
-        ["Test content"], metadatas=[{"source_id": "123"}]
-    )
+    store.add_texts.assert_called_once_with(["Test content"], metadatas=[{"source_id": "123"}])
 
 
 @pytest.fixture
 def mock_settings(monkeypatch):
     mock_settings = MagicMock()
-    monkeypatch.setattr(
-        "application.parser.embedding_pipeline.settings", mock_settings
-    )
+    monkeypatch.setattr("application.parser.embedding_pipeline.settings", mock_settings)
     return mock_settings
 
 
 @pytest.fixture
 def mock_vector_creator(monkeypatch):
     mock_creator = MagicMock()
-    monkeypatch.setattr(
-        "application.parser.embedding_pipeline.VectorCreator", mock_creator
-    )
+    monkeypatch.setattr("application.parser.embedding_pipeline.VectorCreator", mock_creator)
     return mock_creator
-
 
 
 def test_embed_and_store_documents_creates_folder(tmp_path, mock_settings, mock_vector_creator):
@@ -110,6 +101,7 @@ def test_embed_and_store_documents_partial_failure(
     def side_effect(*args, **kwargs):
         if "bad" in args[1].page_content:
             raise Exception("Embedding failed")
+
     mock_add_retry.side_effect = side_effect
 
     with caplog.at_level(logging.ERROR):
@@ -119,9 +111,7 @@ def test_embed_and_store_documents_partial_failure(
     mock_store.save_local.assert_called()
 
 
-def test_embed_and_store_documents_save_fails_raises_oserror(
-    tmp_path, mock_settings, mock_vector_creator
-):
+def test_embed_and_store_documents_save_fails_raises_oserror(tmp_path, mock_settings, mock_vector_creator):
     mock_settings.VECTOR_STORE = "faiss"
 
     docs = [MagicMock(page_content="good", metadata={})]
@@ -135,4 +125,3 @@ def test_embed_and_store_documents_save_fails_raises_oserror(
 
     with pytest.raises(OSError, match="Unable to save vector store"):
         embed_and_store_documents(docs, str(folder_name), source_id, task_status)
-

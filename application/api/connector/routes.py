@@ -7,13 +7,7 @@ from urllib.parse import urlencode
 
 
 from bson.objectid import ObjectId
-from flask import (
-    Blueprint,
-    current_app,
-    jsonify,
-    make_response,
-    request
-)
+from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_restx import fields, Namespace, Resource
 
 
@@ -50,13 +44,15 @@ def build_callback_redirect(params: dict) -> str:
     return f"{CALLBACK_STATUS_PATH}?{urlencode(params)}"
 
 
-
 @connectors_ns.route("/api/connectors/auth")
 class ConnectorAuth(Resource):
-    @api.doc(description="Get connector OAuth authorization URL", params={"provider": "Connector provider (e.g., google_drive)"})
+    @api.doc(
+        description="Get connector OAuth authorization URL",
+        params={"provider": "Connector provider (e.g., google_drive)"},
+    )
     def get(self):
         try:
-            provider = request.args.get('provider') or request.args.get('source')
+            provider = request.args.get("provider") or request.args.get("source")
             if not provider:
                 return make_response(jsonify({"success": False, "error": "Missing provider"}), 400)
 
@@ -66,28 +62,20 @@ class ConnectorAuth(Resource):
             decoded_token = request.decoded_token
             if not decoded_token:
                 return make_response(jsonify({"success": False, "error": "Unauthorized"}), 401)
-            user_id = decoded_token.get('sub')
+            user_id = decoded_token.get("sub")
 
             now = datetime.datetime.now(datetime.timezone.utc)
-            result = sessions_collection.insert_one({
-                "provider": provider,
-                "user": user_id,
-                "status": "pending",
-                "created_at": now
-            })
-            state_dict = {
-                "provider": provider,
-                "object_id": str(result.inserted_id)
-            }
+            result = sessions_collection.insert_one(
+                {"provider": provider, "user": user_id, "status": "pending", "created_at": now}
+            )
+            state_dict = {"provider": provider, "object_id": str(result.inserted_id)}
             state = base64.urlsafe_b64encode(json.dumps(state_dict).encode()).decode()
 
             auth = ConnectorCreator.create_auth(provider)
             authorization_url = auth.get_authorization_url(state=state)
-            return make_response(jsonify({
-                "success": True,
-                "authorization_url": authorization_url,
-                "state": state
-            }), 200)
+            return make_response(
+                jsonify({"success": True, "authorization_url": authorization_url, "state": state}), 200
+            )
         except Exception as e:
             current_app.logger.error(f"Error generating connector auth URL: {e}", exc_info=True)
             return make_response(jsonify({"success": False, "error": "Failed to generate authorization URL"}), 500)
@@ -102,9 +90,9 @@ class ConnectorsCallback(Resource):
             from application.parser.connectors.connector_creator import ConnectorCreator
             from flask import request, redirect
 
-            authorization_code = request.args.get('code')
-            state = request.args.get('state')
-            error = request.args.get('error')
+            authorization_code = request.args.get("code")
+            state = request.args.get("state")
+            error = request.args.get("error")
 
             state_dict = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
             provider = state_dict.get("provider")
@@ -112,32 +100,41 @@ class ConnectorsCallback(Resource):
 
             # Validate provider
             if not provider or not isinstance(provider, str) or not ConnectorCreator.is_supported(provider):
-                return redirect(build_callback_redirect({
-                    "status": "error",
-                    "message": "Invalid provider"
-                }))
+                return redirect(build_callback_redirect({"status": "error", "message": "Invalid provider"}))
 
             if error:
                 if error == "access_denied":
-                    return redirect(build_callback_redirect({
-                        "status": "cancelled",
-                        "message": "Authentication was cancelled. You can try again if you'd like to connect your account.",
-                        "provider": provider
-                    }))
+                    return redirect(
+                        build_callback_redirect(
+                            {
+                                "status": "cancelled",
+                                "message": "Authentication was cancelled. You can try again if you'd like to connect your account.",
+                                "provider": provider,
+                            }
+                        )
+                    )
                 else:
                     current_app.logger.warning(f"OAuth error in callback: {error}")
-                    return redirect(build_callback_redirect({
-                        "status": "error",
-                        "message": "Authentication failed. Please try again and make sure to grant all requested permissions.",
-                        "provider": provider
-                    }))
+                    return redirect(
+                        build_callback_redirect(
+                            {
+                                "status": "error",
+                                "message": "Authentication failed. Please try again and make sure to grant all requested permissions.",
+                                "provider": provider,
+                            }
+                        )
+                    )
 
             if not authorization_code:
-                return redirect(build_callback_redirect({
-                    "status": "error",
-                    "message": "Authentication failed. Please try again and make sure to grant all requested permissions.",
-                    "provider": provider
-                }))
+                return redirect(
+                    build_callback_redirect(
+                        {
+                            "status": "error",
+                            "message": "Authentication failed. Please try again and make sure to grant all requested permissions.",
+                            "provider": provider,
+                        }
+                    )
+                )
 
             try:
                 auth = ConnectorCreator.create_auth(provider)
@@ -150,13 +147,13 @@ class ConnectorsCallback(Resource):
                         credentials = auth.create_credentials_from_token_info(token_info)
                         service = auth.build_drive_service(credentials)
                         user_info = service.about().get(fields="user").execute()
-                        user_email = user_info.get('user', {}).get('emailAddress', 'Connected User')
+                        user_email = user_info.get("user", {}).get("emailAddress", "Connected User")
                     else:
-                        user_email = token_info.get('user_info', {}).get('email', 'Connected User')
+                        user_email = token_info.get("user_info", {}).get("email", "Connected User")
 
                 except Exception as e:
                     current_app.logger.warning(f"Could not get user info: {e}")
-                    user_email = 'Connected User'
+                    user_email = "Connected User"
 
                 sanitized_token_info = auth.sanitize_token_info(token_info)
 
@@ -167,105 +164,129 @@ class ConnectorsCallback(Resource):
                             "session_token": session_token,
                             "token_info": sanitized_token_info,
                             "user_email": user_email,
-                            "status": "authorized"
+                            "status": "authorized",
                         }
-                    }
+                    },
                 )
 
                 # Redirect to success page with session token and user email
-                return redirect(build_callback_redirect({
-                    "status": "success",
-                    "message": "Authentication successful",
-                    "provider": provider,
-                    "session_token": session_token,
-                    "user_email": user_email
-                }))
+                return redirect(
+                    build_callback_redirect(
+                        {
+                            "status": "success",
+                            "message": "Authentication successful",
+                            "provider": provider,
+                            "session_token": session_token,
+                            "user_email": user_email,
+                        }
+                    )
+                )
 
             except Exception as e:
                 current_app.logger.error(f"Error exchanging code for tokens: {str(e)}", exc_info=True)
-                return redirect(build_callback_redirect({
-                    "status": "error",
-                    "message": "Authentication failed. Please try again and make sure to grant all requested permissions.",
-                    "provider": provider
-                }))
+                return redirect(
+                    build_callback_redirect(
+                        {
+                            "status": "error",
+                            "message": "Authentication failed. Please try again and make sure to grant all requested permissions.",
+                            "provider": provider,
+                        }
+                    )
+                )
 
         except Exception as e:
             current_app.logger.error(f"Error handling connector callback: {e}")
-            return redirect(build_callback_redirect({
-                "status": "error",
-                "message": "Authentication failed. Please try again and make sure to grant all requested permissions."
-            }))
+            return redirect(
+                build_callback_redirect(
+                    {
+                        "status": "error",
+                        "message": "Authentication failed. Please try again and make sure to grant all requested permissions.",
+                    }
+                )
+            )
 
 
 @connectors_ns.route("/api/connectors/files")
 class ConnectorFiles(Resource):
-    @api.expect(api.model("ConnectorFilesModel", {
-        "provider": fields.String(required=True),
-        "session_token": fields.String(required=True),
-        "folder_id": fields.String(required=False),
-        "limit": fields.Integer(required=False),
-        "page_token": fields.String(required=False),
-        "search_query": fields.String(required=False),
-    }))
+    @api.expect(
+        api.model(
+            "ConnectorFilesModel",
+            {
+                "provider": fields.String(required=True),
+                "session_token": fields.String(required=True),
+                "folder_id": fields.String(required=False),
+                "limit": fields.Integer(required=False),
+                "page_token": fields.String(required=False),
+                "search_query": fields.String(required=False),
+            },
+        )
+    )
     @api.doc(description="List files from a connector provider (supports pagination and search)")
     def post(self):
         try:
             data = request.get_json()
-            provider = data.get('provider')
-            session_token = data.get('session_token')
-            limit = data.get('limit', 10)
+            provider = data.get("provider")
+            session_token = data.get("session_token")
+            limit = data.get("limit", 10)
 
             if not provider or not session_token:
-                return make_response(jsonify({"success": False, "error": "provider and session_token are required"}), 400)
+                return make_response(
+                    jsonify({"success": False, "error": "provider and session_token are required"}), 400
+                )
 
             decoded_token = request.decoded_token
             if not decoded_token:
                 return make_response(jsonify({"success": False, "error": "Unauthorized"}), 401)
-            user = decoded_token.get('sub')
+            user = decoded_token.get("sub")
             session = sessions_collection.find_one({"session_token": session_token, "user": user})
             if not session:
                 return make_response(jsonify({"success": False, "error": "Invalid or unauthorized session"}), 401)
 
             loader = ConnectorCreator.create_connector(provider, session_token)
 
-            generic_keys = {'provider', 'session_token'}
-            input_config = {
-                k: v for k, v in data.items() if k not in generic_keys
-            }
-            input_config['list_only'] = True
-                
+            generic_keys = {"provider", "session_token"}
+            input_config = {k: v for k, v in data.items() if k not in generic_keys}
+            input_config["list_only"] = True
+
             documents = loader.load_data(input_config)
 
             files = []
             for doc in documents[:limit]:
                 metadata = doc.extra_info
-                modified_time = metadata.get('modified_time')
+                modified_time = metadata.get("modified_time")
                 if modified_time:
-                    date_part = modified_time.split('T')[0]
-                    time_part = modified_time.split('T')[1].split('.')[0].split('Z')[0]
+                    date_part = modified_time.split("T")[0]
+                    time_part = modified_time.split("T")[1].split(".")[0].split("Z")[0]
                     formatted_time = f"{date_part} {time_part}"
                 else:
                     formatted_time = None
 
-                files.append({
-                    'id': doc.doc_id,
-                    'name': metadata.get('file_name', 'Unknown File'),
-                    'type': metadata.get('mime_type', 'unknown'),
-                    'size': metadata.get('size', None),
-                    'modifiedTime': formatted_time,
-                    'isFolder': metadata.get('is_folder', False)
-                })
+                files.append(
+                    {
+                        "id": doc.doc_id,
+                        "name": metadata.get("file_name", "Unknown File"),
+                        "type": metadata.get("mime_type", "unknown"),
+                        "size": metadata.get("size", None),
+                        "modifiedTime": formatted_time,
+                        "isFolder": metadata.get("is_folder", False),
+                    }
+                )
 
-            next_token = getattr(loader, 'next_page_token', None)
+            next_token = getattr(loader, "next_page_token", None)
             has_more = bool(next_token)
 
-            return make_response(jsonify({
-                "success": True, 
-                "files": files, 
-                "total": len(files), 
-                "next_page_token": next_token, 
-                "has_more": has_more
-            }), 200)
+            return make_response(
+                jsonify(
+                    {
+                        "success": True,
+                        "files": files,
+                        "total": len(files),
+                        "next_page_token": next_token,
+                        "has_more": has_more,
+                    }
+                ),
+                200,
+            )
         except Exception as e:
             current_app.logger.error(f"Error loading connector files: {e}", exc_info=True)
             return make_response(jsonify({"success": False, "error": "Failed to load files"}), 500)
@@ -273,20 +294,27 @@ class ConnectorFiles(Resource):
 
 @connectors_ns.route("/api/connectors/validate-session")
 class ConnectorValidateSession(Resource):
-    @api.expect(api.model("ConnectorValidateSessionModel", {"provider": fields.String(required=True), "session_token": fields.String(required=True)}))
+    @api.expect(
+        api.model(
+            "ConnectorValidateSessionModel",
+            {"provider": fields.String(required=True), "session_token": fields.String(required=True)},
+        )
+    )
     @api.doc(description="Validate connector session token and return user info and access token")
     def post(self):
         try:
             data = request.get_json()
-            provider = data.get('provider')
-            session_token = data.get('session_token')
+            provider = data.get("provider")
+            session_token = data.get("session_token")
             if not provider or not session_token:
-                return make_response(jsonify({"success": False, "error": "provider and session_token are required"}), 400)
+                return make_response(
+                    jsonify({"success": False, "error": "provider and session_token are required"}), 400
+                )
 
             decoded_token = request.decoded_token
             if not decoded_token:
                 return make_response(jsonify({"success": False, "error": "Unauthorized"}), 401)
-            user = decoded_token.get('sub')
+            user = decoded_token.get("sub")
 
             session = sessions_collection.find_one({"session_token": session_token, "user": user})
             if not session or "token_info" not in session:
@@ -296,25 +324,25 @@ class ConnectorValidateSession(Resource):
             auth = ConnectorCreator.create_auth(provider)
             is_expired = auth.is_token_expired(token_info)
 
-            if is_expired and token_info.get('refresh_token'):
+            if is_expired and token_info.get("refresh_token"):
                 try:
-                    refreshed_token_info = auth.refresh_access_token(token_info.get('refresh_token'))
+                    refreshed_token_info = auth.refresh_access_token(token_info.get("refresh_token"))
                     sanitized_token_info = auth.sanitize_token_info(refreshed_token_info)
                     sessions_collection.update_one(
-                        {"session_token": session_token},
-                        {"$set": {"token_info": sanitized_token_info}}
+                        {"session_token": session_token}, {"$set": {"token_info": sanitized_token_info}}
                     )
                     token_info = sanitized_token_info
                     is_expired = False
                 except Exception as refresh_error:
                     current_app.logger.error(f"Failed to refresh token: {refresh_error}")
-            
+
             if is_expired:
-                return make_response(jsonify({
-                    "success": False,
-                    "expired": True,
-                    "error": "Session token has expired. Please reconnect."
-                }), 401)
+                return make_response(
+                    jsonify(
+                        {"success": False, "expired": True, "error": "Session token has expired. Please reconnect."}
+                    ),
+                    401,
+                )
 
             _base_fields = {"access_token", "refresh_token", "token_uri", "expiry"}
             provider_extras = {k: v for k, v in token_info.items() if k not in _base_fields}
@@ -322,8 +350,8 @@ class ConnectorValidateSession(Resource):
             response_data = {
                 "success": True,
                 "expired": False,
-                "user_email": session.get('user_email', 'Connected User'),
-                "access_token": token_info.get('access_token'),
+                "user_email": session.get("user_email", "Connected User"),
+                "access_token": token_info.get("access_token"),
                 **provider_extras,
             }
 
@@ -335,20 +363,24 @@ class ConnectorValidateSession(Resource):
 
 @connectors_ns.route("/api/connectors/disconnect")
 class ConnectorDisconnect(Resource):
-    @api.expect(api.model("ConnectorDisconnectModel", {"provider": fields.String(required=True), "session_token": fields.String(required=False)}))
+    @api.expect(
+        api.model(
+            "ConnectorDisconnectModel",
+            {"provider": fields.String(required=True), "session_token": fields.String(required=False)},
+        )
+    )
     @api.doc(description="Disconnect a connector session")
     def post(self):
         try:
             data = request.get_json()
-            provider = data.get('provider')
-            session_token = data.get('session_token')
+            provider = data.get("provider")
+            session_token = data.get("session_token")
             if not provider:
                 return make_response(jsonify({"success": False, "error": "provider is required"}), 400)
 
-
             if session_token:
                 sessions_collection.delete_one({"session_token": session_token})
-            
+
             return make_response(jsonify({"success": True}), 200)
         except Exception as e:
             current_app.logger.error(f"Error disconnecting connector session: {e}", exc_info=True)
@@ -362,7 +394,7 @@ class ConnectorSync(Resource):
             "ConnectorSyncModel",
             {
                 "source_id": fields.String(required=True, description="Source ID to sync"),
-                "session_token": fields.String(required=True, description="Authentication token")
+                "session_token": fields.String(required=True, description="Authentication token"),
             },
         )
     )
@@ -374,94 +406,59 @@ class ConnectorSync(Resource):
 
         try:
             data = request.get_json()
-            source_id = data.get('source_id')
-            session_token = data.get('session_token')
+            source_id = data.get("source_id")
+            session_token = data.get("session_token")
 
             if not all([source_id, session_token]):
                 return make_response(
-                    jsonify({
-                        "success": False,
-                        "error": "source_id and session_token are required"
-                    }), 
-                    400
+                    jsonify({"success": False, "error": "source_id and session_token are required"}), 400
                 )
             source = sources_collection.find_one({"_id": ObjectId(source_id)})
             if not source:
-                return make_response(
-                    jsonify({
-                        "success": False,
-                        "error": "Source not found"
-                    }), 
-                    404
-                )
+                return make_response(jsonify({"success": False, "error": "Source not found"}), 404)
 
-            if source.get('user') != decoded_token.get('sub'):
-                return make_response(
-                    jsonify({
-                        "success": False,
-                        "error": "Unauthorized access to source"
-                    }), 
-                    403
-                )
+            if source.get("user") != decoded_token.get("sub"):
+                return make_response(jsonify({"success": False, "error": "Unauthorized access to source"}), 403)
 
             remote_data = {}
             try:
-                if source.get('remote_data'):
-                    remote_data = json.loads(source.get('remote_data'))
+                if source.get("remote_data"):
+                    remote_data = json.loads(source.get("remote_data"))
             except json.JSONDecodeError:
                 current_app.logger.error(f"Invalid remote_data format for source {source_id}")
                 remote_data = {}
 
-            source_type = remote_data.get('provider')
+            source_type = remote_data.get("provider")
             if not source_type:
                 return make_response(
-                    jsonify({
-                        "success": False,
-                        "error": "Source provider not found in remote_data"
-                    }), 
-                    400
+                    jsonify({"success": False, "error": "Source provider not found in remote_data"}), 400
                 )
 
             # Extract configuration from remote_data
-            file_ids = remote_data.get('file_ids', [])
-            folder_ids = remote_data.get('folder_ids', [])
-            recursive = remote_data.get('recursive', True)
+            file_ids = remote_data.get("file_ids", [])
+            folder_ids = remote_data.get("folder_ids", [])
+            recursive = remote_data.get("recursive", True)
 
             # Start the sync task
             task = ingest_connector_task.delay(
-                job_name=source.get('name'),
-                user=decoded_token.get('sub'),
+                job_name=source.get("name"),
+                user=decoded_token.get("sub"),
                 source_type=source_type,
                 session_token=session_token,
                 file_ids=file_ids,
                 folder_ids=folder_ids,
                 recursive=recursive,
-                retriever=source.get('retriever', 'classic'),
+                retriever=source.get("retriever", "classic"),
                 operation_mode="sync",
                 doc_id=source_id,
-                sync_frequency=source.get('sync_frequency', 'never')
+                sync_frequency=source.get("sync_frequency", "never"),
             )
 
-            return make_response(
-                jsonify({
-                    "success": True,
-                    "task_id": task.id
-                }), 
-                200
-            )
+            return make_response(jsonify({"success": True, "task_id": task.id}), 200)
 
         except Exception as err:
-            current_app.logger.error(
-                f"Error syncing connector source: {err}",
-                exc_info=True
-            )
-            return make_response(
-                jsonify({
-                    "success": False,
-                    "error": "Failed to sync connector source"
-                }),
-                400
-            )
+            current_app.logger.error(f"Error syncing connector source: {err}", exc_info=True)
+            return make_response(jsonify({"success": False, "error": "Failed to sync connector source"}), 400)
 
 
 @connectors_ns.route("/api/connectors/callback-status")
@@ -471,20 +468,20 @@ class ConnectorCallbackStatus(Resource):
         """Return HTML page with connector authentication status"""
         try:
             # Validate and sanitize status to a known value
-            status_raw = request.args.get('status', 'error')
-            status = status_raw if status_raw in ('success', 'error', 'cancelled') else 'error'
+            status_raw = request.args.get("status", "error")
+            status = status_raw if status_raw in ("success", "error", "cancelled") else "error"
 
             # Escape all user-controlled values for HTML context
-            message = html.escape(request.args.get('message', ''))
-            provider_raw = request.args.get('provider', 'connector')
-            provider = html.escape(provider_raw.replace('_', ' ').title())
-            session_token = request.args.get('session_token', '')
-            user_email = html.escape(request.args.get('user_email', ''))
+            message = html.escape(request.args.get("message", ""))
+            provider_raw = request.args.get("provider", "connector")
+            provider = html.escape(provider_raw.replace("_", " ").title())
+            session_token = request.args.get("session_token", "")
+            user_email = html.escape(request.args.get("user_email", ""))
 
             def safe_js_string(value: str) -> str:
                 """Safely encode a string for embedding in inline JavaScript."""
                 js_encoded = json.dumps(value)
-                return js_encoded.replace('</', '<\\/').replace('<!--', '<\\!--')
+                return js_encoded.replace("</", "<\\/").replace("<!--", "<\\!--")
 
             js_status = safe_js_string(status)
             js_session_token = safe_js_string(session_token)
@@ -529,17 +526,15 @@ class ConnectorCallbackStatus(Resource):
                     <h2>{provider} Authentication</h2>
                     <div class="{status}">
                         <p>{message}</p>
-                        {f'<p>Connected as: {user_email}</p>' if status == 'success' else ''}
+                        {f"<p>Connected as: {user_email}</p>" if status == "success" else ""}
                     </div>
-                    <p><small>You can close this window. {f"Your {provider} is now connected and ready to use." if status == 'success' else "Feel free to close this window."}</small></p>
+                    <p><small>You can close this window. {f"Your {provider} is now connected and ready to use." if status == "success" else "Feel free to close this window."}</small></p>
                 </div>
             </body>
             </html>
             """
 
-            return make_response(html_content, 200, {'Content-Type': 'text/html'})
+            return make_response(html_content, 200, {"Content-Type": "text/html"})
         except Exception as e:
             current_app.logger.error(f"Error rendering callback status page: {e}")
-            return make_response("Authentication error occurred", 500, {'Content-Type': 'text/html'})
-
-
+            return make_response("Authentication error occurred", 500, {"Content-Type": "text/html"})

@@ -59,7 +59,6 @@ class LineIterator:
 
 
 class SagemakerAPILLM(BaseLLM):
-
     def __init__(self, api_key=None, user_api_key=None, *args, **kwargs):
         import boto3
 

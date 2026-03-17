@@ -5,6 +5,7 @@ DOCSGPT_API_KEY = "sk-docsgpt-public"
 DOCSGPT_BASE_URL = "https://oai.arc53.com"
 DOCSGPT_MODEL = "docsgpt"
 
+
 class DocsGPTAPILLM(OpenAILLM):
     def __init__(self, api_key=None, user_api_key=None, base_url=None, *args, **kwargs):
         super().__init__(

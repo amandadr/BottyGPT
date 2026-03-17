@@ -14,15 +14,14 @@ _redis_instance = None
 _redis_creation_failed = False
 _instance_lock = Lock()
 
+
 def get_redis_instance():
     global _redis_instance, _redis_creation_failed
     if _redis_instance is None and not _redis_creation_failed:
         with _instance_lock:
             if _redis_instance is None and not _redis_creation_failed:
                 try:
-                    _redis_instance = redis.Redis.from_url(
-                        settings.CACHE_REDIS_URL, socket_connect_timeout=2
-                    )
+                    _redis_instance = redis.Redis.from_url(settings.CACHE_REDIS_URL, socket_connect_timeout=2)
                 except ValueError as e:
                     logger.error(f"Invalid Redis URL: {e}")
                     _redis_creation_failed = True  # Stop future attempts
@@ -47,7 +46,7 @@ def gen_cache(func):
     def wrapper(self, model, messages, stream, tools=None, *args, **kwargs):
         if tools is not None:
             return func(self, model, messages, stream, tools, *args, **kwargs)
-        
+
         try:
             cache_key = gen_cache_key(messages, model, tools)
         except ValueError as e:
@@ -80,7 +79,7 @@ def stream_cache(func):
         if tools is not None:
             yield from func(self, model, messages, stream, tools, *args, **kwargs)
             return
-        
+
         try:
             cache_key = gen_cache_key(messages, model, tools)
         except ValueError as e:

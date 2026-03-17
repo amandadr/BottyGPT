@@ -21,9 +21,7 @@ class CompressionThresholdChecker:
             threshold_percentage: Percentage of context to use as threshold
                                  (defaults to settings.COMPRESSION_THRESHOLD_PERCENTAGE)
         """
-        self.threshold_percentage = (
-            threshold_percentage or settings.COMPRESSION_THRESHOLD_PERCENTAGE
-        )
+        self.threshold_percentage = threshold_percentage or settings.COMPRESSION_THRESHOLD_PERCENTAGE
 
     def should_compress(
         self,
@@ -92,7 +90,7 @@ class CompressionThresholdChecker:
             if current_tokens >= threshold:
                 logger.warning(
                     f"Message context limit approaching: {current_tokens}/{context_limit} tokens "
-                    f"({(current_tokens/context_limit)*100:.1f}%)"
+                    f"({(current_tokens / context_limit) * 100:.1f}%)"
                 )
                 return True
 

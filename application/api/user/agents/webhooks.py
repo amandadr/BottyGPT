@@ -12,9 +12,7 @@ from application.api.user.tasks import process_agent_webhook
 from application.core.settings import settings
 
 
-agents_webhooks_ns = Namespace(
-    "agents", description="Agent management operations", path="/api"
-)
+agents_webhooks_ns = Namespace("agents", description="Agent management operations", path="/api")
 
 
 @agents_webhooks_ns.route("/agent_webhook")
@@ -30,17 +28,11 @@ class AgentWebhook(Resource):
         user = decoded_token.get("sub")
         agent_id = request.args.get("id")
         if not agent_id:
-            return make_response(
-                jsonify({"success": False, "message": "ID is required"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "ID is required"}), 400)
         try:
-            agent = agents_collection.find_one(
-                {"_id": ObjectId(agent_id), "user": user}
-            )
+            agent = agents_collection.find_one({"_id": ObjectId(agent_id), "user": user})
             if not agent:
-                return make_response(
-                    jsonify({"success": False, "message": "Agent not found"}), 404
-                )
+                return make_response(jsonify({"success": False, "message": "Agent not found"}), 404)
             webhook_token = agent.get("incoming_webhook_token")
             if not webhook_token:
                 webhook_token = secrets.token_urlsafe(32)
@@ -51,16 +43,12 @@ class AgentWebhook(Resource):
             base_url = settings.API_URL.rstrip("/")
             full_webhook_url = f"{base_url}/api/webhooks/agents/{webhook_token}"
         except Exception as err:
-            current_app.logger.error(
-                f"Error generating webhook URL: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error generating webhook URL: {err}", exc_info=True)
             return make_response(
                 jsonify({"success": False, "message": "Error generating webhook URL"}),
                 400,
             )
-        return make_response(
-            jsonify({"success": True, "webhook_url": full_webhook_url}), 200
-        )
+        return make_response(jsonify({"success": True, "webhook_url": full_webhook_url}), 200)
 
 
 @agents_webhooks_ns.route("/webhooks/agents/<string:webhook_token>")
@@ -81,18 +69,14 @@ class AgentWebhookListener(Resource):
                 agent_id=agent_id_str,
                 payload=payload,
             )
-            current_app.logger.info(
-                f"Task {task.id} enqueued for agent {agent_id_str} ({source_method})."
-            )
+            current_app.logger.info(f"Task {task.id} enqueued for agent {agent_id_str} ({source_method}).")
             return make_response(jsonify({"success": True, "task_id": task.id}), 200)
         except Exception as err:
             current_app.logger.error(
                 f"Error enqueuing webhook task ({source_method}) for agent {agent_id_str}: {err}",
                 exc_info=True,
             )
-            return make_response(
-                jsonify({"success": False, "message": "Error processing webhook"}), 500
-            )
+            return make_response(jsonify({"success": False, "message": "Error processing webhook"}), 500)
 
     @api.doc(
         description="Webhook listener for agent events (POST). Expects JSON payload, which is used to trigger processing.",

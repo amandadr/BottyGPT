@@ -47,10 +47,7 @@ class FakeCollection:
     def find(self, query, projection=None):
         user_id = query.get("user_id")
         tool_id = query.get("tool_id")
-        filtered = [
-            doc for (uid, tid, _), doc in self.docs.items()
-            if uid == user_id and tid == tool_id
-        ]
+        filtered = [doc for (uid, tid, _), doc in self.docs.items() if uid == user_id and tid == tool_id]
         return FakeCursor(filtered)
 
     def update_one(self, query, update, upsert=False):
@@ -91,6 +88,7 @@ def todo_tool(monkeypatch) -> TodoListTool:
     """Provides a TodoListTool with a fake MongoDB backend."""
     # Reset the MongoDB client cache to ensure our mock is used
     from application.core.mongo_db import MongoDB
+
     MongoDB._client = None
 
     fake_collection = FakeCollection()
@@ -164,6 +162,7 @@ def test_isolation_and_default_tool_id(monkeypatch):
     """Ensure todos are isolated by tool_id and user_id."""
     # Reset the MongoDB client cache to ensure our mock is used
     from application.core.mongo_db import MongoDB
+
     MongoDB._client = None
 
     fake_collection = FakeCollection()

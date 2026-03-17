@@ -28,14 +28,15 @@ import requests
 
 class Colors:
     """ANSI color codes for terminal output"""
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
+
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
 
 
 def generate_default_token() -> tuple[Optional[str], Optional[str]]:
@@ -71,12 +72,12 @@ def generate_default_token() -> tuple[Optional[str], Optional[str]]:
 
 class DocsGPTTester:
     def __init__(self, base_url: str, token: Optional[str] = None, token_source: str = "provided"):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.token = token
         self.token_source = token_source
         self.headers = {}
         if token:
-            self.headers['Authorization'] = f'Bearer {token}'
+            self.headers["Authorization"] = f"Bearer {token}"
         self.agent_id = None
         self.test_results = []
 
@@ -122,13 +123,7 @@ class DocsGPTTester:
             self.print_info(f"POST {endpoint}")
             self.print_info(f"Payload: {json.dumps(payload, indent=2)}")
 
-            response = requests.post(
-                endpoint,
-                json=payload,
-                headers=self.headers,
-                stream=True,
-                timeout=30
-            )
+            response = requests.post(endpoint, json=payload, headers=self.headers, stream=True, timeout=30)
 
             self.print_info(f"Status Code: {response.status_code}")
 
@@ -145,20 +140,20 @@ class DocsGPTTester:
 
             for line in response.iter_lines():
                 if line:
-                    line = line.decode('utf-8')
-                    if line.startswith('data: '):
+                    line = line.decode("utf-8")
+                    if line.startswith("data: "):
                         data_str = line[6:]  # Remove 'data: ' prefix
                         try:
                             data = json.loads(data_str)
                             events.append(data)
 
                             # Handle different event types
-                            if data.get('type') in ['stream', 'answer']:
+                            if data.get("type") in ["stream", "answer"]:
                                 # Both 'stream' and 'answer' types contain response text
-                                full_response += data.get('message', '') or data.get('answer', '')
-                            elif data.get('type') == 'id':
-                                conversation_id = data.get('id')
-                            elif data.get('type') == 'end':
+                                full_response += data.get("message", "") or data.get("answer", "")
+                            elif data.get("type") == "id":
+                                conversation_id = data.get("id")
+                            elif data.get("type") == "end":
                                 break
                         except json.JSONDecodeError:
                             pass
@@ -205,12 +200,7 @@ class DocsGPTTester:
             self.print_info(f"POST {endpoint}")
             self.print_info(f"Payload: {json.dumps(payload, indent=2)}")
 
-            response = requests.post(
-                endpoint,
-                json=payload,
-                headers=self.headers,
-                timeout=30
-            )
+            response = requests.post(endpoint, json=payload, headers=self.headers, timeout=30)
 
             self.print_info(f"Status Code: {response.status_code}")
 
@@ -224,16 +214,16 @@ class DocsGPTTester:
 
             self.print_info(f"Response keys: {list(result.keys())}")
 
-            if 'answer' in result:
-                answer = result['answer']
+            if "answer" in result:
+                answer = result["answer"]
                 self.print_success(f"Answer received: {answer[:100]}...")
             else:
                 self.print_warning("No 'answer' field in response")
 
-            if 'conversation_id' in result:
+            if "conversation_id" in result:
                 self.print_success(f"Conversation ID: {result['conversation_id']}")
 
-            if 'sources' in result:
+            if "sources" in result:
                 self.print_info(f"Sources: {len(result['sources'])} items")
 
             self.test_results.append((test_name, True, "Success"))
@@ -297,27 +287,19 @@ DocsGPT provides:
             self.print_info("Uploading test documentation...")
 
             # Create a file-like object
-            files = {
-                'file': ('test_docs.txt', test_content.encode(), 'text/plain')
-            }
+            files = {"file": ("test_docs.txt", test_content.encode(), "text/plain")}
             data = {
-                'user': 'test_user',
-                'name': f'Test Docs {int(time.time())}',
+                "user": "test_user",
+                "name": f"Test Docs {int(time.time())}",
             }
 
-            response = requests.post(
-                endpoint,
-                files=files,
-                data=data,
-                headers=self.headers,
-                timeout=30
-            )
+            response = requests.post(endpoint, files=files, data=data, headers=self.headers, timeout=30)
 
             self.print_info(f"Status Code: {response.status_code}")
 
             if response.status_code == 200:
                 result = response.json()
-                task_id = result.get('task_id')
+                task_id = result.get("task_id")
 
                 if task_id:
                     self.print_success(f"Upload task started: {task_id}")
@@ -373,18 +355,13 @@ DocsGPT provides:
             self.print_info(f"POST {endpoint}")
             self.print_info("Crawling: https://docs.docsgpt.cloud/")
 
-            response = requests.post(
-                endpoint,
-                data=payload,
-                headers=self.headers,
-                timeout=30
-            )
+            response = requests.post(endpoint, data=payload, headers=self.headers, timeout=30)
 
             self.print_info(f"Status Code: {response.status_code}")
 
             if response.status_code == 200:
                 result = response.json()
-                task_id = result.get('task_id')
+                task_id = result.get("task_id")
 
                 if task_id:
                     self.print_success(f"Crawler task started: {task_id}")
@@ -420,31 +397,22 @@ DocsGPT provides:
         endpoint = f"{self.base_url}/api/task_status"
 
         try:
-            response = requests.get(
-                endpoint,
-                params={"task_id": task_id},
-                headers=self.headers,
-                timeout=10
-            )
+            response = requests.get(endpoint, params={"task_id": task_id}, headers=self.headers, timeout=10)
 
             if response.status_code == 200:
                 result = response.json()
-                if result.get('status') == 'SUCCESS':
+                if result.get("status") == "SUCCESS":
                     # Task completed, now find the source
                     # Query sources collection to find the latest source
-                    sources_response = requests.get(
-                        f"{self.base_url}/api/sources",
-                        headers=self.headers,
-                        timeout=10
-                    )
+                    sources_response = requests.get(f"{self.base_url}/api/sources", headers=self.headers, timeout=10)
                     if sources_response.status_code == 200:
                         sources = sources_response.json()
                         # Filter out the "Default" source and get user sources only
-                        user_sources = [s for s in sources if s.get('date') != 'default']
+                        user_sources = [s for s in sources if s.get("date") != "default"]
                         if user_sources and len(user_sources) > 0:
                             # Get the most recent source (first one, as they're sorted by date desc)
                             latest_source = user_sources[0]
-                            return latest_source.get('id')
+                            return latest_source.get("id")
             return None
         except Exception as e:
             self.print_error(f"Error getting source ID: {str(e)}")
@@ -515,19 +483,14 @@ DocsGPT provides:
             self.print_info(f"POST {endpoint}")
             self.print_info(f"Payload: {json.dumps(payload, indent=2)}")
 
-            response = requests.post(
-                endpoint,
-                json=payload,
-                headers=self.headers,
-                timeout=10
-            )
+            response = requests.post(endpoint, json=payload, headers=self.headers, timeout=10)
 
             self.print_info(f"Status Code: {response.status_code}")
 
             if response.status_code in [200, 201]:  # Accept both 200 OK and 201 Created
                 result = response.json()
-                agent_id = result.get('id')
-                api_key = result.get('key', '')
+                agent_id = result.get("id")
+                api_key = result.get("key", "")
 
                 if agent_id:
                     self.agent_id = agent_id
@@ -592,13 +555,7 @@ DocsGPT provides:
             self.print_info(f"Using API key: {api_key[:20]}...")
 
             if endpoint_type == "stream":
-                response = requests.post(
-                    endpoint,
-                    json=payload,
-                    headers=self.headers,
-                    stream=True,
-                    timeout=30
-                )
+                response = requests.post(endpoint, json=payload, headers=self.headers, stream=True, timeout=30)
 
                 self.print_info(f"Status Code: {response.status_code}")
 
@@ -614,16 +571,16 @@ DocsGPT provides:
 
                 for line in response.iter_lines():
                     if line:
-                        line = line.decode('utf-8')
-                        if line.startswith('data: '):
+                        line = line.decode("utf-8")
+                        if line.startswith("data: "):
                             data_str = line[6:]
                             try:
                                 data = json.loads(data_str)
                                 events.append(data)
 
-                                if data.get('type') in ['stream', 'answer']:
-                                    full_response += data.get('message', '') or data.get('answer', '')
-                                elif data.get('type') == 'end':
+                                if data.get("type") in ["stream", "answer"]:
+                                    full_response += data.get("message", "") or data.get("answer", "")
+                                elif data.get("type") == "end":
                                     break
                             except json.JSONDecodeError:
                                 pass
@@ -634,12 +591,7 @@ DocsGPT provides:
                 return True
 
             else:  # answer endpoint
-                response = requests.post(
-                    endpoint,
-                    json=payload,
-                    headers=self.headers,
-                    timeout=30
-                )
+                response = requests.post(endpoint, json=payload, headers=self.headers, timeout=30)
 
                 self.print_info(f"Status Code: {response.status_code}")
 
@@ -650,7 +602,7 @@ DocsGPT provides:
                     return False
 
                 result = response.json()
-                answer = result.get('answer') or ''
+                answer = result.get("answer") or ""
                 self.print_success(f"Answer received: {answer[:100]}...")
                 self.test_results.append((test_name, True, "Success"))
                 return True
@@ -682,13 +634,7 @@ DocsGPT provides:
             self.print_info(f"POST {endpoint}")
             self.print_info("Testing with invalid model_id: invalid-model-xyz-123")
 
-            response = requests.post(
-                endpoint,
-                json=payload,
-                headers=self.headers,
-                stream=True,
-                timeout=10
-            )
+            response = requests.post(endpoint, json=payload, headers=self.headers, stream=True, timeout=10)
 
             self.print_info(f"Status Code: {response.status_code}")
 
@@ -698,15 +644,15 @@ DocsGPT provides:
                 error_field = None
                 for line in response.iter_lines():
                     if line:
-                        line = line.decode('utf-8')
-                        if line.startswith('data: '):
+                        line = line.decode("utf-8")
+                        if line.startswith("data: "):
                             data_str = line[6:]
                             try:
                                 data = json.loads(data_str)
-                                if data.get('type') == 'error':
+                                if data.get("type") == "error":
                                     # Try both 'message' and 'error' fields
-                                    error_message = data.get('message') or data.get('error', '')
-                                    error_field = 'message' if 'message' in data else 'error'
+                                    error_message = data.get("message") or data.get("error", "")
+                                    error_field = "message" if "message" in data else "error"
                                     break
                             except json.JSONDecodeError:
                                 pass
@@ -717,7 +663,7 @@ DocsGPT provides:
                     self.print_info(f"Error ({error_field}): {error_message[:200]}")
 
                     # Check if it's the detailed validation error or generic error
-                    if 'Invalid model_id' in error_message or 'model' in error_message.lower():
+                    if "Invalid model_id" in error_message or "model" in error_message.lower():
                         self.print_success("✓ Validation error contains model information")
                         self.test_results.append((test_name, True, "Validation works"))
                     else:
@@ -770,19 +716,14 @@ DocsGPT provides:
             self.print_info(f"POST {endpoint}")
             self.print_info("Creating agent with read_webpage tool...")
 
-            response = requests.post(
-                endpoint,
-                json=payload,
-                headers=self.headers,
-                timeout=10
-            )
+            response = requests.post(endpoint, json=payload, headers=self.headers, timeout=10)
 
             self.print_info(f"Status Code: {response.status_code}")
 
             if response.status_code in [200, 201]:
                 result = response.json()
-                agent_id = result.get('id')
-                api_key = result.get('key', '')
+                agent_id = result.get("id")
+                api_key = result.get("key", "")
 
                 if agent_id:
                     self.print_success(f"Web scraping agent created with ID: {agent_id}")
@@ -872,7 +813,7 @@ DocsGPT provides:
                 question = f"Please read and summarize the content from this webpage: {url}"
             else:
                 # Use regular questions for remaining requests
-                question = f"Tell me about Python topic number {i+1}: data structures, decorators, async, testing, etc. Please provide a comprehensive explanation."
+                question = f"Tell me about Python topic number {i + 1}: data structures, decorators, async, testing, etc. Please provide a comprehensive explanation."
 
             payload = {
                 "question": question,
@@ -895,24 +836,24 @@ DocsGPT provides:
                     endpoint,
                     json=payload,
                     headers=self.headers,
-                    timeout=90  # Longer timeout for web scraping
+                    timeout=90,  # Longer timeout for web scraping
                 )
 
                 if response.status_code == 200:
                     result = response.json()
-                    current_conv_id = result.get('conversation_id', current_conv_id)
-                    answer_preview = (result.get('answer') or '')[:80]
-                    self.print_success(f"Request {i+1}/10 completed (conv_id: {current_conv_id})")
+                    current_conv_id = result.get("conversation_id", current_conv_id)
+                    answer_preview = (result.get("answer") or "")[:80]
+                    self.print_success(f"Request {i + 1}/10 completed (conv_id: {current_conv_id})")
                     self.print_info(f"  Answer preview: {answer_preview}...")
                 else:
-                    self.print_error(f"Request {i+1}/10 failed with status {response.status_code}")
-                    self.test_results.append((test_name, False, f"Request {i+1} failed"))
+                    self.print_error(f"Request {i + 1}/10 failed with status {response.status_code}")
+                    self.test_results.append((test_name, False, f"Request {i + 1} failed"))
                     return False
 
                 time.sleep(2)  # Small delay between requests
 
             except Exception as e:
-                self.print_error(f"Request {i+1}/10 failed: {str(e)}")
+                self.print_error(f"Request {i + 1}/10 failed: {str(e)}")
                 self.test_results.append((test_name, False, str(e)))
                 return False
 
@@ -949,10 +890,12 @@ DocsGPT provides:
 
         # Step 1: Send general questions
         self.print_info("Step 1: Sending general questions...")
-        for i, question in enumerate([
-            "Tell me about Python best practices in detail",
-            "Explain Python data structures comprehensively",
-        ]):
+        for i, question in enumerate(
+            [
+                "Tell me about Python best practices in detail",
+                "Explain Python data structures comprehensively",
+            ]
+        ):
             payload = {
                 "question": question,
                 "history": "[]",
@@ -966,8 +909,8 @@ DocsGPT provides:
                 response = requests.post(endpoint, json=payload, headers=self.headers, timeout=60)
                 if response.status_code == 200:
                     result = response.json()
-                    conversation_id = result.get('conversation_id', conversation_id)
-                    self.print_success(f"General question {i+1}/2 completed")
+                    conversation_id = result.get("conversation_id", conversation_id)
+                    self.print_success(f"General question {i + 1}/2 completed")
                 else:
                     self.print_error(f"Request failed with status {response.status_code}")
                     self.test_results.append((test_name, False, "General questions failed"))
@@ -991,7 +934,7 @@ DocsGPT provides:
             response = requests.post(endpoint, json=critical_payload, headers=self.headers, timeout=60)
             if response.status_code == 200:
                 result = response.json()
-                conversation_id = result.get('conversation_id', conversation_id)
+                conversation_id = result.get("conversation_id", conversation_id)
                 self.print_success("Critical information sent")
             else:
                 self.print_error("Critical info request failed")
@@ -1005,10 +948,12 @@ DocsGPT provides:
 
         # Step 3: Send more general questions to bury the critical info
         self.print_info("Step 3: Sending more questions to bury the critical info...")
-        for i, question in enumerate([
-            "Explain Python decorators in great detail",
-            "Tell me about Python async programming comprehensively",
-        ]):
+        for i, question in enumerate(
+            [
+                "Explain Python decorators in great detail",
+                "Tell me about Python async programming comprehensively",
+            ]
+        ):
             payload = {
                 "question": question,
                 "history": "[]",
@@ -1020,8 +965,8 @@ DocsGPT provides:
                 response = requests.post(endpoint, json=payload, headers=self.headers, timeout=60)
                 if response.status_code == 200:
                     result = response.json()
-                    conversation_id = result.get('conversation_id', conversation_id)
-                    self.print_success(f"Burying question {i+1}/2 completed")
+                    conversation_id = result.get("conversation_id", conversation_id)
+                    self.print_success(f"Burying question {i + 1}/2 completed")
                 else:
                     self.print_error("Request failed")
                     self.test_results.append((test_name, False, "Burying questions failed"))
@@ -1045,10 +990,10 @@ DocsGPT provides:
             response = requests.post(endpoint, json=recall_payload, headers=self.headers, timeout=60)
             if response.status_code == 200:
                 result = response.json()
-                answer = (result.get('answer') or '').lower()
+                answer = (result.get("answer") or "").lower()
 
                 # Check if the critical info was preserved
-                if 'db_password_prod' in answer or 'database password' in answer:
+                if "db_password_prod" in answer or "database password" in answer:
                     self.print_success("✓ Critical information preserved through compression!")
                     self.print_info(f"Answer: {answer[:150]}...")
                     self.test_results.append((test_name, True, "Info preserved"))
@@ -1178,18 +1123,15 @@ DocsGPT provides:
 
                     try:
                         response = requests.post(
-                            f"{self.base_url}/api/answer",
-                            json=payload,
-                            headers=self.headers,
-                            timeout=30
+                            f"{self.base_url}/api/answer", json=payload, headers=self.headers, timeout=30
                         )
 
                         if response.status_code == 200:
                             result = response.json()
-                            answer = result.get('answer') or ''
+                            answer = result.get("answer") or ""
                             self.print_success(f"Answer received: {answer[:100]}...")
 
-                            if any(word in answer.lower() for word in ['install', 'docker', 'setup']):
+                            if any(word in answer.lower() for word in ["install", "docker", "setup"]):
                                 self.print_success("Answer contains relevant information from source")
                                 self.test_results.append((test_name, True, "Success"))
                             else:
@@ -1222,7 +1164,7 @@ DocsGPT provides:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Integration test script for DocsGPT API endpoints',
+        description="Integration test script for DocsGPT API endpoints",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -1237,19 +1179,16 @@ Examples:
 
   # Test specific endpoint only
   python tests/test_integration.py --base-url http://localhost:7091 --token YOUR_TOKEN
-        """
+        """,
     )
 
     parser.add_argument(
-        '--base-url',
-        default='http://localhost:7091',
-        help='Base URL of DocsGPT instance (default: http://localhost:7091)'
+        "--base-url",
+        default="http://localhost:7091",
+        help="Base URL of DocsGPT instance (default: http://localhost:7091)",
     )
 
-    parser.add_argument(
-        '--token',
-        help='JWT authentication token (auto-generated from local secret when available)'
-    )
+    parser.add_argument("--token", help="JWT authentication token (auto-generated from local secret when available)")
 
     args = parser.parse_args()
 
@@ -1278,5 +1217,5 @@ Examples:
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

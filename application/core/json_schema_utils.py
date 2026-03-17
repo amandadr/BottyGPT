@@ -27,8 +27,6 @@ def normalize_json_schema_payload(json_schema: Any) -> Optional[Dict[str, Any]]:
         return wrapped_schema
 
     if "type" not in json_schema:
-        raise JsonSchemaValidationError(
-            'must include either a "type" or "schema" field'
-        )
+        raise JsonSchemaValidationError('must include either a "type" or "schema" field')
 
     return json_schema

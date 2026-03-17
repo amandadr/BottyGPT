@@ -1,6 +1,7 @@
 import requests
 from application.agents.tools.base import Tool
 
+
 class NtfyTool(Tool):
     """
     Ntfy Tool

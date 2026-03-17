@@ -94,9 +94,7 @@ class QdrantStore(BaseVectorStore):
             )
         except Exception as index_error:
             if "already exists" not in str(index_error).lower():
-                logging.warning(
-                    "Could not create index for metadata.source_id: %s", index_error
-                )
+                logging.warning("Could not create index for metadata.source_id: %s", index_error)
 
         # Wrap with LangChain Qdrant using our client (no construct_instance)
         distance_strategy = (settings.QDRANT_DISTANCE_FUNC or "Cosine").strip()
@@ -123,7 +121,6 @@ class QdrantStore(BaseVectorStore):
 
     def get_chunks(self):
         try:
-
             chunks = []
             offset = None
             while True:
@@ -139,9 +136,7 @@ class QdrantStore(BaseVectorStore):
                     doc_id = record.id
                     text = record.payload.get("page_content")
                     metadata = record.payload.get("metadata")
-                    chunks.append(
-                        {"doc_id": doc_id, "text": text, "metadata": metadata}
-                    )
+                    chunks.append({"doc_id": doc_id, "text": text, "metadata": metadata})
                 if offset is None:
                     break
             return chunks
@@ -151,14 +146,15 @@ class QdrantStore(BaseVectorStore):
 
     def add_chunk(self, text, metadata=None):
         import uuid
+
         metadata = metadata or {}
-        
+
         # Create a copy to avoid modifying the original metadata
         final_metadata = metadata.copy()
-        
+
         # Ensure the source_id is in the metadata so the chunk can be found by filters
         final_metadata["source_id"] = self._source_id
-        
+
         doc = Document(page_content=text, metadata=final_metadata)
         # Generate a unique ID for the document
         doc_id = str(uuid.uuid4())

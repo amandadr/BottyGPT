@@ -3,6 +3,7 @@
 Contains parser for .png, .jpg, .jpeg files.
 
 """
+
 from pathlib import Path
 import requests
 from typing import Dict, Union
@@ -23,9 +24,9 @@ class ImageParser(BaseParser):
             doc2md_service = "https://llm.arc53.com/doc2md"
             # alternatively you can use local vision capable LLM
             with open(file, "rb") as file_loaded:
-                files = {'file': file_loaded}
-                response = requests.post(doc2md_service, files=files)   
-                data = response.json()["markdown"] 
+                files = {"file": file_loaded}
+                response = requests.post(doc2md_service, files=files)
+                data = response.json()["markdown"]
         else:
             data = ""
         return data

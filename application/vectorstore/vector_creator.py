@@ -13,7 +13,7 @@ class VectorCreator:
         "mongodb": MongoDBVectorStore,
         "qdrant": QdrantStore,
         "milvus": MilvusStore,
-        "pgvector": PGVectorStore
+        "pgvector": PGVectorStore,
     }
 
     @classmethod

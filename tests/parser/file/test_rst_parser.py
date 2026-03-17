@@ -19,7 +19,7 @@ def rst_parser_custom():
         remove_interpreters=False,
         remove_directives=False,
         remove_whitespaces_excess=False,
-        remove_characters_excess=False
+        remove_characters_excess=False,
     )
 
 
@@ -40,9 +40,9 @@ def test_rst_parser_initialization_with_custom_options():
         remove_interpreters=False,
         remove_directives=False,
         remove_whitespaces_excess=False,
-        remove_characters_excess=False
+        remove_characters_excess=False,
     )
-    
+
     assert not parser._remove_hyperlinks
     assert not parser._remove_images
     assert not parser._remove_table_excess
@@ -55,7 +55,7 @@ def test_rst_parser_initialization_with_custom_options():
 def test_rst_parser_default_initialization():
     """Test RstParser initialization with default options."""
     parser = RstParser()
-    
+
     assert parser._remove_hyperlinks
     assert parser._remove_images
     assert parser._remove_table_excess
@@ -114,10 +114,10 @@ def test_chunk_by_token_count():
     parser = RstParser()
     text = "This is a long text that should be chunked into smaller pieces based on token count"
     chunks = parser.chunk_by_token_count(text, max_tokens=5)
-    
+
     # Should create multiple chunks
     assert len(chunks) > 1
-    
+
     # Each chunk should be reasonably sized (approximately 5 * 5 = 25 characters)
     for chunk in chunks:
         assert len(chunk) <= 30  # Allow some flexibility
@@ -141,12 +141,12 @@ Chapter 2
 =========
 
 This is chapter 2 content."""
-    
+
     tups = parser.rst_to_tups(rst_content)
-    
+
     # Should have 3 tuples (intro, chapter 1, chapter 2)
     assert len(tups) >= 2
-    
+
     # Check that headers are captured
     headers = [tup[0] for tup in tups if tup[0] is not None]
     assert "Introduction" in headers
@@ -158,9 +158,9 @@ def test_rst_to_tups_without_headers():
     """Test RST to tuples conversion without headers."""
     parser = RstParser()
     rst_content = "Just plain text without any headers or structure."
-    
+
     tups = parser.rst_to_tups(rst_content)
-    
+
     # Should have one tuple with None header
     assert len(tups) == 1
     assert tups[0][0] is None
@@ -178,14 +178,14 @@ Subtitle
 --------
 
 More content here."""
-    
+
     with patch("builtins.open", mock_open(read_data=content)):
         result = rst_parser.parse_file(Path("test.rst"))
-    
+
     # Should return a list of strings
     assert isinstance(result, list)
     assert len(result) >= 1
-    
+
     # Content should be processed and cleaned
     joined_result = "\n".join(result)
     assert "Title" in joined_result
@@ -195,10 +195,10 @@ More content here."""
 def test_parse_file_with_hyperlinks(rst_parser_custom):
     """Test parse_file with hyperlinks when removal is disabled."""
     content = "Text with `link <http://example.com>`_ here."
-    
+
     with patch("builtins.open", mock_open(read_data=content)):
         result = rst_parser_custom.parse_file(Path("test.rst"))
-    
+
     joined_result = "\n".join(result)
     # Hyperlinks should be preserved when removal is disabled
     assert "http://example.com" in joined_result
@@ -211,13 +211,13 @@ def test_parse_tups_with_max_tokens():
 ======
 
 This is a very long piece of content that should be chunked into smaller pieces when max_tokens is specified. It contains multiple sentences and should be split appropriately."""
-    
+
     with patch("builtins.open", mock_open(read_data=content)):
         tups = parser.parse_tups(Path("test.rst"), max_tokens=10)
-    
+
     # Should create multiple chunks due to token limit
     assert len(tups) > 1
-    
+
     # Each tuple should have a header indicating chunk number
     chunk_headers = [tup[0] for tup in tups]
     assert any("Chunk" in str(header) for header in chunk_headers if header)
@@ -230,13 +230,13 @@ def test_parse_tups_without_max_tokens():
 ======
 
 Content here."""
-    
+
     with patch("builtins.open", mock_open(read_data=content)):
         tups = parser.parse_tups(Path("test.rst"), max_tokens=None)
-    
+
     # Should not create additional chunks
     assert len(tups) >= 1
-    
+
     # Headers should not contain "Chunk"
     chunk_headers = [tup[0] for tup in tups]
     assert not any("Chunk" in str(header) for header in chunk_headers if header)
@@ -245,10 +245,10 @@ Content here."""
 def test_parse_file_empty_content():
     """Test parse_file with empty content."""
     parser = RstParser()
-    
+
     with patch("builtins.open", mock_open(read_data="")):
         result = parser.parse_file(Path("empty.rst"))
-    
+
     # Should handle empty content gracefully
     assert isinstance(result, list)
 

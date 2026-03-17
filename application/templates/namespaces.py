@@ -29,9 +29,7 @@ class SystemNamespace(NamespaceBuilder):
     def namespace_name(self) -> str:
         return "system"
 
-    def build(
-        self, request_id: Optional[str] = None, user_id: Optional[str] = None, **kwargs
-    ) -> Dict[str, Any]:
+    def build(self, request_id: Optional[str] = None, user_id: Optional[str] = None, **kwargs) -> Dict[str, Any]:
         """
         Build system context with metadata.
 
@@ -60,9 +58,7 @@ class PassthroughNamespace(NamespaceBuilder):
     def namespace_name(self) -> str:
         return "passthrough"
 
-    def build(
-        self, passthrough_data: Optional[Dict[str, Any]] = None, **kwargs
-    ) -> Dict[str, Any]:
+    def build(self, passthrough_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
         """
         Build passthrough context from request parameters.
 
@@ -79,9 +75,7 @@ class PassthroughNamespace(NamespaceBuilder):
             if isinstance(value, (str, int, float, bool, type(None))):
                 safe_data[key] = value
             else:
-                logger.warning(
-                    f"Skipping non-serializable passthrough value for key '{key}': {type(value)}"
-                )
+                logger.warning(f"Skipping non-serializable passthrough value for key '{key}': {type(value)}")
         return safe_data
 
 
@@ -92,9 +86,7 @@ class SourceNamespace(NamespaceBuilder):
     def namespace_name(self) -> str:
         return "source"
 
-    def build(
-        self, docs: Optional[list] = None, docs_together: Optional[str] = None, **kwargs
-    ) -> Dict[str, Any]:
+    def build(self, docs: Optional[list] = None, docs_together: Optional[str] = None, **kwargs) -> Dict[str, Any]:
         """
         Build source context from RAG retrieval results.
 
@@ -124,9 +116,7 @@ class ToolsNamespace(NamespaceBuilder):
     def namespace_name(self) -> str:
         return "tools"
 
-    def build(
-        self, tools_data: Optional[Dict[str, Any]] = None, **kwargs
-    ) -> Dict[str, Any]:
+    def build(self, tools_data: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
         """
         Build tools context with pre-executed tool results.
 
@@ -145,9 +135,7 @@ class ToolsNamespace(NamespaceBuilder):
             if isinstance(tool_result, (str, dict, list, int, float, bool, type(None))):
                 safe_data[tool_name] = tool_result
             else:
-                logger.warning(
-                    f"Skipping non-serializable tool result for '{tool_name}': {type(tool_result)}"
-                )
+                logger.warning(f"Skipping non-serializable tool result for '{tool_name}': {type(tool_result)}")
         return safe_data
 
 

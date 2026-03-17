@@ -42,28 +42,18 @@ class RemoteEmbeddings:
                 # Sort by index to ensure correct order
                 data = sorted(result["data"], key=lambda x: x.get("index", 0))
                 return [item["embedding"] for item in data]
-            raise ValueError(
-                f"Unexpected response format from remote embeddings API: {result}"
-            )
+            raise ValueError(f"Unexpected response format from remote embeddings API: {result}")
         else:
-            raise ValueError(
-                f"Unexpected response format from remote embeddings API: {result}"
-            )
+            raise ValueError(f"Unexpected response format from remote embeddings API: {result}")
 
     def embed_query(self, query: str):
         """Embed a single query string."""
         embeddings_list = self._embed(query)
-        if (
-            isinstance(embeddings_list, list)
-            and len(embeddings_list) == 1
-            and isinstance(embeddings_list[0], list)
-        ):
+        if isinstance(embeddings_list, list) and len(embeddings_list) == 1 and isinstance(embeddings_list[0], list):
             if self.dimension is None:
                 self.dimension = len(embeddings_list[0])
             return embeddings_list[0]
-        raise ValueError(
-            f"Unexpected result structure after embedding query: {embeddings_list}"
-        )
+        raise ValueError(f"Unexpected result structure after embedding query: {embeddings_list}")
 
     def embed_documents(self, documents: list):
         """Embed a list of documents."""
@@ -96,8 +86,8 @@ class EmbeddingsSingleton:
     @staticmethod
     def get_instance(embeddings_name, *args, **kwargs):
         if embeddings_name not in EmbeddingsSingleton._instances:
-            EmbeddingsSingleton._instances[embeddings_name] = (
-                EmbeddingsSingleton._create_instance(embeddings_name, *args, **kwargs)
+            EmbeddingsSingleton._instances[embeddings_name] = EmbeddingsSingleton._create_instance(
+                embeddings_name, *args, **kwargs
             )
         return EmbeddingsSingleton._instances[embeddings_name]
 
@@ -116,9 +106,7 @@ class EmbeddingsSingleton:
             "huggingface_sentence-transformers-all-mpnet-base-v2": lambda: EmbeddingsWrapper(
                 "sentence-transformers/all-mpnet-base-v2"
             ),
-            "huggingface_hkunlp/instructor-large": lambda: EmbeddingsWrapper(
-                "hkunlp/instructor-large"
-            ),
+            "huggingface_hkunlp/instructor-large": lambda: EmbeddingsWrapper("hkunlp/instructor-large"),
         }
 
         if embeddings_name in embeddings_factory:
@@ -162,18 +150,12 @@ class BaseVectorStore(ABC):
         pass
 
     def is_azure_configured(self):
-        return (
-            settings.OPENAI_API_BASE
-            and settings.OPENAI_API_VERSION
-            and settings.AZURE_DEPLOYMENT_NAME
-        )
+        return settings.OPENAI_API_BASE and settings.OPENAI_API_VERSION and settings.AZURE_DEPLOYMENT_NAME
 
     def _get_embeddings(self, embeddings_name, embeddings_key=None):
         # Check for remote embeddings first
         if settings.EMBEDDINGS_BASE_URL:
-            logging.info(
-                f"Using remote embeddings API at: {settings.EMBEDDINGS_BASE_URL}"
-            )
+            logging.info(f"Using remote embeddings API at: {settings.EMBEDDINGS_BASE_URL}")
             cache_key = f"remote_{settings.EMBEDDINGS_BASE_URL}_{embeddings_name}"
             if cache_key not in EmbeddingsSingleton._instances:
                 EmbeddingsSingleton._instances[cache_key] = RemoteEmbeddings(
@@ -190,9 +172,7 @@ class BaseVectorStore(ABC):
                     embeddings_name, model=settings.AZURE_EMBEDDINGS_DEPLOYMENT_NAME
                 )
             else:
-                embedding_instance = EmbeddingsSingleton.get_instance(
-                    embeddings_name, openai_api_key=embeddings_key
-                )
+                embedding_instance = EmbeddingsSingleton.get_instance(embeddings_name, openai_api_key=embeddings_key)
         elif embeddings_name == "huggingface_sentence-transformers/all-mpnet-base-v2":
             possible_paths = [
                 "/app/models/all-mpnet-base-v2",  # Docker absolute path

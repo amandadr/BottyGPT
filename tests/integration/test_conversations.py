@@ -484,9 +484,7 @@ class ConversationTests(DocsGPTTestBase):
 
 def main():
     """Main entry point."""
-    client = create_client_from_args(
-        ConversationTests, "DocsGPT Conversation Integration Tests"
-    )
+    client = create_client_from_args(ConversationTests, "DocsGPT Conversation Integration Tests")
     exit_code = 0 if client.run_all() else 1
     sys.exit(exit_code)
 

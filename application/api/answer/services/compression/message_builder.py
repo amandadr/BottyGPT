@@ -33,9 +33,7 @@ class MessageBuilder:
         """
         # Append compression summary to system prompt if present
         if compressed_summary:
-            system_prompt = MessageBuilder._append_compression_context(
-                system_prompt, compressed_summary, context_type
-            )
+            system_prompt = MessageBuilder._append_compression_context(system_prompt, compressed_summary, context_type)
 
         messages = [{"role": "system", "content": system_prompt}]
 
@@ -65,19 +63,14 @@ class MessageBuilder:
                         }
                     }
 
-                    messages.append(
-                        {"role": "assistant", "content": [function_call_dict]}
-                    )
-                    messages.append(
-                        {"role": "tool", "content": [function_response_dict]}
-                    )
+                    messages.append({"role": "assistant", "content": [function_call_dict]})
+                    messages.append({"role": "tool", "content": [function_response_dict]})
 
         # If no recent queries (everything was compressed), add a continuation user message
         if len(recent_queries) == 0 and compressed_summary:
-            messages.append({
-                "role": "user",
-                "content": "Please continue with the remaining tasks based on the context above."
-            })
+            messages.append(
+                {"role": "user", "content": "Please continue with the remaining tasks based on the context above."}
+            )
             logger.info("Added continuation user message to maintain proper turn-taking after full compression")
 
         return messages
@@ -144,9 +137,7 @@ class MessageBuilder:
             Rebuilt message list or None if failed
         """
         # Find the system message
-        system_message = next(
-            (msg for msg in messages if msg.get("role") == "system"), None
-        )
+        system_message = next((msg for msg in messages if msg.get("role") == "system"), None)
         if not system_message:
             logger.warning("No system message found in messages list")
             return None
@@ -159,11 +150,7 @@ class MessageBuilder:
             )
             logger.info(
                 "Appended compression summary to system prompt (truncated): %s",
-                (
-                    compressed_summary[:500] + "..."
-                    if len(compressed_summary) > 500
-                    else compressed_summary
-                ),
+                (compressed_summary[:500] + "..." if len(compressed_summary) > 500 else compressed_summary),
             )
 
         rebuilt_messages = [system_message]
@@ -172,9 +159,7 @@ class MessageBuilder:
         for query in recent_queries:
             if "prompt" in query and "response" in query:
                 rebuilt_messages.append({"role": "user", "content": query["prompt"]})
-                rebuilt_messages.append(
-                    {"role": "assistant", "content": query["response"]}
-                )
+                rebuilt_messages.append({"role": "assistant", "content": query["response"]})
 
             # Add tool calls from history if present
             if include_tool_calls and "tool_calls" in query:
@@ -196,19 +181,14 @@ class MessageBuilder:
                         }
                     }
 
-                    rebuilt_messages.append(
-                        {"role": "assistant", "content": [function_call_dict]}
-                    )
-                    rebuilt_messages.append(
-                        {"role": "tool", "content": [function_response_dict]}
-                    )
+                    rebuilt_messages.append({"role": "assistant", "content": [function_call_dict]})
+                    rebuilt_messages.append({"role": "tool", "content": [function_response_dict]})
 
         # If no recent queries (everything was compressed), add a continuation user message
         if len(recent_queries) == 0 and compressed_summary:
-            rebuilt_messages.append({
-                "role": "user",
-                "content": "Please continue with the remaining tasks based on the context above."
-            })
+            rebuilt_messages.append(
+                {"role": "user", "content": "Please continue with the remaining tasks based on the context above."}
+            )
             logger.info("Added continuation user message to maintain proper turn-taking after full compression")
 
         if include_current_execution:
@@ -223,12 +203,9 @@ class MessageBuilder:
             if len(messages) > recent_msg_count:
                 current_execution_messages = messages[recent_msg_count:]
                 rebuilt_messages.extend(current_execution_messages)
-                logger.info(
-                    f"Preserved {len(current_execution_messages)} messages from current execution cycle"
-                )
+                logger.info(f"Preserved {len(current_execution_messages)} messages from current execution cycle")
 
         logger.info(
-            f"Messages rebuilt: {len(messages)} → {len(rebuilt_messages)} messages. "
-            f"Ready to continue tool execution."
+            f"Messages rebuilt: {len(messages)} → {len(rebuilt_messages)} messages. Ready to continue tool execution."
         )
         return rebuilt_messages

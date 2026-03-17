@@ -52,14 +52,10 @@ class RequestBodySerializer:
                 return RequestBodySerializer._serialize_json(body_data)
 
             elif content_type_lower == ContentType.FORM_URLENCODED:
-                return RequestBodySerializer._serialize_form_urlencoded(
-                    body_data, encoding_rules
-                )
+                return RequestBodySerializer._serialize_form_urlencoded(body_data, encoding_rules)
 
             elif content_type_lower == ContentType.MULTIPART_FORM_DATA:
-                return RequestBodySerializer._serialize_multipart_form_data(
-                    body_data, encoding_rules
-                )
+                return RequestBodySerializer._serialize_multipart_form_data(body_data, encoding_rules)
 
             elif content_type_lower == ContentType.TEXT_PLAIN:
                 return RequestBodySerializer._serialize_text_plain(body_data)
@@ -71,9 +67,7 @@ class RequestBodySerializer:
                 return RequestBodySerializer._serialize_octet_stream(body_data)
 
             else:
-                logger.warning(
-                    f"Unknown content type: {content_type}, treating as JSON"
-                )
+                logger.warning(f"Unknown content type: {content_type}, treating as JSON")
                 return RequestBodySerializer._serialize_json(body_data)
 
         except Exception as e:
@@ -84,9 +78,7 @@ class RequestBodySerializer:
     def _serialize_json(body_data: Dict[str, Any]) -> tuple[str, Dict[str, str]]:
         """Serialize body as JSON per OpenAPI spec."""
         try:
-            serialized = json.dumps(
-                body_data, separators=(",", ":"), ensure_ascii=False
-            )
+            serialized = json.dumps(body_data, separators=(",", ":"), ensure_ascii=False)
             headers = {"Content-Type": ContentType.JSON.value}
             return serialized, headers
         except (TypeError, ValueError) as e:
@@ -110,9 +102,7 @@ class RequestBodySerializer:
             explode = rule.get("explode", style == "form")
             content_type = rule.get("contentType", "text/plain")
 
-            serialized_value = RequestBodySerializer._serialize_form_value(
-                value, style, explode, content_type, key
-            )
+            serialized_value = RequestBodySerializer._serialize_form_value(value, style, explode, content_type, key)
 
             if isinstance(serialized_value, list):
                 for sv in serialized_value:
@@ -126,9 +116,7 @@ class RequestBodySerializer:
         return serialized, headers
 
     @staticmethod
-    def _serialize_form_value(
-        value: Any, style: str, explode: bool, content_type: str, key: str
-    ) -> Union[str, list]:
+    def _serialize_form_value(value: Any, style: str, explode: bool, content_type: str, key: str) -> Union[str, list]:
         """Serialize individual form value with encoding rules."""
         if isinstance(value, dict):
             if content_type == "application/json":
@@ -137,28 +125,18 @@ class RequestBodySerializer:
                 return RequestBodySerializer._dict_to_xml(value)
             else:
                 if style == "deepObject" and explode:
-                    return [
-                        f"{RequestBodySerializer._percent_encode(str(v))}"
-                        for v in value.values()
-                    ]
+                    return [f"{RequestBodySerializer._percent_encode(str(v))}" for v in value.values()]
                 elif explode:
-                    return [
-                        f"{RequestBodySerializer._percent_encode(str(v))}"
-                        for v in value.values()
-                    ]
+                    return [f"{RequestBodySerializer._percent_encode(str(v))}" for v in value.values()]
                 else:
                     pairs = [f"{k},{v}" for k, v in value.items()]
                     return RequestBodySerializer._percent_encode(",".join(pairs))
 
         elif isinstance(value, (list, tuple)):
             if explode:
-                return [
-                    RequestBodySerializer._percent_encode(str(item)) for item in value
-                ]
+                return [RequestBodySerializer._percent_encode(str(item)) for item in value]
             else:
-                return RequestBodySerializer._percent_encode(
-                    ",".join(str(v) for v in value)
-                )
+                return RequestBodySerializer._percent_encode(",".join(str(v) for v in value))
 
         else:
             return RequestBodySerializer._percent_encode(str(value))
@@ -187,9 +165,7 @@ class RequestBodySerializer:
             content_type = rule.get("contentType", "text/plain")
             headers_rule = rule.get("headers", {})
 
-            part = RequestBodySerializer._create_multipart_part(
-                key, value, content_type, headers_rule
-            )
+            part = RequestBodySerializer._create_multipart_part(key, value, content_type, headers_rule)
             parts.append(part)
 
         body_bytes = f"--{boundary}\r\n".encode("utf-8")
@@ -202,13 +178,9 @@ class RequestBodySerializer:
         return body_bytes, headers
 
     @staticmethod
-    def _create_multipart_part(
-        name: str, value: Any, content_type: str, headers_rule: Dict[str, Any]
-    ) -> str:
+    def _create_multipart_part(name: str, value: Any, content_type: str, headers_rule: Dict[str, Any]) -> str:
         """Create a single multipart/form-data part."""
-        headers = [
-            f'Content-Disposition: form-data; name="{RequestBodySerializer._percent_encode(name)}"'
-        ]
+        headers = [f'Content-Disposition: form-data; name="{RequestBodySerializer._percent_encode(name)}"']
 
         if isinstance(value, bytes):
             if content_type == "application/octet-stream":
@@ -269,14 +241,10 @@ class RequestBodySerializer:
         if isinstance(body_data, bytes):
             return body_data, {"Content-Type": ContentType.OCTET_STREAM.value}
         elif isinstance(body_data, str):
-            return body_data.encode("utf-8"), {
-                "Content-Type": ContentType.OCTET_STREAM.value
-            }
+            return body_data.encode("utf-8"), {"Content-Type": ContentType.OCTET_STREAM.value}
         else:
             serialized = json.dumps(body_data)
-            return serialized.encode("utf-8"), {
-                "Content-Type": ContentType.OCTET_STREAM.value
-            }
+            return serialized.encode("utf-8"), {"Content-Type": ContentType.OCTET_STREAM.value}
 
     @staticmethod
     def _percent_encode(value: str, safe_chars: str = "") -> str:
@@ -300,10 +268,7 @@ class RequestBodySerializer:
                 inner = "".join(build_xml(v, k) for k, v in obj.items())
                 return f"<{name}>{inner}</{name}>"
             elif isinstance(obj, (list, tuple)):
-                items = "".join(
-                    build_xml(item, f"{name[:-1] if name.endswith('s') else name}")
-                    for item in obj
-                )
+                items = "".join(build_xml(item, f"{name[:-1] if name.endswith('s') else name}") for item in obj)
                 return items
             else:
                 return f"<{name}>{RequestBodySerializer._escape_xml(str(obj))}</{name}>"

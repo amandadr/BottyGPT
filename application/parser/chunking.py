@@ -6,6 +6,7 @@ from application.utils import get_encoding
 
 logger = logging.getLogger(__name__)
 
+
 class Chunker:
     def __init__(
         self,
@@ -27,13 +28,11 @@ class Chunker:
         match = re.match(header_pattern, text)
         if match:
             header = match.group(0)
-            body = text[len(header):]
+            body = text[len(header) :]
         else:
             header, body = "", text  # No header, treat entire text as body
         return header, body
 
-
-    
     def split_document(self, doc: Document) -> List[Document]:
         split_docs = []
         header, body = self.separate_header_and_body(doc.text)
@@ -44,14 +43,17 @@ class Chunker:
         part_index = 0
         while current_position < len(body_tokens):
             end_position = current_position + self.max_tokens - len(header_tokens)
-            chunk_tokens = (header_tokens + body_tokens[current_position:end_position]
-                            if self.duplicate_headers or part_index == 0 else body_tokens[current_position:end_position])
+            chunk_tokens = (
+                header_tokens + body_tokens[current_position:end_position]
+                if self.duplicate_headers or part_index == 0
+                else body_tokens[current_position:end_position]
+            )
             chunk_text = self.encoding.decode(chunk_tokens)
             new_doc = Document(
                 text=chunk_text,
                 doc_id=f"{doc.doc_id}-{part_index}",
                 embedding=doc.embedding,
-                extra_info={**(doc.extra_info or {}), "token_count": len(chunk_tokens)}
+                extra_info={**(doc.extra_info or {}), "token_count": len(chunk_tokens)},
             )
             split_docs.append(new_doc)
             current_position = end_position
@@ -73,7 +75,6 @@ class Chunker:
                 processed_docs.append(doc)
                 i += 1
             elif token_count < self.min_tokens:
-  
                 doc.extra_info = doc.extra_info or {}
                 doc.extra_info["token_count"] = token_count
                 processed_docs.append(doc)
@@ -84,10 +85,7 @@ class Chunker:
                 i += 1
         return processed_docs
 
-    def chunk(
-        self,
-        documents: List[Document]
-    ) -> List[Document]:
+    def chunk(self, documents: List[Document]) -> List[Document]:
         if self.chunking_strategy == "classic_chunk":
             return self.classic_chunk(documents)
         else:

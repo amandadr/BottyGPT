@@ -41,9 +41,7 @@ def require_auth(func: Callable) -> Callable:
     return wrapper
 
 
-def success_response(
-    data: Optional[Dict[str, Any]] = None, status: int = 200
-) -> Response:
+def success_response(data: Optional[Dict[str, Any]] = None, status: int = 200) -> Response:
     """
     Create a standardized success response.
 
@@ -108,9 +106,7 @@ def validate_object_id(
         return None, error_response(f"Invalid {resource_name} ID format")
 
 
-def validate_pagination(
-    default_limit: int = 20, max_limit: int = 100
-) -> Tuple[int, int, Optional[Response]]:
+def validate_pagination(default_limit: int = 20, max_limit: int = 100) -> Tuple[int, int, Optional[Response]]:
     """
     Extract and validate pagination parameters from request.
 
@@ -170,9 +166,7 @@ def check_resource_ownership(
     return resource, None
 
 
-def serialize_object_id(
-    obj: Dict[str, Any], id_field: str = "_id", new_field: str = "id"
-) -> Dict[str, Any]:
+def serialize_object_id(obj: Dict[str, Any], id_field: str = "_id", new_field: str = "id") -> Dict[str, Any]:
     """
     Convert ObjectId to string in a dictionary.
 
@@ -247,9 +241,7 @@ def paginated_response(
             response_key="workflows"
         )
     """
-    items = list(
-        collection.find(query).sort(sort_field, sort_order).skip(skip).limit(limit)
-    )
+    items = list(collection.find(query).sort(sort_field, sort_order).skip(skip).limit(limit))
     total = collection.count_documents(query)
 
     return success_response(
@@ -323,9 +315,7 @@ def safe_db_operation(
         return None, error_response(f"{error_message}: {str(e)}")
 
 
-def validate_enum(
-    value: Any, allowed: List[Any], field_name: str
-) -> Optional[Response]:
+def validate_enum(value: Any, allowed: List[Any], field_name: str) -> Optional[Response]:
     """
     Validate that value is in allowed list.
 

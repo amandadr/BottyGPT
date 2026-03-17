@@ -67,33 +67,23 @@ class CompressionOrchestrator:
         """
         try:
             # Load conversation
-            conversation = self.conversation_service.get_conversation(
-                conversation_id, user_id
-            )
+            conversation = self.conversation_service.get_conversation(conversation_id, user_id)
 
             if not conversation:
-                logger.warning(
-                    f"Conversation {conversation_id} not found for user {user_id}"
-                )
+                logger.warning(f"Conversation {conversation_id} not found for user {user_id}")
                 return CompressionResult.failure("Conversation not found")
 
             # Check if compression is needed
-            if not self.threshold_checker.should_compress(
-                conversation, model_id, current_query_tokens
-            ):
+            if not self.threshold_checker.should_compress(conversation, model_id, current_query_tokens):
                 # No compression needed, return full history
                 queries = conversation.get("queries", [])
                 return CompressionResult.success_no_compression(queries)
 
             # Perform compression
-            return self._perform_compression(
-                conversation_id, conversation, model_id, decoded_token
-            )
+            return self._perform_compression(conversation_id, conversation, model_id, decoded_token)
 
         except Exception as e:
-            logger.error(
-                f"Error in compress_if_needed: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error in compress_if_needed: {str(e)}", exc_info=True)
             return CompressionResult.failure(str(e))
 
     def _perform_compression(
@@ -117,11 +107,7 @@ class CompressionOrchestrator:
         """
         try:
             # Determine which model to use for compression
-            compression_model = (
-                settings.COMPRESSION_MODEL_OVERRIDE
-                if settings.COMPRESSION_MODEL_OVERRIDE
-                else model_id
-            )
+            compression_model = settings.COMPRESSION_MODEL_OVERRIDE if settings.COMPRESSION_MODEL_OVERRIDE else model_id
 
             # Get provider and API key for compression model
             provider = get_provider_from_model_id(compression_model)
@@ -158,9 +144,7 @@ class CompressionOrchestrator:
             )
 
             # Perform compression and save to DB
-            metadata = compression_service.compress_and_save(
-                conversation_id, conversation, compress_up_to
-            )
+            metadata = compression_service.compress_and_save(conversation_id, conversation, compress_up_to)
 
             logger.info(
                 f"Compression successful - ratio: {metadata.compression_ratio:.1f}x, "
@@ -168,18 +152,12 @@ class CompressionOrchestrator:
             )
 
             # Reload conversation with updated metadata
-            conversation = self.conversation_service.get_conversation(
-                conversation_id, user_id=decoded_token.get("sub")
-            )
+            conversation = self.conversation_service.get_conversation(conversation_id, user_id=decoded_token.get("sub"))
 
             # Get compressed context
-            compressed_summary, recent_queries = (
-                compression_service.get_compressed_context(conversation)
-            )
+            compressed_summary, recent_queries = compression_service.get_compressed_context(conversation)
 
-            return CompressionResult.success_with_compression(
-                compressed_summary, recent_queries, metadata
-            )
+            return CompressionResult.success_with_compression(compressed_summary, recent_queries, metadata)
 
         except Exception as e:
             logger.error(f"Error performing compression: {str(e)}", exc_info=True)
@@ -211,23 +189,15 @@ class CompressionOrchestrator:
             if current_conversation:
                 conversation = current_conversation
             else:
-                conversation = self.conversation_service.get_conversation(
-                    conversation_id, user_id
-                )
+                conversation = self.conversation_service.get_conversation(conversation_id, user_id)
 
             if not conversation:
-                logger.warning(
-                    f"Could not load conversation {conversation_id} for mid-execution compression"
-                )
+                logger.warning(f"Could not load conversation {conversation_id} for mid-execution compression")
                 return CompressionResult.failure("Conversation not found")
 
             # Perform compression
-            return self._perform_compression(
-                conversation_id, conversation, model_id, decoded_token
-            )
+            return self._perform_compression(conversation_id, conversation, model_id, decoded_token)
 
         except Exception as e:
-            logger.error(
-                f"Error in mid-execution compression: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error in mid-execution compression: {str(e)}", exc_info=True)
             return CompressionResult.failure(str(e))

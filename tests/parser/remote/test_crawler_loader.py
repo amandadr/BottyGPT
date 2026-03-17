@@ -16,6 +16,7 @@ class DummyResponse:
 def _mock_validate_url(url):
     """Mock validate_url that allows test URLs through."""
     from urllib.parse import urlparse
+
     if not urlparse(url).scheme:
         url = "http://" + url
     return url
@@ -179,7 +180,7 @@ def test_load_data_logs_and_skips_on_loader_error(mock_requests_get, mock_loggin
     failing_loader_instance.load.assert_called_once()
 
     mock_logging.error.assert_called_once()
-    message, = mock_logging.error.call_args.args
+    (message,) = mock_logging.error.call_args.args
     assert "Error processing URL http://example.com" in message
     assert mock_logging.error.call_args.kwargs.get("exc_info") is True
 
@@ -188,6 +189,7 @@ def test_load_data_logs_and_skips_on_loader_error(mock_requests_get, mock_loggin
 def test_load_data_returns_empty_on_ssrf_validation_failure(mock_validate_url):
     """Test that SSRF validation failure returns empty list."""
     from application.core.url_validation import SSRFError
+
     mock_validate_url.side_effect = SSRFError("Access to private IP not allowed")
 
     crawler = CrawlerLoader()
@@ -201,12 +203,6 @@ def test_url_to_virtual_path_variants():
     crawler = CrawlerLoader()
 
     assert crawler._url_to_virtual_path("https://docs.docsgpt.cloud/") == "index.md"
-    assert (
-        crawler._url_to_virtual_path("https://docs.docsgpt.cloud/guides/setup")
-        == "guides/setup.md"
-    )
-    assert (
-        crawler._url_to_virtual_path("https://docs.docsgpt.cloud/guides/setup/")
-        == "guides/setup.md"
-    )
+    assert crawler._url_to_virtual_path("https://docs.docsgpt.cloud/guides/setup") == "guides/setup.md"
+    assert crawler._url_to_virtual_path("https://docs.docsgpt.cloud/guides/setup/") == "guides/setup.md"
     assert crawler._url_to_virtual_path("https://example.com/page.html") == "page.md"

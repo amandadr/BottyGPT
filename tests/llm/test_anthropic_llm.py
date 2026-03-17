@@ -56,9 +56,7 @@ def test_anthropic_raw_gen_builds_prompt_and_returns_completion():
         {"content": "ctx"},
         {"content": "q"},
     ]
-    out = llm._raw_gen(
-        llm, model="claude-2", messages=msgs, stream=False, max_tokens=55
-    )
+    out = llm._raw_gen(llm, model="claude-2", messages=msgs, stream=False, max_tokens=55)
     assert out == "final"
     last = llm.anthropic.completions.last_kwargs
     assert last["model"] == "claude-2"
@@ -75,8 +73,6 @@ def test_anthropic_raw_gen_stream_yields_chunks():
         {"content": "ctx"},
         {"content": "q"},
     ]
-    gen = llm._raw_gen_stream(
-        llm, model="claude", messages=msgs, stream=True, max_tokens=10
-    )
+    gen = llm._raw_gen_stream(llm, model="claude", messages=msgs, stream=True, max_tokens=10)
     chunks = list(gen)
     assert chunks == ["s1", "s2"]

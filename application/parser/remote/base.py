@@ -1,4 +1,5 @@
 """Base reader class."""
+
 from abc import abstractmethod
 from typing import Any, List
 

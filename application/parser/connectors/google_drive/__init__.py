@@ -7,4 +7,4 @@ This module provides authentication and document loading capabilities for Google
 from .auth import GoogleDriveAuth
 from .loader import GoogleDriveLoader
 
-__all__ = ['GoogleDriveAuth', 'GoogleDriveLoader']
+__all__ = ["GoogleDriveAuth", "GoogleDriveLoader"]

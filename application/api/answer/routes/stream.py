@@ -22,9 +22,7 @@ class StreamResource(Resource, BaseAnswerResource):
     stream_model = answer_ns.model(
         "StreamModel",
         {
-            "question": fields.String(
-                required=True, description="Question to be asked"
-            ),
+            "question": fields.String(required=True, description="Question to be asked"),
             "history": fields.List(
                 fields.String,
                 required=False,
@@ -34,24 +32,14 @@ class StreamResource(Resource, BaseAnswerResource):
                 required=False,
                 description="Existing conversation ID (loads history)",
             ),
-            "prompt_id": fields.String(
-                required=False, default="default", description="Prompt ID"
-            ),
-            "chunks": fields.Integer(
-                required=False, default=2, description="Number of chunks"
-            ),
+            "prompt_id": fields.String(required=False, default="default", description="Prompt ID"),
+            "chunks": fields.Integer(required=False, default=2, description="Number of chunks"),
             "retriever": fields.String(required=False, description="Retriever type"),
             "api_key": fields.String(required=False, description="API key"),
             "agent_id": fields.String(required=False, description="Agent ID"),
-            "active_docs": fields.String(
-                required=False, description="Active documents"
-            ),
-            "isNoneDoc": fields.Boolean(
-                required=False, description="Flag indicating if no document is used"
-            ),
-            "index": fields.Integer(
-                required=False, description="Index of the query to update"
-            ),
+            "active_docs": fields.String(required=False, description="Active documents"),
+            "isNoneDoc": fields.Boolean(required=False, description="Flag indicating if no document is used"),
+            "index": fields.Integer(required=False, description="Index of the query to update"),
             "save_conversation": fields.Boolean(
                 required=False,
                 default=True,
@@ -61,9 +49,7 @@ class StreamResource(Resource, BaseAnswerResource):
                 required=False,
                 description="Model ID to use for this request",
             ),
-            "attachments": fields.List(
-                fields.String, required=False, description="List of attachment IDs"
-            ),
+            "attachments": fields.List(fields.String, required=False, description="List of attachment IDs"),
             "passthrough": fields.Raw(
                 required=False,
                 description="Dynamic parameters to inject into prompt template",
@@ -91,9 +77,7 @@ class StreamResource(Resource, BaseAnswerResource):
             docs_together, docs_list = processor.pre_fetch_docs(data["question"])
             tools_data = processor.pre_fetch_tools()
 
-            agent = processor.create_agent(
-                docs_together=docs_together, docs=docs_list, tools_data=tools_data
-            )
+            agent = processor.create_agent(docs_together=docs_together, docs=docs_list, tools_data=tools_data)
 
             if error := self.check_usage(processor.agent_config):
                 return error

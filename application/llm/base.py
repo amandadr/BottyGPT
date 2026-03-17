@@ -40,13 +40,9 @@ class BaseLLM(ABC):
                     model_id=settings.FALLBACK_LLM_NAME,
                     agent_id=self.agent_id,
                 )
-                logger.info(
-                    f"Fallback LLM initialized: {settings.FALLBACK_LLM_PROVIDER}/{settings.FALLBACK_LLM_NAME}"
-                )
+                logger.info(f"Fallback LLM initialized: {settings.FALLBACK_LLM_PROVIDER}/{settings.FALLBACK_LLM_NAME}")
             except Exception as e:
-                logger.error(
-                    f"Failed to initialize fallback LLM: {str(e)}", exc_info=True
-                )
+                logger.error(f"Failed to initialize fallback LLM: {str(e)}", exc_info=True)
         return self._fallback_llm
 
     @staticmethod
@@ -55,9 +51,7 @@ class BaseLLM(ABC):
             return args_dict
         return {k: v for k, v in args_dict.items() if v is not None}
 
-    def _execute_with_fallback(
-        self, method_name: str, decorators: list, *args, **kwargs
-    ):
+    def _execute_with_fallback(self, method_name: str, decorators: list, *args, **kwargs):
         """
         Execute method with fallback support.
 
@@ -84,9 +78,7 @@ class BaseLLM(ABC):
                 f"Primary LLM failed. Falling back to {settings.FALLBACK_LLM_PROVIDER}/{settings.FALLBACK_LLM_NAME}. Error: {str(e)}"
             )
 
-            fallback_method = getattr(
-                self.fallback_llm, method_name.replace("_raw_", "")
-            )
+            fallback_method = getattr(self.fallback_llm, method_name.replace("_raw_", ""))
             return fallback_method(*args, **kwargs)
 
     def gen(self, model, messages, stream=False, tools=None, *args, **kwargs):
@@ -124,18 +116,14 @@ class BaseLLM(ABC):
         pass
 
     def supports_tools(self):
-        return hasattr(self, "_supports_tools") and callable(
-            getattr(self, "_supports_tools")
-        )
+        return hasattr(self, "_supports_tools") and callable(getattr(self, "_supports_tools"))
 
     def _supports_tools(self):
         raise NotImplementedError("Subclass must implement _supports_tools method")
 
     def supports_structured_output(self):
         """Check if the LLM supports structured output/JSON schema enforcement"""
-        return hasattr(self, "_supports_structured_output") and callable(
-            getattr(self, "_supports_structured_output")
-        )
+        return hasattr(self, "_supports_structured_output") and callable(getattr(self, "_supports_structured_output"))
 
     def _supports_structured_output(self):
         return False

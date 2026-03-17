@@ -69,9 +69,7 @@ class MCPTool(Tool):
 
         self.auth_credentials = {}
         if config.get("encrypted_credentials") and user_id:
-            self.auth_credentials = decrypt_credentials(
-                config["encrypted_credentials"], user_id
-            )
+            self.auth_credentials = decrypt_credentials(config["encrypted_credentials"], user_id)
         else:
             self.auth_credentials = config.get("auth_credentials", {})
         self.oauth_scopes = config.get("oauth_scopes", [])
@@ -108,13 +106,9 @@ class MCPTool(Tool):
         auth_key = ""
         if self.auth_type == "oauth":
             scopes_str = ",".join(self.oauth_scopes) if self.oauth_scopes else "none"
-            auth_key = (
-                f"oauth:{self.oauth_client_name}:{scopes_str}:{self.redirect_uri}"
-            )
+            auth_key = f"oauth:{self.oauth_client_name}:{scopes_str}:{self.redirect_uri}"
         elif self.auth_type in ["bearer"]:
-            token = self.auth_credentials.get(
-                "bearer_token", ""
-            ) or self.auth_credentials.get("access_token", "")
+            token = self.auth_credentials.get("bearer_token", "") or self.auth_credentials.get("access_token", "")
             auth_key = f"bearer:{token[:10]}..." if token else "bearer:none"
         elif self.auth_type == "api_key":
             api_key = self.auth_credentials.get("api_key", "")
@@ -160,9 +154,7 @@ class MCPTool(Tool):
                     user_id=self.user_id,
                 )
         elif self.auth_type == "bearer":
-            token = self.auth_credentials.get(
-                "bearer_token", ""
-            ) or self.auth_credentials.get("access_token", "")
+            token = self.auth_credentials.get("bearer_token", "") or self.auth_credentials.get("access_token", "")
             if token:
                 auth = BearerAuth(token)
         self._client = Client(transport, auth=auth)
@@ -185,9 +177,7 @@ class MCPTool(Tool):
             username = self.auth_credentials.get("username", "")
             password = self.auth_credentials.get("password", "")
             if username and password:
-                credentials = base64.b64encode(
-                    f"{username}:{password}".encode()
-                ).decode()
+                credentials = base64.b64encode(f"{username}:{password}".encode()).decode()
                 headers["Authorization"] = f"Basic {credentials}"
         if self.transport_type == "auto":
             if "sse" in self.server_url.lower() or self.server_url.endswith("/sse"):
@@ -277,9 +267,7 @@ class MCPTool(Tool):
             try:
                 asyncio.get_running_loop()
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(
-                        self._run_in_new_loop, operation, *args, **kwargs
-                    )
+                    future = executor.submit(self._run_in_new_loop, operation, *args, **kwargs)
                     return future.result(timeout=self.timeout)
             except RuntimeError:
                 return self._run_in_new_loop(operation, *args, **kwargs)
@@ -291,9 +279,7 @@ class MCPTool(Tool):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            return loop.run_until_complete(
-                self._execute_with_client(operation, *args, **kwargs)
-            )
+            return loop.run_until_complete(self._execute_with_client(operation, *args, **kwargs))
         finally:
             loop.close()
 
@@ -337,9 +323,7 @@ class MCPTool(Tool):
                 continue
             cleaned_kwargs[key] = value
         try:
-            result = self._run_async_operation(
-                "call_tool", action_name, **cleaned_kwargs
-            )
+            result = self._run_async_operation("call_tool", action_name, **cleaned_kwargs)
             return self._format_result(result)
         except Exception as e:
             error_msg = str(e)
@@ -361,18 +345,14 @@ class MCPTool(Tool):
                 self._client = None
                 self._setup_client()
                 try:
-                    result = self._run_async_operation(
-                        "call_tool", action_name, **cleaned_kwargs
-                    )
+                    result = self._run_async_operation("call_tool", action_name, **cleaned_kwargs)
                     return self._format_result(result)
                 except Exception as retry_e:
                     raise Exception(
                         f"Action '{action_name}' failed after re-auth attempt: {retry_e}. "
                         "Your credentials may have expired — please re-authorize in tool settings."
                     ) from retry_e
-            raise Exception(
-                f"Failed to execute action '{action_name}': {error_msg}"
-            ) from e
+            raise Exception(f"Failed to execute action '{action_name}': {error_msg}") from e
 
     def _format_result(self, result) -> Dict:
         """Format FastMCP result to match expected format."""
@@ -384,9 +364,7 @@ class MCPTool(Tool):
                 elif hasattr(content_item, "data"):
                     content_list.append({"type": "data", "data": content_item.data})
                 else:
-                    content_list.append(
-                        {"type": "unknown", "content": str(content_item)}
-                    )
+                    content_list.append({"type": "unknown", "content": str(content_item)})
             return {
                 "content": content_list,
                 "isError": getattr(result, "isError", False),
@@ -475,9 +453,7 @@ class MCPTool(Tool):
         }
 
     def _test_oauth_connection(self) -> Dict:
-        storage = DBTokenStorage(
-            server_url=self.server_url, user_id=self.user_id, db_client=db
-        )
+        storage = DBTokenStorage(server_url=self.server_url, user_id=self.user_id, db_client=db)
         loop = asyncio.new_event_loop()
         try:
             tokens = loop.run_until_complete(storage.get_tokens())
@@ -532,10 +508,7 @@ class MCPTool(Tool):
         actions = []
         for tool in self.available_tools:
             input_schema = (
-                tool.get("inputSchema")
-                or tool.get("input_schema")
-                or tool.get("schema")
-                or tool.get("parameters")
+                tool.get("inputSchema") or tool.get("input_schema") or tool.get("schema") or tool.get("parameters")
             )
 
             parameters_schema = {
@@ -777,12 +750,8 @@ class DocsGPTOAuth(OAuthClientProvider):
                 returned_state = self.extracted_state
 
                 self.redis_client.delete(code_key)
-                self.redis_client.delete(
-                    f"{self.redis_prefix}auth_url:{self.extracted_state}"
-                )
-                self.redis_client.delete(
-                    f"{self.redis_prefix}state:{self.extracted_state}"
-                )
+                self.redis_client.delete(f"{self.redis_prefix}auth_url:{self.extracted_state}")
+                self.redis_client.delete(f"{self.redis_prefix}state:{self.extracted_state}")
 
                 if self.task_id:
                     status_data = {
@@ -797,12 +766,8 @@ class DocsGPTOAuth(OAuthClientProvider):
             if error_data:
                 error_msg = error_data.decode()
                 self.redis_client.delete(error_key)
-                self.redis_client.delete(
-                    f"{self.redis_prefix}auth_url:{self.extracted_state}"
-                )
-                self.redis_client.delete(
-                    f"{self.redis_prefix}state:{self.extracted_state}"
-                )
+                self.redis_client.delete(f"{self.redis_prefix}auth_url:{self.extracted_state}")
+                self.redis_client.delete(f"{self.redis_prefix}state:{self.extracted_state}")
                 raise Exception(f"OAuth error: {error_msg}")
             await asyncio.sleep(poll_interval)
         self.redis_client.delete(f"{self.redis_prefix}auth_url:{self.extracted_state}")
@@ -823,14 +788,10 @@ class NonInteractiveOAuth(DocsGPTOAuth):
         super().__init__(**kwargs)
 
     async def redirect_handler(self, authorization_url: str) -> None:
-        raise Exception(
-            "OAuth session expired — please re-authorize this MCP server in tool settings."
-        )
+        raise Exception("OAuth session expired — please re-authorize this MCP server in tool settings.")
 
     async def callback_handler(self) -> tuple[str, str | None]:
-        raise Exception(
-            "OAuth session expired — please re-authorize this MCP server in tool settings."
-        )
+        raise Exception("OAuth session expired — please re-authorize this MCP server in tool settings.")
 
 
 class DBTokenStorage(TokenStorage):
@@ -880,16 +841,12 @@ class DBTokenStorage(TokenStorage):
     async def get_client_info(self) -> OAuthClientInformationFull | None:
         doc = await asyncio.to_thread(self.collection.find_one, self.get_db_key())
         if not doc or "client_info" not in doc:
-            logger.debug(
-                "No client_info in DB for %s", self.get_base_url(self.server_url)
-            )
+            logger.debug("No client_info in DB for %s", self.get_base_url(self.server_url))
             return None
         try:
             client_info = OAuthClientInformationFull.model_validate(doc["client_info"])
             if self.expected_redirect_uri:
-                stored_uris = [
-                    str(uri).rstrip("/") for uri in client_info.redirect_uris
-                ]
+                stored_uris = [str(uri).rstrip("/") for uri in client_info.redirect_uris]
                 expected_uri = self.expected_redirect_uri.rstrip("/")
                 if expected_uri not in stored_uris:
                     logger.warning(
@@ -942,9 +899,7 @@ class MCPOAuthManager:
         self.redis_client = redis_client
         self.redis_prefix = redis_prefix
 
-    def handle_oauth_callback(
-        self, state: str, code: str, error: Optional[str] = None
-    ) -> bool:
+    def handle_oauth_callback(self, state: str, code: str, error: Optional[str] = None) -> bool:
         """
         Handle OAuth callback from provider.
 

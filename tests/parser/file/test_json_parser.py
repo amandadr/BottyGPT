@@ -41,9 +41,9 @@ def test_json_parser_row_joiner_config():
 def test_json_parser_forwards_json_config():
     def pf(s):
         return 1.23
+
     parser = JSONParser(json_config={"parse_float": pf})
     with patch("builtins.open", mock_open(read_data="[]")):
         with patch("json.load", return_value=[]) as mock_load:
             parser.parse_file(Path("t.json"))
             assert mock_load.call_args.kwargs.get("parse_float") is pf
-

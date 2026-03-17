@@ -9,6 +9,7 @@ from application.parser.schema.base import Document
 import tldextract
 import os
 
+
 class CrawlerLoader(BaseRemote):
     def __init__(self, limit=10, allow_subdomains=False):
         """
@@ -60,7 +61,7 @@ class CrawlerLoader(BaseRemote):
             if processed_markdown:
                 # Generate virtual file path from URL for consistent file-like matching
                 virtual_path = self._url_to_virtual_path(current_url)
-                
+
                 # Create a Document for each visited page
                 documents.append(
                     Document(
@@ -104,24 +105,24 @@ class CrawlerLoader(BaseRemote):
             return None
 
     def _process_html_to_markdown(self, html_content, current_url):
-        soup = BeautifulSoup(html_content, 'html.parser')
-        title_tag = soup.find('title')
+        soup = BeautifulSoup(html_content, "html.parser")
+        title_tag = soup.find("title")
         title = title_tag.text.strip() if title_tag else "No Title"
 
         # Extract language
-        language_tag = soup.find('html')
-        language = language_tag.get('lang', 'en') if language_tag else "en"
+        language_tag = soup.find("html")
+        language = language_tag.get("lang", "en") if language_tag else "en"
 
         markdownified = markdownify(html_content, heading_style="ATX", newline_style="BACKSLASH")
         # Reduce sequences of more than two newlines to exactly three
-        markdownified = re.sub(r'\n{3,}', '\n\n\n', markdownified)
+        markdownified = re.sub(r"\n{3,}", "\n\n\n", markdownified)
         return title, language, markdownified
 
     def _extract_links(self, html_content, current_url):
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, "html.parser")
         links = []
-        for a in soup.find_all('a', href=True):
-            full_url = urljoin(current_url, a['href'])
+        for a in soup.find_all("a", href=True):
+            full_url = urljoin(current_url, a["href"])
             links.append((full_url, a.text.strip()))
         return links
 

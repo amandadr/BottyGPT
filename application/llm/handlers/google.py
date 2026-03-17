@@ -34,11 +34,7 @@ class GoogleLLMHandler(LLMHandler):
                         )
                     )
 
-            content = " ".join(
-                part.text
-                for part in parts
-                if hasattr(part, "text") and part.text is not None
-            )
+            content = " ".join(part.text for part in parts if hasattr(part, "text") and part.text is not None)
             return LLMResponse(
                 content=content,
                 tool_calls=tool_calls,

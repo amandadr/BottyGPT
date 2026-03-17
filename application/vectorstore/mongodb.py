@@ -26,10 +26,7 @@ class MongoDBVectorStore(BaseVectorStore):
         try:
             import pymongo
         except ImportError:
-            raise ImportError(
-                "Could not import pymongo python package. "
-                "Please install it with `pip install pymongo`."
-            )
+            raise ImportError("Could not import pymongo python package. Please install it with `pip install pymongo`.")
 
         self._client = pymongo.MongoClient(self._mongo_uri)
         self._database = self._client[database]
@@ -134,16 +131,11 @@ class MongoDBVectorStore(BaseVectorStore):
                 doc_id = str(doc.get("_id"))
                 text = doc.get(self._text_key)
                 metadata = {
-                    k: v
-                    for k, v in doc.items()
-                    if k
-                    not in ["_id", self._text_key, self._embedding_key, "source_id"]
+                    k: v for k, v in doc.items() if k not in ["_id", self._text_key, self._embedding_key, "source_id"]
                 }
 
                 if text:
-                    chunks.append(
-                        {"doc_id": doc_id, "text": text, "metadata": metadata}
-                    )
+                    chunks.append({"doc_id": doc_id, "text": text, "metadata": metadata})
 
             return chunks
         except Exception as e:

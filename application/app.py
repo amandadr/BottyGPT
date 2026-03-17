@@ -104,9 +104,7 @@ def readiness_check():
 def generate_token():
     if settings.AUTH_TYPE == "session_jwt":
         new_user_id = str(uuid.uuid4())
-        token = jwt.encode(
-            {"sub": new_user_id}, settings.JWT_SECRET_KEY, algorithm="HS256"
-        )
+        token = jwt.encode({"sub": new_user_id}, settings.JWT_SECRET_KEY, algorithm="HS256")
         return jsonify({"token": token})
     return jsonify({"error": "Token generation not allowed in current auth mode"}), 400
 
@@ -132,9 +130,7 @@ def after_request(response):
     response.headers.add("X-Request-ID", getattr(request, "request_id", "-"))
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-    response.headers.add(
-        "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
-    )
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     logger.info(
         "request completed",
         extra={

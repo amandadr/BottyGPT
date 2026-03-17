@@ -2,7 +2,7 @@
 
 Use this checklist when provisioning a new VM for the **full stack** (frontend + backend + worker + Redis + Mongo + Qdrant). The GitHub Actions workflow builds both images, pushes to Artifact Registry, and deploys everything on the VM. Do **not** build backend/frontend on the VM; use CI-built images only.
 
-**Production setup in use:** [Secret Manager](SECRET-MANAGER-SETUP.md) (app secrets fetched on deploy when `USE_SECRET_MANAGER=true`) and [Cloud Logging](CLOUD-LOGGING-SETUP.md) (Ops Agent sends Docker container logs to Cloud Logging).
+**Production setup in use:** [Secret Manager](SECRET-MANAGER-SETUP.md) (app secrets fetched on deploy when `USE_SECRET_MANAGER=true`) and [Cloud Logging](CLOUD-LOGGING-SETUP.md) (Ops Agent sends Docker container logs to Cloud Logging). For the reasoning behind these and other architecture choices (region, VM vs serverless, TLS, CI/CD), see [ARCHITECTURE-DECISIONS.md](ARCHITECTURE-DECISIONS.md).
 
 ## Continue deployment
 

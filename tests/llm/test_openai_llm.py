@@ -69,9 +69,7 @@ class FakeChatCompletions:
     def create(self, **kwargs):
         self.last_kwargs = kwargs
         if not kwargs.get("stream"):
-            return FakeChatCompletions._Response(
-                choices=[FakeChatCompletions._Choice(content="hello world")]
-            )
+            return FakeChatCompletions._Response(choices=[FakeChatCompletions._Choice(content="hello world")])
         return FakeChatCompletions._Response(
             lines=[
                 FakeChatCompletions._StreamLine(["part1"]),
@@ -130,11 +128,7 @@ def test_clean_messages_openai_variants(openai_llm):
 
     assert any(
         isinstance(m["content"], list)
-        and any(
-            part.get("type") == "image_url"
-            for part in m["content"]
-            if isinstance(part, dict)
-        )
+        and any(part.get("type") == "image_url" for part in m["content"] if isinstance(part, dict))
         for m in cleaned
         if m["role"] == "user"
     )
@@ -146,9 +140,7 @@ def test_raw_gen_calls_openai_client_and_returns_content(openai_llm):
         {"role": "system", "content": "sys"},
         {"role": "user", "content": "hello"},
     ]
-    content = openai_llm._raw_gen(
-        openai_llm, model="gpt-4o", messages=msgs, stream=False
-    )
+    content = openai_llm._raw_gen(openai_llm, model="gpt-4o", messages=msgs, stream=False)
     assert content == "hello world"
 
     passed = openai_llm.client.chat.completions.last_kwargs
@@ -162,9 +154,7 @@ def test_raw_gen_stream_yields_chunks(openai_llm):
     msgs = [
         {"role": "user", "content": "hi"},
     ]
-    gen = openai_llm._raw_gen_stream(
-        openai_llm, model="gpt", messages=msgs, stream=True
-    )
+    gen = openai_llm._raw_gen_stream(openai_llm, model="gpt", messages=msgs, stream=True)
     chunks = list(gen)
     assert "part1" in "".join(chunks)
     assert "part2" in "".join(chunks)
@@ -176,9 +166,7 @@ def test_raw_gen_stream_emits_thought_events(openai_llm):
 
     openai_llm.client.chat.completions.create = lambda **kwargs: FakeChatCompletions._Response(
         lines=[
-            FakeChatCompletions._StreamLine(
-                [{"reasoning_content": "internal thought"}]
-            ),
+            FakeChatCompletions._StreamLine([{"reasoning_content": "internal thought"}]),
             FakeChatCompletions._StreamLine([{"content": "final answer"}]),
             FakeChatCompletions._StreamLine([{"finish_reason": "stop"}]),
         ]
@@ -239,13 +227,8 @@ def test_prepare_messages_with_attachments_image_and_pdf(openai_llm, monkeypatch
 
     user_msg = next(m for m in out if m["role"] == "user")
     assert isinstance(user_msg["content"], list)
-    types_in_content = [
-        p.get("type") for p in user_msg["content"] if isinstance(p, dict)
-    ]
+    types_in_content = [p.get("type") for p in user_msg["content"] if isinstance(p, dict)]
     assert "image_url" in types_in_content or any(
         isinstance(p, dict) and p.get("image_url") for p in user_msg["content"]
     )
-    assert any(
-        isinstance(p, dict) and p.get("file", {}).get("file_id") == "file_xyz"
-        for p in user_msg["content"]
-    )
+    assert any(isinstance(p, dict) and p.get("file", {}).get("file_id") == "file_xyz" for p in user_msg["content"])

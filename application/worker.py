@@ -94,9 +94,7 @@ def generate_random_string(length):
     return "".join([string.ascii_letters[i % 52] for i in range(length)])
 
 
-current_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Zip extraction security limits
 MAX_UNCOMPRESSED_SIZE = 500 * 1024 * 1024  # 500 MB max uncompressed size
@@ -106,6 +104,7 @@ MAX_COMPRESSION_RATIO = 100  # Maximum compression ratio (to detect zip bombs)
 
 class ZipExtractionError(Exception):
     """Raised when zip extraction fails due to security constraints."""
+
     pass
 
 
@@ -157,8 +156,7 @@ def _validate_zip_safety(zip_path: str, extract_to: str) -> None:
                 # Check file count limit
                 if file_count > MAX_FILE_COUNT:
                     raise ZipExtractionError(
-                        f"Zip file contains too many files (>{MAX_FILE_COUNT}). "
-                        "This may be a zip bomb attack."
+                        f"Zip file contains too many files (>{MAX_FILE_COUNT}). This may be a zip bomb attack."
                     )
 
                 # Accumulate uncompressed size
@@ -168,17 +166,15 @@ def _validate_zip_safety(zip_path: str, extract_to: str) -> None:
                 if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
                     raise ZipExtractionError(
                         f"Zip file uncompressed size exceeds limit "
-                        f"({total_uncompressed / (1024*1024):.1f} MB > "
-                        f"{MAX_UNCOMPRESSED_SIZE / (1024*1024):.1f} MB). "
+                        f"({total_uncompressed / (1024 * 1024):.1f} MB > "
+                        f"{MAX_UNCOMPRESSED_SIZE / (1024 * 1024):.1f} MB). "
                         "This may be a zip bomb attack."
                     )
 
                 # Check for path traversal (zip slip)
                 target_path = os.path.join(extract_to, info.filename)
                 if not _is_path_safe(extract_to, target_path):
-                    raise ZipExtractionError(
-                        f"Zip file contains path traversal attempt: {info.filename}"
-                    )
+                    raise ZipExtractionError(f"Zip file contains path traversal attempt: {info.filename}")
 
             # Check compression ratio (only if compressed size is meaningful)
             if compressed_size > 0 and total_uncompressed > 0:
@@ -340,9 +336,7 @@ def run_agent_logic(agent_config, input_data):
         system_api_key = get_api_key_for_provider(provider or settings.LLM_PROVIDER)
 
         # Calculate proper doc_token_limit based on model's context window
-        doc_token_limit = calculate_doc_token_budget(
-            model_id=model_id
-        )
+        doc_token_limit = calculate_doc_token_budget(model_id=model_id)
 
         retriever = RetrieverCreator.create_retriever(
             retriever,
@@ -477,9 +471,7 @@ def ingest_worker(
                         with open(local_file_path, "wb") as f:
                             f.write(file_data.read())
                     except Exception as e:
-                        logging.error(
-                            f"Error downloading file {storage_file_path}: {e}"
-                        )
+                        logging.error(f"Error downloading file {storage_file_path}: {e}")
                         continue
             else:
                 # Handle single file case
@@ -528,9 +520,7 @@ def ingest_worker(
                         extra_info["filename"] = display_name
                         extra_info["file_name"] = display_name
                         extra_info["title"] = display_name
-                directory_structure = _apply_display_names_to_structure(
-                    directory_structure, file_name_map
-                )
+                directory_structure = _apply_display_names_to_structure(directory_structure, file_name_map)
 
             chunker = Chunker(
                 chunking_strategy="classic_chunk",
@@ -614,9 +604,7 @@ def reingest_source_worker(self, source_id, user):
         source_file_path = source.get("file_path", "")
         file_name_map = _normalize_file_name_map(source.get("file_name_map"))
 
-        self.update_state(
-            state="PROGRESS", meta={"current": 20, "status": "Scanning current files"}
-        )
+        self.update_state(state="PROGRESS", meta={"current": 20, "status": "Scanning current files"})
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # Download all files from storage to temp directory, preserving directory structure
@@ -638,9 +626,7 @@ def reingest_source_worker(self, source_id, user):
                         with open(local_file_path, "wb") as f:
                             f.write(file_data.read())
                     except Exception as e:
-                        logging.error(
-                            f"Error downloading file {storage_file_path}: {e}"
-                        )
+                        logging.error(f"Error downloading file {storage_file_path}: {e}")
                         continue
 
             reader = SimpleDirectoryReader(
@@ -668,9 +654,7 @@ def reingest_source_worker(self, source_id, user):
             )
             reader.load_data()
             directory_structure = reader.directory_structure
-            logging.info(
-                f"Directory structure built with token counts: {directory_structure}"
-            )
+            logging.info(f"Directory structure built with token counts: {directory_structure}")
 
             try:
                 old_directory_structure = source.get("directory_structure") or {}
@@ -684,17 +668,11 @@ def reingest_source_worker(self, source_id, user):
                     files = set()
                     if isinstance(struct, dict):
                         for name, meta in struct.items():
-                            current_path = (
-                                os.path.join(prefix, name) if prefix else name
-                            )
-                            if isinstance(meta, dict) and (
-                                "type" in meta and "size_bytes" in meta
-                            ):
+                            current_path = os.path.join(prefix, name) if prefix else name
+                            if isinstance(meta, dict) and ("type" in meta and "size_bytes" in meta):
                                 files.add(current_path)
                             elif isinstance(meta, dict):
-                                files |= _flatten_directory_structure(
-                                    meta, current_path
-                                )
+                                files |= _flatten_directory_structure(meta, current_path)
                     return files
 
                 old_files = _flatten_directory_structure(old_directory_structure)
@@ -714,9 +692,7 @@ def reingest_source_worker(self, source_id, user):
                     logging.info("No files removed since last ingest.")
 
             except Exception as e:
-                logging.error(
-                    f"Error comparing directory structures: {e}", exc_info=True
-                )
+                logging.error(f"Error comparing directory structures: {e}", exc_info=True)
                 added_files = []
                 removed_files = []
             try:
@@ -746,11 +722,7 @@ def reingest_source_worker(self, source_id, user):
                 if removed_files:
                     try:
                         for ch in vector_store.get_chunks() or []:
-                            metadata = (
-                                ch.get("metadata", {})
-                                if isinstance(ch, dict)
-                                else getattr(ch, "metadata", {})
-                            )
+                            metadata = ch.get("metadata", {}) if isinstance(ch, dict) else getattr(ch, "metadata", {})
                             raw_source = metadata.get("source")
 
                             source_file = str(raw_source) if raw_source else ""
@@ -762,12 +734,8 @@ def reingest_source_worker(self, source_id, user):
                                         vector_store.delete_chunk(cid)
                                         deleted += 1
                                     except Exception as de:
-                                        logging.error(
-                                            f"Failed deleting chunk {cid}: {de}"
-                                        )
-                        logging.info(
-                            f"Deleted {deleted} chunks from {len(removed_files)} removed files"
-                        )
+                                        logging.error(f"Failed deleting chunk {cid}: {de}")
+                        logging.info(f"Deleted {deleted} chunks from {len(removed_files)} removed files")
                     except Exception as e:
                         logging.error(
                             f"Error during deletion of removed file chunks: {e}",
@@ -806,50 +774,32 @@ def reingest_source_worker(self, source_id, user):
                                 token_count,
                             ) in reader_new.file_token_counts.items():
                                 try:
-                                    rel_path = os.path.relpath(
-                                        file_path, start=temp_dir
-                                    )
+                                    rel_path = os.path.relpath(file_path, start=temp_dir)
                                     path_parts = rel_path.split(os.sep)
                                     current_dir = directory_structure
 
                                     for part in path_parts[:-1]:
-                                        if part in current_dir and isinstance(
-                                            current_dir[part], dict
-                                        ):
+                                        if part in current_dir and isinstance(current_dir[part], dict):
                                             current_dir = current_dir[part]
                                         else:
                                             break
 
                                     filename = path_parts[-1]
-                                    if filename in current_dir and isinstance(
-                                        current_dir[filename], dict
-                                    ):
-                                        current_dir[filename][
-                                            "token_count"
-                                        ] = token_count
-                                        logging.info(
-                                            f"Updated token count for {rel_path}: {token_count}"
-                                        )
+                                    if filename in current_dir and isinstance(current_dir[filename], dict):
+                                        current_dir[filename]["token_count"] = token_count
+                                        logging.info(f"Updated token count for {rel_path}: {token_count}")
                                 except Exception as e:
-                                    logging.warning(
-                                        f"Could not update token count for {file_path}: {e}"
-                                    )
+                                    logging.warning(f"Could not update token count for {file_path}: {e}")
 
                             for d in chunked_new:
                                 meta = dict(d.extra_info or {})
                                 try:
                                     raw_src = meta.get("source")
-                                    if isinstance(raw_src, str) and os.path.isabs(
-                                        raw_src
-                                    ):
-                                        meta["source"] = os.path.relpath(
-                                            raw_src, start=temp_dir
-                                        )
+                                    if isinstance(raw_src, str) and os.path.isabs(raw_src):
+                                        meta["source"] = os.path.relpath(raw_src, start=temp_dir)
                                 except Exception:
                                     pass
-                                display_name = _get_display_name(
-                                    file_name_map, meta.get("source")
-                                )
+                                display_name = _get_display_name(file_name_map, meta.get("source"))
                                 if display_name:
                                     display_name = str(display_name)
                                     meta["filename"] = display_name
@@ -858,20 +808,14 @@ def reingest_source_worker(self, source_id, user):
 
                                 vector_store.add_chunk(d.text, metadata=meta)
                                 added += 1
-                            logging.info(
-                                f"Added {added} chunks from {len(added_files)} new files"
-                            )
+                            logging.info(f"Added {added} chunks from {len(added_files)} new files")
                     except Exception as e:
-                        logging.error(
-                            f"Error during ingestion of new files: {e}", exc_info=True
-                        )
+                        logging.error(f"Error during ingestion of new files: {e}", exc_info=True)
 
                 # 3) Update source directory structure timestamp
                 try:
                     total_tokens = sum(reader.file_token_counts.values())
-                    directory_structure = _apply_display_names_to_structure(
-                        directory_structure, file_name_map
-                    )
+                    directory_structure = _apply_display_names_to_structure(directory_structure, file_name_map)
 
                     sources_collection.update_one(
                         {"_id": ObjectId(source_id)},
@@ -884,9 +828,7 @@ def reingest_source_worker(self, source_id, user):
                         },
                     )
                 except Exception as e:
-                    logging.error(
-                        f"Error updating directory_structure in DB: {e}", exc_info=True
-                    )
+                    logging.error(f"Error updating directory_structure in DB: {e}", exc_info=True)
 
                 self.update_state(
                     state="PROGRESS",
@@ -903,9 +845,7 @@ def reingest_source_worker(self, source_id, user):
                     "chunks_deleted": deleted,
                 }
             except Exception as e:
-                logging.error(
-                    f"Error while processing file changes: {e}", exc_info=True
-                )
+                logging.error(f"Error while processing file changes: {e}", exc_info=True)
                 raise
 
     except Exception as e:
@@ -986,9 +926,7 @@ def remote_worker(
                 size_bytes = len(doc.text.encode("utf-8")) if doc.text else 0
 
                 # Guess mime type from extension
-                file_name = (
-                    file_path.split("/")[-1] if "/" in file_path else file_path
-                )
+                file_name = file_path.split("/")[-1] if "/" in file_path else file_path
                 ext = os.path.splitext(file_name)[1].lower()
                 mime_types = {
                     ".txt": "text/plain",
@@ -1027,8 +965,7 @@ def remote_worker(
                         current_level = current_level[part]
 
         logging.info(
-            f"Built directory structure with {len(directory_structure)} files: "
-            f"{list(directory_structure.keys())}"
+            f"Built directory structure with {len(directory_structure)} files: {list(directory_structure.keys())}"
         )
 
         if operation_mode == "upload":
@@ -1043,9 +980,7 @@ def remote_worker(
         self.update_state(state="PROGRESS", meta={"current": 100})
 
         # Serialize remote_data as JSON if it's a dict (for S3, Reddit, etc.)
-        remote_data_serialized = (
-            json.dumps(source_data) if isinstance(source_data, dict) else source_data
-        )
+        remote_data_serialized = json.dumps(source_data) if isinstance(source_data, dict) else source_data
         file_data = {
             "name": name_job,
             "user": user,
@@ -1125,17 +1060,10 @@ def sync_worker(self, frequency):
             source_data = doc.get("remote_data")
             retriever = doc.get("retriever")
             doc_id = str(doc.get("_id"))
-            resp = sync(
-                self, source_data, name, user, source_type, frequency, retriever, doc_id
-            )
+            resp = sync(self, source_data, name, user, source_type, frequency, retriever, doc_id)
             sync_counts["total_sync_count"] += 1
-            sync_counts[
-                "sync_success" if resp["status"] == "success" else "sync_failure"
-            ] += 1
-    return {
-        key: sync_counts[key]
-        for key in ["total_sync_count", "sync_success", "sync_failure"]
-    }
+            sync_counts["sync_success" if resp["status"] == "success" else "sync_failure"] += 1
+    return {key: sync_counts[key] for key in ["total_sync_count", "sync_success", "sync_failure"]}
 
 
 def attachment_worker(self, file_info, user):
@@ -1156,23 +1084,21 @@ def attachment_worker(self, file_info, user):
         self.update_state(state="PROGRESS", meta={"current": 10})
         storage = StorageCreator.get_storage()
 
-        self.update_state(
-            state="PROGRESS", meta={"current": 30, "status": "Processing content"}
-        )
+        self.update_state(state="PROGRESS", meta={"current": 30, "status": "Processing content"})
 
-        file_extractor = get_default_file_extractor(
-            ocr_enabled=settings.DOCLING_OCR_ATTACHMENTS_ENABLED
-        )
+        file_extractor = get_default_file_extractor(ocr_enabled=settings.DOCLING_OCR_ATTACHMENTS_ENABLED)
         content = storage.process_file(
             relative_path,
-            lambda local_path, **kwargs: SimpleDirectoryReader(
-                input_files=[local_path],
-                exclude_hidden=True,
-                errors="ignore",
-                file_extractor=file_extractor,
-            )
-            .load_data()[0]
-            .text,
+            lambda local_path, **kwargs: (
+                SimpleDirectoryReader(
+                    input_files=[local_path],
+                    exclude_hidden=True,
+                    errors="ignore",
+                    file_extractor=file_extractor,
+                )
+                .load_data()[0]
+                .text
+            ),
         )
 
         token_count = num_tokens_from_string(content)
@@ -1180,9 +1106,7 @@ def attachment_worker(self, file_info, user):
             content = content[:250000]
             token_count = num_tokens_from_string(content)
 
-        self.update_state(
-            state="PROGRESS", meta={"current": 80, "status": "Storing in database"}
-        )
+        self.update_state(state="PROGRESS", meta={"current": 80, "status": "Storing in database"})
 
         mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
@@ -1201,9 +1125,7 @@ def attachment_worker(self, file_info, user):
             }
         )
 
-        logging.info(
-            f"Stored attachment with ID: {attachment_id}", extra={"user": user}
-        )
+        logging.info(f"Stored attachment with ID: {attachment_id}", extra={"user": user})
 
         self.update_state(state="PROGRESS", meta={"current": 100, "status": "Complete"})
 
@@ -1257,9 +1179,7 @@ def agent_webhook_worker(self, agent_id, payload):
         logging.error(f"Error running agent logic: {e}", exc_info=True)
         return {"status": "error"}
     else:
-        logging.info(
-            f"Webhook processed for agent {agent_id}", extra={"agent_id": agent_id}
-        )
+        logging.info(f"Webhook processed for agent {agent_id}", extra={"agent_id": agent_id})
         return {"status": "success", "result": result}
     finally:
         self.update_state(state="PROGRESS", meta={"current": 100})
@@ -1295,9 +1215,7 @@ def ingest_connector(
         doc_id: Document ID for sync operations (required when operation_mode="sync")
         sync_frequency: How often to sync ("never", "daily", "weekly", "monthly")
     """
-    logging.info(
-        f"Starting remote ingestion from {source_type} for user: {user}, job: {job_name}"
-    )
+    logging.info(f"Starting remote ingestion from {source_type} for user: {user}, job: {job_name}")
     self.update_state(state="PROGRESS", meta={"current": 1})
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -1316,9 +1234,7 @@ def ingest_connector(
                     f"Unsupported connector type: {source_type}. Supported types: {ConnectorCreator.get_supported_connectors()}"
                 )
 
-            remote_loader = ConnectorCreator.create_connector(
-                source_type, session_token
-            )
+            remote_loader = ConnectorCreator.create_connector(source_type, session_token)
 
             # Create a clean config for storage
             api_source_config = {
@@ -1328,16 +1244,10 @@ def ingest_connector(
             }
 
             # Step 2: Download files to temp directory
-            self.update_state(
-                state="PROGRESS", meta={"current": 20, "status": "Downloading files"}
-            )
-            download_info = remote_loader.download_to_directory(
-                temp_dir, api_source_config
-            )
+            self.update_state(state="PROGRESS", meta={"current": 20, "status": "Downloading files"})
+            download_info = remote_loader.download_to_directory(temp_dir, api_source_config)
 
-            if download_info.get("empty_result", False) or not download_info.get(
-                "files_downloaded", 0
-            ):
+            if download_info.get("empty_result", False) or not download_info.get("files_downloaded", 0):
                 logging.warning(f"No files were downloaded from {source_type}")
                 # Create empty result directly instead of calling a separate method
                 return {
@@ -1350,9 +1260,7 @@ def ingest_connector(
                 }
 
             # Step 3: Use SimpleDirectoryReader to process downloaded files
-            self.update_state(
-                state="PROGRESS", meta={"current": 40, "status": "Processing files"}
-            )
+            self.update_state(state="PROGRESS", meta={"current": 40, "status": "Processing files"})
             reader = SimpleDirectoryReader(
                 input_dir=temp_dir,
                 recursive=True,
@@ -1380,9 +1288,7 @@ def ingest_connector(
             directory_structure = getattr(reader, "directory_structure", {})
 
             # Step 4: Process documents (chunking, embedding, etc.)
-            self.update_state(
-                state="PROGRESS", meta={"current": 60, "status": "Processing documents"}
-            )
+            self.update_state(state="PROGRESS", meta={"current": 60, "status": "Processing documents"})
 
             chunker = Chunker(
                 chunking_strategy="classic_chunk",
@@ -1398,9 +1304,7 @@ def ingest_connector(
                     source = doc.extra_info.get("source")
                     if source and os.path.isabs(source):
                         # Convert absolute path to relative path
-                        doc.extra_info["source"] = os.path.relpath(
-                            source, start=temp_dir
-                        )
+                        doc.extra_info["source"] = os.path.relpath(source, start=temp_dir)
 
             docs = [Document.to_langchain_format(raw_doc) for raw_doc in raw_docs]
 
@@ -1408,9 +1312,7 @@ def ingest_connector(
                 id = ObjectId()
             elif operation_mode == "sync":
                 if not doc_id or not ObjectId.is_valid(doc_id):
-                    logging.error(
-                        "Invalid doc_id provided for sync operation: %s", doc_id
-                    )
+                    logging.error("Invalid doc_id provided for sync operation: %s", doc_id)
                     raise ValueError("doc_id must be provided for sync operation.")
                 id = ObjectId(doc_id)
             else:
@@ -1419,9 +1321,7 @@ def ingest_connector(
             vector_store_path = os.path.join(temp_dir, "vector_store")
             os.makedirs(vector_store_path, exist_ok=True)
 
-            self.update_state(
-                state="PROGRESS", meta={"current": 80, "status": "Storing documents"}
-            )
+            self.update_state(state="PROGRESS", meta={"current": 80, "status": "Storing documents"})
             embed_and_store_documents(docs, vector_store_path, id, self)
 
             tokens = count_tokens_docs(docs)
@@ -1434,9 +1334,7 @@ def ingest_connector(
                 "retriever": retriever,
                 "id": str(id),
                 "type": "connector:file",
-                "remote_data": json.dumps(
-                    {"provider": source_type, **api_source_config}
-                ),
+                "remote_data": json.dumps({"provider": source_type, **api_source_config}),
                 "directory_structure": json.dumps(directory_structure),
                 "sync_frequency": sync_frequency,
             }
@@ -1449,9 +1347,7 @@ def ingest_connector(
             upload_index(vector_store_path, file_data)
 
             # Ensure we mark the task as complete
-            self.update_state(
-                state="PROGRESS", meta={"current": 100, "status": "Complete"}
-            )
+            self.update_state(state="PROGRESS", meta={"current": 100, "status": "Complete"})
 
             logging.info(f"Remote ingestion completed: {job_name}")
 

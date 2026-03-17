@@ -51,20 +51,14 @@ try:
         background=True,
     )
     users_collection.create_index("user_id", unique=True)
-    workflows_collection.create_index(
-        [("user", 1)], name="workflow_user_index", background=True
-    )
-    workflow_nodes_collection.create_index(
-        [("workflow_id", 1)], name="node_workflow_index", background=True
-    )
+    workflows_collection.create_index([("user", 1)], name="workflow_user_index", background=True)
+    workflow_nodes_collection.create_index([("workflow_id", 1)], name="node_workflow_index", background=True)
     workflow_nodes_collection.create_index(
         [("workflow_id", 1), ("graph_version", 1)],
         name="node_workflow_graph_version_index",
         background=True,
     )
-    workflow_edges_collection.create_index(
-        [("workflow_id", 1)], name="edge_workflow_index", background=True
-    )
+    workflow_edges_collection.create_index([("workflow_id", 1)], name="edge_workflow_index", background=True)
     workflow_edges_collection.create_index(
         [("workflow_id", 1), ("graph_version", 1)],
         name="edge_workflow_graph_version_index",
@@ -72,9 +66,7 @@ try:
     )
 except Exception as e:
     print("Error creating indexes:", e)
-current_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def generate_minute_range(start_date, end_date):
@@ -145,9 +137,7 @@ def resolve_tool_details(tool_ids):
     Returns:
         List of tool details with id, name, and display_name
     """
-    tools = user_tools_collection.find(
-        {"_id": {"$in": [ObjectId(tid) for tid in tool_ids]}}
-    )
+    tools = user_tools_collection.find({"_id": {"$in": [ObjectId(tid) for tid in tool_ids]}})
     return [
         {
             "id": str(tool["_id"]),
@@ -198,7 +188,9 @@ def handle_image_upload(
         file = request.files["image"]
         if file.filename != "":
             filename = secure_filename(file.filename)
-            upload_path = f"{settings.UPLOAD_FOLDER.rstrip('/')}/{user}/{base_path.rstrip('/')}/{uuid.uuid4()}_{filename}"
+            upload_path = (
+                f"{settings.UPLOAD_FOLDER.rstrip('/')}/{user}/{base_path.rstrip('/')}/{uuid.uuid4()}_{filename}"
+            )
             try:
                 storage.save_file(file, upload_path, storage_class="STANDARD")
                 image_url = upload_path
@@ -226,19 +218,11 @@ def require_agent(func):
     def wrapper(*args, **kwargs):
         webhook_token = kwargs.get("webhook_token")
         if not webhook_token:
-            return make_response(
-                jsonify({"success": False, "message": "Webhook token missing"}), 400
-            )
-        agent = agents_collection.find_one(
-            {"incoming_webhook_token": webhook_token}, {"_id": 1}
-        )
+            return make_response(jsonify({"success": False, "message": "Webhook token missing"}), 400)
+        agent = agents_collection.find_one({"incoming_webhook_token": webhook_token}, {"_id": 1})
         if not agent:
-            current_app.logger.warning(
-                f"Webhook attempt with invalid token: {webhook_token}"
-            )
-            return make_response(
-                jsonify({"success": False, "message": "Agent not found"}), 404
-            )
+            current_app.logger.warning(f"Webhook attempt with invalid token: {webhook_token}")
+            return make_response(jsonify({"success": False, "message": "Agent not found"}), 404)
         kwargs["agent"] = agent
         kwargs["agent_id_str"] = str(agent["_id"])
         return func(*args, **kwargs)

@@ -48,9 +48,7 @@ class WorkflowEngine:
         self._template_engine = TemplateEngine()
         self._namespace_manager = NamespaceManager()
 
-    def execute(
-        self, initial_inputs: WorkflowState, query: str
-    ) -> Generator[Dict[str, str], None, None]:
+    def execute(self, initial_inputs: WorkflowState, query: str) -> Generator[Dict[str, str], None, None]:
         self._initialize_state(initial_inputs, query)
 
         start_node = self.graph.get_start_node()
@@ -119,14 +117,10 @@ class WorkflowEngine:
                 break
             current_node_id = self._get_next_node_id(current_node_id)
             if current_node_id is None and node.type != NodeType.END:
-                logger.warning(
-                    f"Branch ended at node '{node.title}' ({node.id}) without reaching an end node"
-                )
+                logger.warning(f"Branch ended at node '{node.title}' ({node.id}) without reaching an end node")
             steps += 1
         if steps >= self.MAX_EXECUTION_STEPS:
-            logger.warning(
-                f"Workflow reached max steps limit ({self.MAX_EXECUTION_STEPS})"
-            )
+            logger.warning(f"Workflow reached max steps limit ({self.MAX_EXECUTION_STEPS})")
 
     def _initialize_state(self, initial_inputs: WorkflowState, query: str) -> None:
         self.state.update(initial_inputs)
@@ -160,9 +154,7 @@ class WorkflowEngine:
 
         return edges[0].target_id
 
-    def _execute_node(
-        self, node: WorkflowNode
-    ) -> Generator[Dict[str, str], None, None]:
+    def _execute_node(self, node: WorkflowNode) -> Generator[Dict[str, str], None, None]:
         logger.info(f"Executing node {node.id} ({node.type.value})")
 
         node_handlers = {
@@ -178,19 +170,13 @@ class WorkflowEngine:
         if handler:
             yield from handler(node)
 
-    def _execute_start_node(
-        self, node: WorkflowNode
-    ) -> Generator[Dict[str, str], None, None]:
+    def _execute_start_node(self, node: WorkflowNode) -> Generator[Dict[str, str], None, None]:
         yield from ()
 
-    def _execute_note_node(
-        self, node: WorkflowNode
-    ) -> Generator[Dict[str, str], None, None]:
+    def _execute_note_node(self, node: WorkflowNode) -> Generator[Dict[str, str], None, None]:
         yield from ()
 
-    def _execute_agent_node(
-        self, node: WorkflowNode
-    ) -> Generator[Dict[str, str], None, None]:
+    def _execute_agent_node(self, node: WorkflowNode) -> Generator[Dict[str, str], None, None]:
         from application.core.model_utils import (
             get_api_key_for_provider,
             get_model_capabilities,
@@ -203,25 +189,15 @@ class WorkflowEngine:
             formatted_prompt = self._format_template(node_config.prompt_template)
         else:
             formatted_prompt = self.state.get("query", "")
-        node_json_schema = self._normalize_node_json_schema(
-            node_config.json_schema, node.title
-        )
+        node_json_schema = self._normalize_node_json_schema(node_config.json_schema, node.title)
         node_model_id = node_config.model_id or self.agent.model_id
-        node_llm_name = (
-            node_config.llm_name
-            or get_provider_from_model_id(node_model_id or "")
-            or self.agent.llm_name
-        )
+        node_llm_name = node_config.llm_name or get_provider_from_model_id(node_model_id or "") or self.agent.llm_name
         node_api_key = get_api_key_for_provider(node_llm_name) or self.agent.api_key
 
         if node_json_schema and node_model_id:
             model_capabilities = get_model_capabilities(node_model_id)
-            if model_capabilities and not model_capabilities.get(
-                "supports_structured_output", False
-            ):
-                raise ValueError(
-                    f'Model "{node_model_id}" does not support structured output for node "{node.title}"'
-                )
+            if model_capabilities and not model_capabilities.get("supports_structured_output", False):
+                raise ValueError(f'Model "{node_model_id}" does not support structured output for node "{node.title}"')
 
         node_agent = WorkflowNodeAgentFactory.create(
             agent_type=node_config.agent_type,
@@ -261,20 +237,14 @@ class WorkflowEngine:
         if has_structured_response:
             structured_response = "".join(structured_response_parts).strip()
             response_to_parse = structured_response or full_response
-            parsed_success, parsed_structured = self._parse_structured_output(
-                response_to_parse
-            )
+            parsed_success, parsed_structured = self._parse_structured_output(response_to_parse)
             output_value = parsed_structured if parsed_success else response_to_parse
             if node_json_schema:
                 self._validate_structured_output(node_json_schema, output_value)
         elif node_json_schema:
-            parsed_success, parsed_structured = self._parse_structured_output(
-                full_response
-            )
+            parsed_success, parsed_structured = self._parse_structured_output(full_response)
             if not parsed_success:
-                raise ValueError(
-                    "Structured output was expected but response was not valid JSON"
-                )
+                raise ValueError("Structured output was expected but response was not valid JSON")
             output_value = parsed_structured
             self._validate_structured_output(node_json_schema, output_value)
 
@@ -284,9 +254,7 @@ class WorkflowEngine:
         if node_config.output_variable:
             self.state[node_config.output_variable] = output_value
 
-    def _execute_state_node(
-        self, node: WorkflowNode
-    ) -> Generator[Dict[str, str], None, None]:
+    def _execute_state_node(self, node: WorkflowNode) -> Generator[Dict[str, str], None, None]:
         config = node.config.get("config", node.config)
         for op in config.get("operations", []):
             expression = op.get("expression", "")
@@ -295,9 +263,7 @@ class WorkflowEngine:
                 self.state[target_variable] = evaluate_cel(expression, self.state)
         yield from ()
 
-    def _execute_condition_node(
-        self, node: WorkflowNode
-    ) -> Generator[Dict[str, str], None, None]:
+    def _execute_condition_node(self, node: WorkflowNode) -> Generator[Dict[str, str], None, None]:
         config = ConditionNodeConfig(**node.config.get("config", node.config))
         matched_handle = None
 
@@ -314,9 +280,7 @@ class WorkflowEngine:
         self._condition_result = matched_handle or "else"
         yield from ()
 
-    def _execute_end_node(
-        self, node: WorkflowNode
-    ) -> Generator[Dict[str, str], None, None]:
+    def _execute_end_node(self, node: WorkflowNode) -> Generator[Dict[str, str], None, None]:
         config = node.config.get("config", node.config)
         output_template = str(config.get("output_template", ""))
         if output_template:
@@ -331,9 +295,7 @@ class WorkflowEngine:
         try:
             return True, json.loads(normalized_response)
         except json.JSONDecodeError:
-            logger.warning(
-                "Workflow agent returned structured output that was not valid JSON"
-            )
+            logger.warning("Workflow agent returned structured output that was not valid JSON")
             return False, None
 
     def _normalize_node_json_schema(
@@ -344,15 +306,11 @@ class WorkflowEngine:
         try:
             return normalize_json_schema_payload(schema)
         except JsonSchemaValidationError as exc:
-            raise ValueError(
-                f'Invalid JSON schema for node "{node_title}": {exc}'
-            ) from exc
+            raise ValueError(f'Invalid JSON schema for node "{node_title}": {exc}') from exc
 
     def _validate_structured_output(self, schema: Dict[str, Any], output_value: Any) -> None:
         if jsonschema is None:
-            logger.warning(
-                "jsonschema package is not available, skipping structured output validation"
-            )
+            logger.warning("jsonschema package is not available, skipping structured output validation")
             return
 
         try:
@@ -372,21 +330,13 @@ class WorkflowEngine:
         try:
             return self._template_engine.render(template, context)
         except TemplateRenderError as e:
-            logger.warning(
-                "Workflow template rendering failed, using raw template: %s", str(e)
-            )
+            logger.warning("Workflow template rendering failed, using raw template: %s", str(e))
             return template
 
     def _build_template_context(self) -> Dict[str, Any]:
         docs, docs_together = self._get_source_template_data()
-        passthrough_data = (
-            self.state.get("passthrough")
-            if isinstance(self.state.get("passthrough"), dict)
-            else None
-        )
-        tools_data = (
-            self.state.get("tools") if isinstance(self.state.get("tools"), dict) else None
-        )
+        passthrough_data = self.state.get("passthrough") if isinstance(self.state.get("passthrough"), dict) else None
+        tools_data = self.state.get("tools") if isinstance(self.state.get("tools"), dict) else None
 
         context = self._namespace_manager.build_context(
             user_id=getattr(self.agent, "user", None),

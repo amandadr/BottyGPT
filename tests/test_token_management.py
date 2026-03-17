@@ -6,6 +6,7 @@ They are skipped until the following modules are created:
 - application.compression (DocumentCompressor, HistoryCompressor, etc.)
 - application.core.token_budget (TokenBudgetManager)
 """
+
 # ruff: noqa: F821
 import pytest
 
@@ -51,10 +52,7 @@ class TestTokenBudgetManager:
         manager = TokenBudgetManager(model_id="gpt-4o")
 
         # Create scenario with excessive history
-        large_history = [
-            {"prompt": f"Question {i}" * 100, "response": f"Answer {i}" * 100}
-            for i in range(100)
-        ]
+        large_history = [{"prompt": f"Question {i}" * 100, "response": f"Answer {i}" * 100} for i in range(100)]
 
         budget, usage, recommendation = manager.check_and_recommend(
             system_prompt="You are a helpful assistant.",
@@ -74,13 +72,9 @@ class TestHistoryCompressor:
         """Test sliding window compression strategy"""
         compressor = HistoryCompressor()
 
-        history = [
-            {"prompt": f"Question {i}", "response": f"Answer {i}"} for i in range(20)
-        ]
+        history = [{"prompt": f"Question {i}", "response": f"Answer {i}"} for i in range(20)]
 
-        compressed, metadata = compressor.compress(
-            history, target_tokens=500, strategy="sliding_window"
-        )
+        compressed, metadata = compressor.compress(history, target_tokens=500, strategy="sliding_window")
 
         assert len(compressed) < len(history)
         assert metadata["original_messages"] == 20
@@ -117,14 +111,9 @@ class TestDocumentCompressor:
         """Test re-ranking compression strategy"""
         compressor = DocumentCompressor()
 
-        docs = [
-            {"text": f"Document {i} with some content here" * 20, "title": f"Doc {i}"}
-            for i in range(10)
-        ]
+        docs = [{"text": f"Document {i} with some content here" * 20, "title": f"Doc {i}"} for i in range(10)]
 
-        compressed, metadata = compressor.compress(
-            docs, target_tokens=500, query="Document 5", strategy="rerank"
-        )
+        compressed, metadata = compressor.compress(docs, target_tokens=500, query="Document 5", strategy="rerank")
 
         assert len(compressed) < len(docs)
         assert metadata["original_docs"] == 10
@@ -136,16 +125,12 @@ class TestDocumentCompressor:
 
         docs = [
             {
-                "text": "This is a long document. " * 100
-                + "Python is great. "
-                + "More text here. " * 100,
+                "text": "This is a long document. " * 100 + "Python is great. " + "More text here. " * 100,
                 "title": "Python Guide",
             }
         ]
 
-        compressed, metadata = compressor.compress(
-            docs, target_tokens=300, query="Python", strategy="excerpt"
-        )
+        compressed, metadata = compressor.compress(docs, target_tokens=300, query="Python", strategy="excerpt")
 
         assert metadata["excerpts_created"] > 0
         # Excerpt should contain the query term
@@ -167,9 +152,7 @@ class TestToolResultCompressor:
             }
         ]
 
-        compressed, metadata = compressor.compress(
-            tool_results, target_tokens=100, strategy="truncate"
-        )
+        compressed, metadata = compressor.compress(tool_results, target_tokens=100, strategy="truncate")
 
         assert metadata["results_truncated"] > 0
         # Result should be shorter
@@ -193,9 +176,7 @@ class TestToolResultCompressor:
             }
         ]
 
-        compressed, metadata = compressor.compress(
-            tool_results, target_tokens=100, strategy="extract"
-        )
+        compressed, metadata = compressor.compress(tool_results, target_tokens=100, strategy="extract")
 
         # Should keep important fields, discard verbose ones
         assert "data" in compressed[0]["result"]
@@ -220,9 +201,7 @@ class TestPromptOptimizer:
             for i in range(10)
         ]
 
-        optimized, metadata = optimizer.optimize_tools(
-            tools, target_tokens=500, strategy="compress"
-        )
+        optimized, metadata = optimizer.optimize_tools(tools, target_tokens=500, strategy="compress")
 
         assert metadata["optimized_tokens"] < metadata["original_tokens"]
         assert metadata["descriptions_compressed"] > 0
@@ -277,15 +256,10 @@ def test_integration_compression_workflow():
     doc_compressor = DocumentCompressor()
 
     # Large chat history
-    history = [
-        {"prompt": f"Question {i}" * 50, "response": f"Answer {i}" * 50}
-        for i in range(50)
-    ]
+    history = [{"prompt": f"Question {i}" * 50, "response": f"Answer {i}" * 50} for i in range(50)]
 
     # Large documents
-    docs = [
-        {"text": f"Document {i} content" * 100, "title": f"Doc {i}"} for i in range(20)
-    ]
+    docs = [{"text": f"Document {i} content" * 100, "title": f"Doc {i}"} for i in range(20)]
 
     # Check budget
     budget, usage, recommendation = manager.check_and_recommend(

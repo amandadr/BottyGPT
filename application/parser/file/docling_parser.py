@@ -6,6 +6,7 @@ table structure recognition, and unified document representation.
 Supports: PDF, DOCX, PPTX, XLSX, HTML, XHTML, CSV, Markdown, AsciiDoc,
 images (PNG, JPEG, TIFF, BMP, WEBP), WebVTT, and specialized XML formats.
 """
+
 import importlib.util
 import logging
 from pathlib import Path
@@ -111,10 +112,7 @@ class DoclingParser(BaseParser):
         logger.info(f"  use_rapidocr={self.use_rapidocr}")
 
         if importlib.util.find_spec("docling.document_converter") is None:
-            raise ImportError(
-                "docling is required for DoclingParser. "
-                "Install it with: pip install docling"
-            )
+            raise ImportError("docling is required for DoclingParser. Install it with: pip install docling")
 
         # Create converter with hybrid OCR (smart: text direct, bitmaps OCR'd)
         self._converter = self._create_converter()

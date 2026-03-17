@@ -53,11 +53,7 @@ def test_gen_token_usage_counts_structured_tool_content(monkeypatch):
     @gen_token_usage
     def wrapped(self, model, messages, stream, tools, **kwargs):
         _ = (model, messages, stream, tools, kwargs)
-        return {
-            "tool_calls": [
-                {"name": "read_webpage", "arguments": {"url": "https://example.com"}}
-            ]
-        }
+        return {"tool_calls": [{"name": "read_webpage", "arguments": {"url": "https://example.com"}}]}
 
     messages = [
         {

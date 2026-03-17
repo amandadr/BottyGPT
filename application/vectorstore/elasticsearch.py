@@ -11,7 +11,7 @@ class ElasticsearchStore(BaseVectorStore):
         self.source_id = source_id.replace("application/indexes/", "").rstrip("/")
         self.embeddings_key = embeddings_key
         self.index_name = index_name
-        
+
         if ElasticsearchStore._es_connection is None:
             connection_params = {}
             if settings.ELASTIC_URL:
@@ -24,30 +24,28 @@ class ElasticsearchStore(BaseVectorStore):
                 raise ValueError("Please provide either elasticsearch_url or cloud_id.")
 
             import elasticsearch
+
             ElasticsearchStore._es_connection = elasticsearch.Elasticsearch(**connection_params)
-            
+
         self.docsearch = ElasticsearchStore._es_connection
 
     def connect_to_elasticsearch(
         *,
-        es_url = None,
-        cloud_id = None,
-        api_key = None,
-        username = None,
-        password = None,
+        es_url=None,
+        cloud_id=None,
+        api_key=None,
+        username=None,
+        password=None,
     ):
         try:
             import elasticsearch
         except ImportError:
             raise ImportError(
-                "Could not import elasticsearch python package. "
-                "Please install it with `pip install elasticsearch`."
+                "Could not import elasticsearch python package. Please install it with `pip install elasticsearch`."
             )
 
         if es_url and cloud_id:
-            raise ValueError(
-                "Both es_url and cloud_id are defined. Please provide only one."
-            )
+            raise ValueError("Both es_url and cloud_id are defined. Please provide only one.")
 
         connection_params = {}
 
@@ -101,32 +99,28 @@ class ElasticsearchStore(BaseVectorStore):
             },
             "rank": {"rrf": {}},
         }
-        resp = self.docsearch.search(index=self.index_name, query=full_query['query'], size=k, knn=full_query['knn'])
+        resp = self.docsearch.search(index=self.index_name, query=full_query["query"], size=k, knn=full_query["knn"])
         # create Documents objects from the results page_content ['_source']['text'], metadata ['_source']['metadata']
         doc_list = []
-        for hit in resp['hits']['hits']:
-            
-            doc_list.append(Document(page_content = hit['_source']['text'], metadata = hit['_source']['metadata']))
+        for hit in resp["hits"]["hits"]:
+            doc_list.append(Document(page_content=hit["_source"]["text"], metadata=hit["_source"]["metadata"]))
         return doc_list
 
-    def _create_index_if_not_exists(
-            self, index_name, dims_length
-        ):
+    def _create_index_if_not_exists(self, index_name, dims_length):
 
         if self._es_connection.indices.exists(index=index_name):
             print(f"Index {index_name} already exists.")
 
         else:
-
             indexSettings = self.index(
                 dims_length=dims_length,
             )
             self._es_connection.indices.create(index=index_name, **indexSettings)
 
     def index(
-            self,
-            dims_length,
-        ):
+        self,
+        dims_length,
+    ):
         return {
             "mappings": {
                 "properties": {
@@ -143,16 +137,17 @@ class ElasticsearchStore(BaseVectorStore):
     def add_texts(
         self,
         texts,
-        metadatas = None,
-        ids = None,
-        refresh_indices = True,
-        create_index_if_not_exists = True,
-        bulk_kwargs = None,
+        metadatas=None,
+        ids=None,
+        refresh_indices=True,
+        create_index_if_not_exists=True,
+        bulk_kwargs=None,
         **kwargs,
-        ):
-        
+    ):
+
         bulk_kwargs = bulk_kwargs or {}
         import uuid
+
         embeddings = []
         ids = ids or [str(uuid.uuid4()) for _ in texts]
         requests = []
@@ -163,9 +158,7 @@ class ElasticsearchStore(BaseVectorStore):
         dims_length = len(vectors[0])
 
         if create_index_if_not_exists:
-            self._create_index_if_not_exists(
-                index_name=self.index_name, dims_length=dims_length
-            )
+            self._create_index_if_not_exists(index_name=self.index_name, dims_length=dims_length)
 
         for i, (text, vector) in enumerate(zip(texts, vectors)):
             metadata = metadatas[i] if metadatas else {}
@@ -181,9 +174,9 @@ class ElasticsearchStore(BaseVectorStore):
                 }
             )
 
-
         if len(requests) > 0:
             from elasticsearch.helpers import BulkIndexError, bulk
+
             try:
                 success, failed = bulk(
                     self._es_connection,
@@ -203,5 +196,7 @@ class ElasticsearchStore(BaseVectorStore):
             return []
 
     def delete_index(self):
-        self._es_connection.delete_by_query(index=self.index_name, query={"match": {
-                                      "metadata.source_id.keyword": self.source_id}},)
+        self._es_connection.delete_by_query(
+            index=self.index_name,
+            query={"match": {"metadata.source_id.keyword": self.source_id}},
+        )

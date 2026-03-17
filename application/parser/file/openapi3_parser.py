@@ -25,10 +25,7 @@ class OpenAPI3Parser(BaseParser):
         info = ""
         if path.operations:
             for operation in path.operations:
-                info += (
-                    f"\n{operation.method.value}="
-                    f"{operation.responses[0].description}"
-                )
+                info += f"\n{operation.method.value}={operation.responses[0].description}"
         return info
 
     def parse_file(self, file_path):

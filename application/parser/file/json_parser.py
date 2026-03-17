@@ -4,6 +4,7 @@ from pathlib import Path
 
 from application.parser.file.base_parser import BaseParser
 
+
 class JSONParser(BaseParser):
     r"""JSON (.json) parser.
 
@@ -25,12 +26,7 @@ class JSONParser(BaseParser):
     """
 
     def __init__(
-            self,
-            *args: Any,
-            concat_rows: bool = True,
-            row_joiner: str = "\n",
-            json_config: dict = {},
-            **kwargs: Any
+        self, *args: Any, concat_rows: bool = True, row_joiner: str = "\n", json_config: dict = {}, **kwargs: Any
     ) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
@@ -44,9 +40,9 @@ class JSONParser(BaseParser):
 
     def parse_file(self, file: Path, errors: str = "ignore") -> Union[str, List[str]]:
         """Parse JSON file."""
-        
-        with open(file, 'r', encoding='utf-8') as f:
-                data = json.load(f, **self._json_config)
+
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f, **self._json_config)
 
         if isinstance(data, dict):
             data = [data]

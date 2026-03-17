@@ -114,38 +114,28 @@ class TestCompressionService:
         assert service.prompt_builder.version == settings.COMPRESSION_PROMPT_VERSION
 
     @patch("application.api.answer.services.compression.threshold_checker.get_token_limit")
-    def test_should_compress_below_threshold(
-        self, mock_get_token_limit, threshold_checker, sample_conversation
-    ):
+    def test_should_compress_below_threshold(self, mock_get_token_limit, threshold_checker, sample_conversation):
         """Test that compression is not triggered when below threshold"""
         mock_get_token_limit.return_value = 128000  # GPT-4o limit
 
         # Small conversation should not trigger compression
-        result = threshold_checker.should_compress(
-            sample_conversation, model_id="gpt-4o"
-        )
+        result = threshold_checker.should_compress(sample_conversation, model_id="gpt-4o")
 
         assert result is False
 
     @patch("application.api.answer.services.compression.threshold_checker.get_token_limit")
-    def test_should_compress_above_threshold(
-        self, mock_get_token_limit, threshold_checker, large_conversation
-    ):
+    def test_should_compress_above_threshold(self, mock_get_token_limit, threshold_checker, large_conversation):
         """Test that compression is triggered when above threshold"""
         mock_get_token_limit.return_value = 10000  # Lower limit to ensure large conversation exceeds threshold
 
         # Large conversation should trigger compression (100 queries with repeated text)
         # Threshold at 80% of 10k = 8k tokens, so large_conversation > 8k should trigger
-        result = threshold_checker.should_compress(
-            large_conversation, model_id="gpt-4o"
-        )
+        result = threshold_checker.should_compress(large_conversation, model_id="gpt-4o")
 
         assert result is True
 
     @patch("application.api.answer.services.compression.threshold_checker.get_token_limit")
-    def test_should_compress_at_exact_threshold(
-        self, mock_get_token_limit, threshold_checker
-    ):
+    def test_should_compress_at_exact_threshold(self, mock_get_token_limit, threshold_checker):
         """Test compression trigger at exact 80% threshold"""
         mock_get_token_limit.return_value = 1000
 
@@ -211,17 +201,15 @@ class TestCompressionService:
         compression_service.llm.gen.return_value = mock_summary
 
         # Compress first 2 queries
-        result = compression_service.compress_conversation(
-            conversation=sample_conversation, compress_up_to_index=1
-        )
+        result = compression_service.compress_conversation(conversation=sample_conversation, compress_up_to_index=1)
 
         # Verify LLM was called
         assert compression_service.llm.gen.called
 
         # Verify result is a CompressionMetadata object
-        assert hasattr(result, 'timestamp')
+        assert hasattr(result, "timestamp")
         assert result.query_index == 1
-        assert hasattr(result, 'compressed_summary')
+        assert hasattr(result, "compressed_summary")
         assert result.original_token_count > 0
         assert result.compressed_token_count > 0
         assert result.compression_ratio > 0
@@ -258,9 +246,7 @@ class TestCompressionService:
         mock_summary = "<summary>Test summary with tools</summary>"
         compression_service.llm.gen.return_value = mock_summary
 
-        compression_service.compress_conversation(
-            conversation=conversation, compress_up_to_index=0
-        )
+        compression_service.compress_conversation(conversation=conversation, compress_up_to_index=0)
 
         # Verify tool calls are included in compression prompt
         call_args = compression_service.llm.gen.call_args
@@ -270,9 +256,7 @@ class TestCompressionService:
         assert "Tool Calls:" in user_message
         assert "search_tool" in user_message
 
-    def test_compress_conversation_invalid_index(
-        self, compression_service, sample_conversation
-    ):
+    def test_compress_conversation_invalid_index(self, compression_service, sample_conversation):
         """Test compression with invalid index raises error"""
         with pytest.raises(ValueError, match="Invalid compress_up_to_index"):
             compression_service.compress_conversation(
@@ -280,13 +264,9 @@ class TestCompressionService:
                 compress_up_to_index=100,  # Invalid - conversation only has 3 queries
             )
 
-    def test_get_compressed_context_no_compression(
-        self, compression_service, sample_conversation
-    ):
+    def test_get_compressed_context_no_compression(self, compression_service, sample_conversation):
         """Test getting context when no compression exists"""
-        summary, recent = compression_service.get_compressed_context(
-            sample_conversation
-        )
+        summary, recent = compression_service.get_compressed_context(sample_conversation)
 
         assert summary is None
         assert len(recent) == 3  # All queries returned
@@ -317,9 +297,7 @@ class TestCompressionService:
             },
         }
 
-        summary, recent = compression_service.get_compressed_context(
-            conversation
-        )
+        summary, recent = compression_service.get_compressed_context(conversation)
 
         assert summary == "Summary of Q1-Q3"
         assert len(recent) == 2  # Q4 and Q5 (after compression point)
@@ -329,9 +307,7 @@ class TestCompressionService:
     def test_get_compressed_context_multiple_compressions(self, compression_service):
         """Test getting context when multiple compressions exist"""
         conversation = {
-            "queries": [
-                {"prompt": f"Q{i}", "response": f"A{i}"} for i in range(1, 11)
-            ],
+            "queries": [{"prompt": f"Q{i}", "response": f"A{i}"} for i in range(1, 11)],
             "compression_metadata": {
                 "is_compressed": True,
                 "last_compression_at": datetime.now(timezone.utc),
@@ -354,9 +330,7 @@ class TestCompressionService:
             },
         }
 
-        summary, recent = compression_service.get_compressed_context(
-            conversation
-        )
+        summary, recent = compression_service.get_compressed_context(conversation)
 
         # Should use the most recent compression
         assert summary == "Second compression summary (includes first)"
@@ -418,18 +392,12 @@ class TestCompressionService:
             }
         ]
 
-        token_count_with_tools = TokenCounter.count_query_tokens(
-            queries, include_tool_calls=True
-        )
-        token_count_without_tools = TokenCounter.count_query_tokens(
-            queries, include_tool_calls=False
-        )
+        token_count_with_tools = TokenCounter.count_query_tokens(queries, include_tool_calls=True)
+        token_count_without_tools = TokenCounter.count_query_tokens(queries, include_tool_calls=False)
 
         assert token_count_with_tools > token_count_without_tools
 
-    def test_format_conversation_for_compression(
-        self, prompt_builder, sample_conversation
-    ):
+    def test_format_conversation_for_compression(self, prompt_builder, sample_conversation):
         """Test conversation formatting for compression prompt"""
         queries = sample_conversation["queries"]
 
@@ -456,9 +424,7 @@ class TestCompressionService:
         assert messages[1]["role"] == "user"
         assert "conversation to summarize" in messages[1]["content"]
 
-    def test_build_compression_prompt_with_existing_compressions(
-        self, prompt_builder
-    ):
+    def test_build_compression_prompt_with_existing_compressions(self, prompt_builder):
         """Test compression prompt building with existing compressions"""
         queries = [
             {"prompt": "Q3", "response": "A3", "tool_calls": [], "sources": []},
@@ -473,9 +439,7 @@ class TestCompressionService:
             }
         ]
 
-        messages = prompt_builder.build_prompt(
-            queries, existing_compressions
-        )
+        messages = prompt_builder.build_prompt(queries, existing_compressions)
 
         user_content = messages[1]["content"]
 
@@ -484,13 +448,9 @@ class TestCompressionService:
         assert "Previous compression summary" in user_content
         assert "NEW summary" in user_content
 
-    def test_calculate_conversation_tokens(
-        self, sample_conversation
-    ):
+    def test_calculate_conversation_tokens(self, sample_conversation):
         """Test conversation token calculation"""
-        token_count = TokenCounter.count_conversation_tokens(
-            sample_conversation, include_system_prompt=False
-        )
+        token_count = TokenCounter.count_conversation_tokens(sample_conversation, include_system_prompt=False)
 
         assert token_count > 0
 
@@ -502,18 +462,14 @@ class TestCompressionService:
         assert token_count_with_system > token_count
 
     @patch("application.api.answer.services.compression.threshold_checker.logger")
-    def test_error_handling_in_should_compress(
-        self, mock_logger, threshold_checker, sample_conversation
-    ):
+    def test_error_handling_in_should_compress(self, mock_logger, threshold_checker, sample_conversation):
         """Test error handling in should_compress"""
         # Force an error by making get_token_limit raise an exception
         with patch(
             "application.api.answer.services.compression.threshold_checker.get_token_limit",
             side_effect=Exception("Test error"),
         ):
-            result = threshold_checker.should_compress(
-                sample_conversation, model_id="gpt-4o"
-            )
+            result = threshold_checker.should_compress(sample_conversation, model_id="gpt-4o")
 
             # Should return False on error
             assert result is False
@@ -521,16 +477,12 @@ class TestCompressionService:
             assert mock_logger.error.called
 
     @patch("application.api.answer.services.compression.service.logger")
-    def test_error_handling_in_get_compressed_context(
-        self, mock_logger, compression_service
-    ):
+    def test_error_handling_in_get_compressed_context(self, mock_logger, compression_service):
         """Test error handling in get_compressed_context"""
         # Malformed conversation
         malformed_conversation = {"queries": None}
 
-        summary, recent = compression_service.get_compressed_context(
-            malformed_conversation
-        )
+        summary, recent = compression_service.get_compressed_context(malformed_conversation)
 
         # Should return safe defaults
         assert summary is None
@@ -538,14 +490,11 @@ class TestCompressionService:
         # Should log the error
         assert mock_logger.error.called
 
-
     def test_compression_points_array_limiting(self, compression_service):
         """Test that only the most recent compression points are kept"""
         # Simulate a conversation with 3 previous compressions
         conversation = {
-            "queries": [
-                {"prompt": f"Q{i}", "response": f"A{i}"} for i in range(1, 11)
-            ],
+            "queries": [{"prompt": f"Q{i}", "response": f"A{i}"} for i in range(1, 11)],
             "compression_metadata": {
                 "is_compressed": True,
                 "last_compression_at": datetime.now(timezone.utc),
@@ -576,9 +525,7 @@ class TestCompressionService:
         }
 
         # The service should use the most recent compression
-        summary, recent = compression_service.get_compressed_context(
-            conversation
-        )
+        summary, recent = compression_service.get_compressed_context(conversation)
 
         # Should use the most recent (third) compression
         assert summary == "Third compression summary"
@@ -597,11 +544,13 @@ class TestCompressionService:
         queries = []
 
         # Initial user request
-        queries.append({
-            "prompt": "Please analyze all Python files in the https://github.com/arc53/DocsGPT repository",
-            "response": "I'll scrape all the Python files from the DocsGPT repository and analyze them.",
-            "tool_calls": []
-        })
+        queries.append(
+            {
+                "prompt": "Please analyze all Python files in the https://github.com/arc53/DocsGPT repository",
+                "response": "I'll scrape all the Python files from the DocsGPT repository and analyze them.",
+                "tool_calls": [],
+            }
+        )
 
         # Simulate 50 file scraping tool calls with realistic file contents
         file_paths = [
@@ -630,7 +579,8 @@ class TestCompressionService:
         tool_calls = []
         for i, file_path in enumerate(file_paths[:20]):  # First 20 files
             # Each tool call with realistic file content (simulating ~500-1000 tokens per file)
-            file_content = f"""
+            file_content = (
+                f"""
 # {file_path}
 
 import os
@@ -638,7 +588,7 @@ import sys
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 
-class {file_path.split('/')[-1].replace('.py', '').title()}:
+class {file_path.split("/")[-1].replace(".py", "").title()}:
     '''
     This is a module that handles various operations for the DocsGPT application.
     It contains multiple classes and functions for processing data.
@@ -679,30 +629,37 @@ def utility_function_two(data: Dict) -> List:
 
 def main():
     config = {{'api_key': 'test', 'endpoint': 'http://localhost', 'model_id': 'gpt-4'}}
-    instance = {file_path.split('/')[-1].replace('.py', '').title()}(config)
+    instance = {file_path.split("/")[-1].replace(".py", "").title()}(config)
     instance.process_data(['item1', 'item2', 'item3'])
-""" * 2  # Double it to simulate ~1000-1500 tokens per response
+"""
+                * 2
+            )  # Double it to simulate ~1000-1500 tokens per response
 
-            tool_calls.append({
-                "call_id": f"call_{i}",
-                "tool_name": "github_file_scraper",
-                "action_name": "read_file",
-                "arguments": {"file_path": file_path},
-                "result": {"content": file_content, "status": "success"},
-                "status": "success"
-            })
+            tool_calls.append(
+                {
+                    "call_id": f"call_{i}",
+                    "tool_name": "github_file_scraper",
+                    "action_name": "read_file",
+                    "arguments": {"file_path": file_path},
+                    "result": {"content": file_content, "status": "success"},
+                    "status": "success",
+                }
+            )
 
         # Add query with all tool calls
-        queries.append({
-            "prompt": "[Agent continues processing]",
-            "response": "I've scraped 20 Python files. Let me analyze the patterns...",
-            "tool_calls": tool_calls
-        })
+        queries.append(
+            {
+                "prompt": "[Agent continues processing]",
+                "response": "I've scraped 20 Python files. Let me analyze the patterns...",
+                "tool_calls": tool_calls,
+            }
+        )
 
         # Add analysis response
-        queries.append({
-            "prompt": "[Agent continues analysis]",
-            "response": """Based on my analysis of the 20 Python files:
+        queries.append(
+            {
+                "prompt": "[Agent continues analysis]",
+                "response": """Based on my analysis of the 20 Python files:
 
 1. Architecture: The codebase follows a modular architecture with clear separation between API, agents, LLM handlers, and utilities.
 
@@ -724,8 +681,9 @@ def main():
    - Good test coverage
    - Clear naming conventions
    - Proper separation of concerns""",
-            "tool_calls": []
-        })
+                "tool_calls": [],
+            }
+        )
 
         conversation = {"queries": queries}
 
@@ -742,7 +700,7 @@ def main():
         # Compress the heavy tool usage
         result = compression_service.compress_conversation(
             conversation=conversation,
-            compress_up_to_index=1  # Compress first 2 queries (including all tool calls)
+            compress_up_to_index=1,  # Compress first 2 queries (including all tool calls)
         )
 
         # Verify compression handled tool calls properly
@@ -779,9 +737,10 @@ def main():
         queries = []
 
         # Query 1: Long general discussion
-        queries.append({
-            "prompt": "Tell me about Python programming best practices",
-            "response": """Python best practices encompass a wide range of principles and patterns.
+        queries.append(
+            {
+                "prompt": "Tell me about Python programming best practices",
+                "response": """Python best practices encompass a wide range of principles and patterns.
 Let me provide a comprehensive overview:
 
 1. Code Style and Formatting:
@@ -823,13 +782,15 @@ Let me provide a comprehensive overview:
    - Use generators for large datasets
 
 These practices help maintain readable, maintainable, and efficient code.""",
-            "tool_calls": []
-        })
+                "tool_calls": [],
+            }
+        )
 
         # Query 2: Another long response
-        queries.append({
-            "prompt": "What about Python data structures?",
-            "response": """Python provides several built-in data structures, each optimized for different use cases:
+        queries.append(
+            {
+                "prompt": "What about Python data structures?",
+                "response": """Python provides several built-in data structures, each optimized for different use cases:
 
 1. Lists:
    - Ordered, mutable sequences
@@ -874,13 +835,15 @@ These practices help maintain readable, maintainable, and efficient code.""",
    - Tuples for immutable data
 
 Understanding these data structures is crucial for writing efficient Python code.""",
-            "tool_calls": []
-        })
+                "tool_calls": [],
+            }
+        )
 
         # Query 3: THE CRITICAL INFORMATION (needle in the haystack)
-        queries.append({
-            "prompt": "I need to remember this important detail",
-            "response": """I'll make a note of that important detail.
+        queries.append(
+            {
+                "prompt": "I need to remember this important detail",
+                "response": """I'll make a note of that important detail.
 
 CRITICAL INFORMATION TO REMEMBER:
 The production database password is stored in the environment variable DB_PASSWORD_PROD.
@@ -890,13 +853,15 @@ The encryption key rotation happens every 90 days.
 The primary contact for incidents is: ops-team@example.com
 
 I've recorded this information for our conversation. These operational details are important for system administration and should be referenced when needed.""",
-            "tool_calls": []
-        })
+                "tool_calls": [],
+            }
+        )
 
         # Query 4: More long content after the important info
-        queries.append({
-            "prompt": "Explain Python decorators in detail",
-            "response": """Python decorators are a powerful feature that allows you to modify or enhance functions and classes. Here's a comprehensive explanation:
+        queries.append(
+            {
+                "prompt": "Explain Python decorators in detail",
+                "response": """Python decorators are a powerful feature that allows you to modify or enhance functions and classes. Here's a comprehensive explanation:
 
 1. Basic Concept:
    - Decorators are functions that take another function as input
@@ -966,13 +931,15 @@ I've recorded this information for our conversation. These operational details a
    - @deprecated for marking old code
 
 Decorators are essential for writing clean, maintainable Python code with separation of concerns.""",
-            "tool_calls": []
-        })
+                "tool_calls": [],
+            }
+        )
 
         # Query 5: Final long response
-        queries.append({
-            "prompt": "What about Python async programming?",
-            "response": """Asynchronous programming in Python allows for concurrent execution of I/O-bound operations:
+        queries.append(
+            {
+                "prompt": "What about Python async programming?",
+                "response": """Asynchronous programming in Python allows for concurrent execution of I/O-bound operations:
 
 1. Core Concepts:
    - Event loop: Manages and executes async tasks
@@ -1019,8 +986,9 @@ Decorators are essential for writing clean, maintainable Python code with separa
    - Timeouts with asyncio.wait_for()
 
 Understanding async programming is crucial for building scalable Python applications.""",
-            "tool_calls": []
-        })
+                "tool_calls": [],
+            }
+        )
 
         conversation = {"queries": queries}
 
@@ -1043,7 +1011,7 @@ Understanding async programming is crucial for building scalable Python applicat
         # Compress everything except the last query
         result = compression_service.compress_conversation(
             conversation=conversation,
-            compress_up_to_index=3  # Compress first 4 queries (includes the critical info)
+            compress_up_to_index=3,  # Compress first 4 queries (includes the critical info)
         )
 
         # Verify compression happened
@@ -1054,12 +1022,10 @@ Understanding async programming is crucial for building scalable Python applicat
         conversation["compression_metadata"] = {
             "is_compressed": True,
             "last_compression_at": datetime.now(timezone.utc),
-            "compression_points": [result.to_dict()]
+            "compression_points": [result.to_dict()],
         }
 
-        summary, recent = compression_service.get_compressed_context(
-            conversation
-        )
+        summary, recent = compression_service.get_compressed_context(conversation)
 
         # Verify critical information is in the summary
         assert summary is not None

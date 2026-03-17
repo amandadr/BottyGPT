@@ -14,6 +14,7 @@ from typing import Optional, Set
 
 class SSRFError(Exception):
     """Raised when a URL fails SSRF validation."""
+
     pass
 
 
@@ -28,8 +29,8 @@ BLOCKED_HOSTNAMES: Set[str] = {
 # Cloud metadata IP addresses (AWS, GCP, Azure, etc.)
 METADATA_IPS: Set[str] = {
     "169.254.169.254",  # AWS, GCP, Azure metadata
-    "169.254.170.2",    # AWS ECS task metadata
-    "fd00:ec2::254",    # AWS IPv6 metadata
+    "169.254.170.2",  # AWS ECS task metadata
+    "fd00:ec2::254",  # AWS IPv6 metadata
 }
 
 # Allowed schemes for external requests
@@ -49,12 +50,12 @@ def is_private_ip(ip_str: str) -> bool:
     try:
         ip = ipaddress.ip_address(ip_str)
         return (
-            ip.is_private or
-            ip.is_loopback or
-            ip.is_link_local or
-            ip.is_reserved or
-            ip.is_multicast or
-            ip.is_unspecified
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
         )
     except ValueError:
         # If we can't parse it as an IP, return False

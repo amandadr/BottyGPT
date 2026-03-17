@@ -44,10 +44,7 @@ class TestS3StorageInitialization:
     @pytest.mark.unit
     def test_init_creates_boto3_client(self):
         """Should create boto3 S3 client with credentials from settings."""
-        with patch("boto3.client") as mock_client, patch(
-            "application.storage.s3.settings"
-        ) as mock_settings:
-
+        with patch("boto3.client") as mock_client, patch("application.storage.s3.settings") as mock_settings:
             mock_settings.SAGEMAKER_ACCESS_KEY = "test-key"
             mock_settings.SAGEMAKER_SECRET_KEY = "test-secret"
             mock_settings.SAGEMAKER_REGION = "us-west-2"
@@ -120,9 +117,7 @@ class TestS3StorageFileExists:
     """Test file existence checking."""
 
     @pytest.mark.unit
-    def test_file_exists_returns_true_when_file_found(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_file_exists_returns_true_when_file_found(self, s3_storage, mock_boto3_client):
         """Should return True when head_object succeeds."""
         path = "documents/test.txt"
         mock_boto3_client.head_object.return_value = {"ContentLength": 100}
@@ -130,14 +125,10 @@ class TestS3StorageFileExists:
         result = s3_storage.file_exists(path)
 
         assert result is True
-        mock_boto3_client.head_object.assert_called_once_with(
-            Bucket="test-bucket", Key=path
-        )
+        mock_boto3_client.head_object.assert_called_once_with(Bucket="test-bucket", Key=path)
 
     @pytest.mark.unit
-    def test_file_exists_returns_false_on_client_error(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_file_exists_returns_false_on_client_error(self, s3_storage, mock_boto3_client):
         """Should return False when head_object raises ClientError."""
         path = "documents/nonexistent.txt"
         mock_boto3_client.head_object.side_effect = ClientError(
@@ -153,9 +144,7 @@ class TestS3StorageGetFile:
     """Test file retrieval functionality."""
 
     @pytest.mark.unit
-    def test_get_file_downloads_and_returns_file_object(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_get_file_downloads_and_returns_file_object(self, s3_storage, mock_boto3_client):
         """Should download file from S3 and return BytesIO object."""
         path = "documents/test.txt"
         test_content = b"file content"
@@ -174,9 +163,7 @@ class TestS3StorageGetFile:
         mock_boto3_client.download_fileobj.assert_called_once()
 
     @pytest.mark.unit
-    def test_get_file_raises_error_when_file_not_found(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_get_file_raises_error_when_file_not_found(self, s3_storage, mock_boto3_client):
         """Should raise FileNotFoundError when file doesn't exist."""
         path = "documents/nonexistent.txt"
         mock_boto3_client.head_object.side_effect = ClientError(
@@ -199,14 +186,10 @@ class TestS3StorageDeleteFile:
         result = s3_storage.delete_file(path)
 
         assert result is True
-        mock_boto3_client.delete_object.assert_called_once_with(
-            Bucket="test-bucket", Key=path
-        )
+        mock_boto3_client.delete_object.assert_called_once_with(Bucket="test-bucket", Key=path)
 
     @pytest.mark.unit
-    def test_delete_file_returns_false_on_client_error(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_delete_file_returns_false_on_client_error(self, s3_storage, mock_boto3_client):
         """Should return False when deletion fails with ClientError."""
         path = "documents/test.txt"
         mock_boto3_client.delete_object.side_effect = ClientError(
@@ -223,9 +206,7 @@ class TestS3StorageListFiles:
     """Test directory listing functionality."""
 
     @pytest.mark.unit
-    def test_list_files_returns_all_keys_with_prefix(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_list_files_returns_all_keys_with_prefix(self, s3_storage, mock_boto3_client):
         """Should return all file keys matching the directory prefix."""
         directory = "documents/"
 
@@ -249,14 +230,10 @@ class TestS3StorageListFiles:
         assert "documents/subdir/file3.txt" in result
 
         mock_boto3_client.get_paginator.assert_called_once_with("list_objects_v2")
-        paginator_mock.paginate.assert_called_once_with(
-            Bucket="test-bucket", Prefix="documents/"
-        )
+        paginator_mock.paginate.assert_called_once_with(Bucket="test-bucket", Prefix="documents/")
 
     @pytest.mark.unit
-    def test_list_files_returns_empty_list_when_no_contents(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_list_files_returns_empty_list_when_no_contents(self, s3_storage, mock_boto3_client):
         """Should return empty list when directory has no files."""
         directory = "empty/"
 
@@ -273,9 +250,7 @@ class TestS3StorageProcessFile:
     """Test file processing functionality."""
 
     @pytest.mark.unit
-    def test_process_file_downloads_and_processes_file(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_process_file_downloads_and_processes_file(self, s3_storage, mock_boto3_client):
         """Should download file to temp location and call processor function."""
         path = "documents/test.txt"
 
@@ -289,15 +264,11 @@ class TestS3StorageProcessFile:
             processor_func = MagicMock(return_value="processed")
             result = s3_storage.process_file(path, processor_func, extra_arg="value")
         assert result == "processed"
-        processor_func.assert_called_once_with(
-            local_path="/tmp/test_file", extra_arg="value"
-        )
+        processor_func.assert_called_once_with(local_path="/tmp/test_file", extra_arg="value")
         mock_boto3_client.download_fileobj.assert_called_once()
 
     @pytest.mark.unit
-    def test_process_file_raises_error_when_file_not_found(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_process_file_raises_error_when_file_not_found(self, s3_storage, mock_boto3_client):
         """Should raise FileNotFoundError when file doesn't exist."""
         path = "documents/nonexistent.txt"
         mock_boto3_client.head_object.side_effect = ClientError(
@@ -314,27 +285,19 @@ class TestS3StorageIsDirectory:
     """Test directory checking functionality."""
 
     @pytest.mark.unit
-    def test_is_directory_returns_true_when_objects_exist(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_is_directory_returns_true_when_objects_exist(self, s3_storage, mock_boto3_client):
         """Should return True when objects exist with the directory prefix."""
         path = "documents/"
 
-        mock_boto3_client.list_objects_v2.return_value = {
-            "Contents": [{"Key": "documents/file1.txt"}]
-        }
+        mock_boto3_client.list_objects_v2.return_value = {"Contents": [{"Key": "documents/file1.txt"}]}
 
         result = s3_storage.is_directory(path)
 
         assert result is True
-        mock_boto3_client.list_objects_v2.assert_called_once_with(
-            Bucket="test-bucket", Prefix="documents/", MaxKeys=1
-        )
+        mock_boto3_client.list_objects_v2.assert_called_once_with(Bucket="test-bucket", Prefix="documents/", MaxKeys=1)
 
     @pytest.mark.unit
-    def test_is_directory_returns_false_when_no_objects_exist(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_is_directory_returns_false_when_no_objects_exist(self, s3_storage, mock_boto3_client):
         """Should return False when no objects exist with the directory prefix."""
         path = "nonexistent/"
 
@@ -377,9 +340,7 @@ class TestS3StorageRemoveDirectory:
         assert len(call_args["Delete"]["Objects"]) == 2
 
     @pytest.mark.unit
-    def test_remove_directory_returns_false_when_empty(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_remove_directory_returns_false_when_empty(self, s3_storage, mock_boto3_client):
         """Should return False when directory is empty (no objects to delete)."""
         directory = "empty/"
 
@@ -393,17 +354,13 @@ class TestS3StorageRemoveDirectory:
         mock_boto3_client.delete_objects.assert_not_called()
 
     @pytest.mark.unit
-    def test_remove_directory_returns_false_on_client_error(
-        self, s3_storage, mock_boto3_client
-    ):
+    def test_remove_directory_returns_false_on_client_error(self, s3_storage, mock_boto3_client):
         """Should return False when deletion fails with ClientError."""
         directory = "documents/"
 
         paginator_mock = MagicMock()
         mock_boto3_client.get_paginator.return_value = paginator_mock
-        paginator_mock.paginate.return_value = [
-            {"Contents": [{"Key": "documents/file1.txt"}]}
-        ]
+        paginator_mock.paginate.return_value = [{"Contents": [{"Key": "documents/file1.txt"}]}]
 
         mock_boto3_client.delete_objects.side_effect = ClientError(
             {"Error": {"Code": "AccessDenied", "Message": "Access denied"}},

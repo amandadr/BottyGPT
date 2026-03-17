@@ -38,4 +38,3 @@ def test_image_parser_remote_false(mock_settings):
 
     assert result == ""
     mock_post.assert_not_called()
-

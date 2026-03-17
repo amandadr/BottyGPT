@@ -10,9 +10,7 @@ from application.storage.storage_creator import StorageCreator
 
 
 class GoogleLLM(BaseLLM):
-    def __init__(
-        self, api_key=None, user_api_key=None, decoded_token=None, *args, **kwargs
-    ):
+    def __init__(self, api_key=None, user_api_key=None, decoded_token=None, *args, **kwargs):
         super().__init__(decoded_token=decoded_token, *args, **kwargs)
         self.api_key = api_key or settings.GOOGLE_API_KEY or settings.API_KEY
         self.user_api_key = user_api_key
@@ -70,9 +68,7 @@ class GoogleLLM(BaseLLM):
             user_message_index = len(prepared_messages) - 1
         if isinstance(prepared_messages[user_message_index].get("content"), str):
             text_content = prepared_messages[user_message_index]["content"]
-            prepared_messages[user_message_index]["content"] = [
-                {"type": "text", "text": text_content}
-            ]
+            prepared_messages[user_message_index]["content"] = [{"type": "text", "text": text_content}]
         elif not isinstance(prepared_messages[user_message_index].get("content"), list):
             prepared_messages[user_message_index]["content"] = []
         files = []
@@ -82,14 +78,10 @@ class GoogleLLM(BaseLLM):
             if mime_type in self.get_supported_attachment_types():
                 try:
                     file_uri = self._upload_file_to_google(attachment)
-                    logging.info(
-                        f"GoogleLLM: Successfully uploaded file, got URI: {file_uri}"
-                    )
+                    logging.info(f"GoogleLLM: Successfully uploaded file, got URI: {file_uri}")
                     files.append({"file_uri": file_uri, "mime_type": mime_type})
                 except Exception as e:
-                    logging.error(
-                        f"GoogleLLM: Error uploading file: {e}", exc_info=True
-                    )
+                    logging.error(f"GoogleLLM: Error uploading file: {e}", exc_info=True)
                     if "content" in attachment:
                         prepared_messages[user_message_index]["content"].append(
                             {
@@ -122,9 +114,7 @@ class GoogleLLM(BaseLLM):
         try:
             file_uri = self.storage.process_file(
                 file_path,
-                lambda local_path, **kwargs: self.client.files.upload(
-                    file=local_path
-                ).uri,
+                lambda local_path, **kwargs: self.client.files.upload(file=local_path).uri,
             )
 
             from application.core.mongo_db import MongoDB
@@ -133,9 +123,7 @@ class GoogleLLM(BaseLLM):
             db = mongo[settings.MONGO_DB_NAME]
             attachments_collection = db["attachments"]
             if "_id" in attachment:
-                attachments_collection.update_one(
-                    {"_id": attachment["_id"]}, {"$set": {"google_file_uri": file_uri}}
-                )
+                attachments_collection.update_one({"_id": attachment["_id"]}, {"$set": {"google_file_uri": file_uri}})
             return file_uri
         except Exception as e:
             logging.error(f"Error uploading file to Google AI: {e}", exc_info=True)
@@ -158,11 +146,7 @@ class GoogleLLM(BaseLLM):
             if isinstance(content, list):
                 parts = []
                 for item in content:
-                    if (
-                        isinstance(item, dict)
-                        and "text" in item
-                        and item["text"] is not None
-                    ):
+                    if isinstance(item, dict) and "text" in item and item["text"] is not None:
                         parts.append(item["text"])
                 return "\n".join(parts)
             return ""
@@ -193,9 +177,7 @@ class GoogleLLM(BaseLLM):
                         elif "function_call" in item:
                             # Remove null values from args to avoid API errors
 
-                            cleaned_args = self._remove_null_values(
-                                item["function_call"]["args"]
-                            )
+                            cleaned_args = self._remove_null_values(item["function_call"]["args"])
                             # Create function call part with thought_signature if present
                             # For Gemini 3 models, we need to include thought_signature
                             if "thought_signature" in item:
@@ -233,16 +215,12 @@ class GoogleLLM(BaseLLM):
                                     )
                                 )
                         else:
-                            raise ValueError(
-                                f"Unexpected content dictionary format:{item}"
-                            )
+                            raise ValueError(f"Unexpected content dictionary format:{item}")
                 else:
                     raise ValueError(f"Unexpected content type: {type(content)}")
                 if parts:
                     cleaned_messages.append(types.Content(role=role, parts=parts))
-        system_instruction = (
-            "\n\n".join(system_instructions) if system_instructions else None
-        )
+        system_instruction = "\n\n".join(system_instructions) if system_instructions else None
         return cleaned_messages, system_instruction
 
     def _clean_schema(self, schema_obj):
@@ -313,11 +291,7 @@ class GoogleLLM(BaseLLM):
                         parameters={
                             "type": "OBJECT",
                             "properties": cleaned_properties,
-                            "required": (
-                                parameters["required"]
-                                if "required" in parameters
-                                else []
-                            ),
+                            "required": (parameters["required"] if "required" in parameters else []),
                         },
                     )
                 else:
@@ -342,10 +316,7 @@ class GoogleLLM(BaseLLM):
                         return f"function_call:{name}"
                     function_response = getattr(part, "function_response", None)
                     if function_response:
-                        name = (
-                            getattr(function_response, "name", "")
-                            or "function_response"
-                        )
+                        name = getattr(function_response, "name", "") or "function_response"
                         return f"function_response:{name}"
             if isinstance(message, dict):
                 content = message.get("content")
@@ -572,9 +543,7 @@ class GoogleLLM(BaseLLM):
                 else:
                     result["format"] = format_value
             if "properties" in schema:
-                result["properties"] = {
-                    k: convert(v) for k, v in schema["properties"].items()
-                }
+                result["properties"] = {k: convert(v) for k, v in schema["properties"].items()}
                 if "propertyOrdering" not in result and result.get("type") == "OBJECT":
                     result["propertyOrdering"] = list(result["properties"].keys())
             if "items" in schema:

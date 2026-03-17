@@ -68,15 +68,19 @@ class TestGitHubLoaderFetchRepoFiles:
 
         def side_effect(url, headers=None):
             if url.endswith("/contents/"):
-                return make_response([
-                    {"type": "file", "path": "README.md"},
-                    {"type": "dir", "path": "src"},
-                ])
+                return make_response(
+                    [
+                        {"type": "file", "path": "README.md"},
+                        {"type": "dir", "path": "src"},
+                    ]
+                )
             elif url.endswith("/contents/src"):
-                return make_response([
-                    {"type": "file", "path": "src/main.py"},
-                    {"type": "file", "path": "src/util.py"},
-                ])
+                return make_response(
+                    [
+                        {"type": "file", "path": "src/main.py"},
+                        {"type": "file", "path": "src/util.py"},
+                    ]
+                )
             raise AssertionError(f"Unexpected URL: {url}")
 
         mock_get.side_effect = side_effect
@@ -90,9 +94,7 @@ class TestGitHubLoaderLoadData:
         loader = GitHubLoader()
 
         # Stub out network-dependent methods
-        monkeypatch.setattr(loader, "fetch_repo_files", lambda repo, path="": [
-            "README.md", "src/main.py"
-        ])
+        monkeypatch.setattr(loader, "fetch_repo_files", lambda repo, path="": ["README.md", "src/main.py"])
 
         def fake_fetch_content(repo, file_path):
             return f"content for {file_path}"
@@ -112,8 +114,6 @@ class TestGitHubLoaderLoadData:
             "title": "src/main.py",
             "source": "https://github.com/owner/repo/blob/main/src/main.py",
         }
-
-
 
 
 class TestGitHubLoaderRobustness:

@@ -82,9 +82,7 @@ def count_tokens_docs(docs):
     return tokens
 
 
-def calculate_doc_token_budget(
-    model_id: str = "gpt-4o"
-) -> int:
+def calculate_doc_token_budget(model_id: str = "gpt-4o") -> int:
     total_context = get_token_limit(model_id)
     reserved = sum(settings.RESERVED_TOKENS.values())
     doc_budget = total_context - reserved
@@ -133,16 +131,10 @@ def validate_required_fields(data, required_fields):
     if errors_dict:
         errors = []
         if errors_dict["missing_fields"]:
-            errors.append(
-                f"Missing required fields: {', '.join(errors_dict['missing_fields'])}"
-            )
+            errors.append(f"Missing required fields: {', '.join(errors_dict['missing_fields'])}")
         if errors_dict["empty_fields"]:
-            errors.append(
-                f"Empty values in required fields: {', '.join(errors_dict['empty_fields'])}"
-            )
-        return make_response(
-            jsonify({"success": False, "message": " | ".join(errors)}), 400
-        )
+            errors.append(f"Empty values in required fields: {', '.join(errors_dict['empty_fields'])}")
+        return make_response(jsonify({"success": False, "message": " | ".join(errors)}), 400)
     return None
 
 
@@ -153,11 +145,7 @@ def get_hash(data):
 def limit_chat_history(history, max_token_limit=None, model_id="docsgpt-local"):
     """Limit chat history to fit within token limit."""
     model_token_limit = get_token_limit(model_id)
-    max_token_limit = (
-        max_token_limit
-        if max_token_limit and max_token_limit < model_token_limit
-        else model_token_limit
-    )
+    max_token_limit = max_token_limit if max_token_limit and max_token_limit < model_token_limit else model_token_limit
 
     if not history:
         return []
@@ -189,9 +177,7 @@ def validate_function_name(function_name):
 
 
 def generate_image_url(image_path):
-    if isinstance(image_path, str) and (
-        image_path.startswith("http://") or image_path.startswith("https://")
-    ):
+    if isinstance(image_path, str) and (image_path.startswith("http://") or image_path.startswith("https://")):
         return image_path
     strategy = getattr(settings, "URL_STRATEGY", "backend")
     if strategy == "s3":
@@ -203,9 +189,7 @@ def generate_image_url(image_path):
         return f"{base_url}/api/images/{image_path}"
 
 
-def calculate_compression_threshold(
-    model_id: str, threshold_percentage: float = 0.8
-) -> int:
+def calculate_compression_threshold(model_id: str, threshold_percentage: float = 0.8) -> int:
     """
     Calculate token threshold for triggering compression.
 
@@ -292,11 +276,13 @@ def convert_pdf_to_images(
             buffer.seek(0)
             base64_data = base64.b64encode(buffer.read()).decode("utf-8")
 
-            images_data.append({
-                "data": base64_data,
-                "mime_type": mime_type,
-                "page": page_num,
-            })
+            images_data.append(
+                {
+                    "data": base64_data,
+                    "mime_type": mime_type,
+                    "page": page_num,
+                }
+            )
 
         return images_data
 
@@ -332,9 +318,7 @@ def clean_text_for_tts(text: str) -> str:
     text = re.sub(r"^>\s+", "", text, flags=re.MULTILINE)  ## > blockquotes
     text = re.sub(r"^[\s]*[-\*\+]\s+", "", text, flags=re.MULTILINE)  ## - * + lists
     text = re.sub(r"^[\s]*\d+\.\s+", "", text, flags=re.MULTILINE)  ## 1. numbered lists
-    text = re.sub(
-        r"^[\*\-_]{3,}\s*$", "", text, flags=re.MULTILINE
-    )  ## --- *** ___ rules
+    text = re.sub(r"^[\*\-_]{3,}\s*$", "", text, flags=re.MULTILINE)  ## --- *** ___ rules
     text = re.sub(r"<[^>]*>", "", text)  ## <html> tags
 
     # Remove non-ASCII (emojis, special Unicode)

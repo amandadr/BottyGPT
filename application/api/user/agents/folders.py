@@ -14,9 +14,7 @@ from application.api.user.base import (
     agents_collection,
 )
 
-agents_folders_ns = Namespace(
-    "agents_folders", description="Agent folder management", path="/api/agents/folders"
-)
+agents_folders_ns = Namespace("agents_folders", description="Agent folder management", path="/api/agents/folders")
 
 
 @agents_folders_ns.route("/")
@@ -98,23 +96,24 @@ class AgentFolder(Resource):
             folder = agent_folders_collection.find_one({"_id": ObjectId(folder_id), "user": user})
             if not folder:
                 return make_response(jsonify({"success": False, "message": "Folder not found"}), 404)
-            
+
             agents = list(agents_collection.find({"user": user, "folder_id": folder_id}))
             agents_list = [
-                {"id": str(a["_id"]), "name": a["name"], "description": a.get("description", "")}
-                for a in agents
+                {"id": str(a["_id"]), "name": a["name"], "description": a.get("description", "")} for a in agents
             ]
             subfolders = list(agent_folders_collection.find({"user": user, "parent_id": folder_id}))
             subfolders_list = [{"id": str(sf["_id"]), "name": sf["name"]} for sf in subfolders]
 
             return make_response(
-                jsonify({
-                    "id": str(folder["_id"]),
-                    "name": folder["name"],
-                    "parent_id": folder.get("parent_id"),
-                    "agents": agents_list,
-                    "subfolders": subfolders_list,
-                }),
+                jsonify(
+                    {
+                        "id": str(folder["_id"]),
+                        "name": folder["name"],
+                        "parent_id": folder.get("parent_id"),
+                        "agents": agents_list,
+                        "subfolders": subfolders_list,
+                    }
+                ),
                 200,
             )
         except Exception as e:
@@ -136,7 +135,9 @@ class AgentFolder(Resource):
                 update_fields["name"] = data["name"]
             if "parent_id" in data:
                 if data["parent_id"] == folder_id:
-                    return make_response(jsonify({"success": False, "message": "Cannot set folder as its own parent"}), 400)
+                    return make_response(
+                        jsonify({"success": False, "message": "Cannot set folder as its own parent"}), 400
+                    )
                 update_fields["parent_id"] = data["parent_id"]
 
             result = agent_folders_collection.update_one(
@@ -155,12 +156,8 @@ class AgentFolder(Resource):
             return make_response(jsonify({"success": False}), 401)
         user = decoded_token.get("sub")
         try:
-            agents_collection.update_many(
-                {"user": user, "folder_id": folder_id}, {"$unset": {"folder_id": ""}}
-            )
-            agent_folders_collection.update_many(
-                {"user": user, "parent_id": folder_id}, {"$unset": {"parent_id": ""}}
-            )
+            agents_collection.update_many({"user": user, "folder_id": folder_id}, {"$unset": {"folder_id": ""}})
+            agent_folders_collection.update_many({"user": user, "parent_id": folder_id}, {"$unset": {"parent_id": ""}})
             result = agent_folders_collection.delete_one({"_id": ObjectId(folder_id), "user": user})
             if result.deleted_count == 0:
                 return make_response(jsonify({"success": False, "message": "Folder not found"}), 404)
@@ -202,13 +199,9 @@ class MoveAgentToFolder(Resource):
                 folder = agent_folders_collection.find_one({"_id": ObjectId(folder_id), "user": user})
                 if not folder:
                     return make_response(jsonify({"success": False, "message": "Folder not found"}), 404)
-                agents_collection.update_one(
-                    {"_id": ObjectId(agent_id)}, {"$set": {"folder_id": folder_id}}
-                )
+                agents_collection.update_one({"_id": ObjectId(agent_id)}, {"$set": {"folder_id": folder_id}})
             else:
-                agents_collection.update_one(
-                    {"_id": ObjectId(agent_id)}, {"$unset": {"folder_id": ""}}
-                )
+                agents_collection.update_one({"_id": ObjectId(agent_id)}, {"$unset": {"folder_id": ""}})
 
             return make_response(jsonify({"success": True}), 200)
         except Exception as e:

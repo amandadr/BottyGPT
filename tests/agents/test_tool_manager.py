@@ -21,7 +21,6 @@ class MockTool(Tool):
 
 @pytest.mark.unit
 class TestToolManager:
-
     @patch("application.agents.tools.tool_manager.pkgutil.iter_modules")
     def test_tool_manager_initialization(self, mock_iter):
         mock_iter.return_value = []
@@ -110,9 +109,7 @@ class TestToolManager:
                     manager = ToolManager({})
                     manager.tools["mock_tool"] = mock_tool_instance
 
-                    result = manager.execute_action(
-                        "mock_tool", "test_action", param="value"
-                    )
+                    result = manager.execute_action("mock_tool", "test_action", param="value")
 
                     assert "Executed test_action" in result
 
@@ -134,9 +131,7 @@ class TestToolManager:
                 manager = ToolManager({"mcp_tool": {}})
                 manager.tools["mcp_tool"] = mock_tool
 
-                with patch.object(
-                    manager, "load_tool", return_value=mock_tool
-                ) as mock_load:
+                with patch.object(manager, "load_tool", return_value=mock_tool) as mock_load:
                     manager.execute_action("mcp_tool", "action", user_id="user123")
 
                     mock_load.assert_called_once_with("mcp_tool", {}, "user123")
@@ -150,9 +145,7 @@ class TestToolManager:
                 manager = ToolManager({"memory": {}})
                 manager.tools["memory"] = mock_tool
 
-                with patch.object(
-                    manager, "load_tool", return_value=mock_tool
-                ) as mock_load:
+                with patch.object(manager, "load_tool", return_value=mock_tool) as mock_load:
                     manager.execute_action("memory", "view", user_id="user456")
 
                     mock_load.assert_called_once_with("memory", {}, "user456")
@@ -200,7 +193,6 @@ class TestToolManager:
 
 @pytest.mark.unit
 class TestToolBase:
-
     def test_tool_base_is_abstract(self):
         with pytest.raises(TypeError):
             Tool()

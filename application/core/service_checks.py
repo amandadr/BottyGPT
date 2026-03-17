@@ -71,9 +71,7 @@ def required_service_checks() -> Dict[str, CheckResult]:
 
 def summarize_checks(checks: Dict[str, CheckResult]) -> Tuple[bool, Dict[str, dict]]:
     all_ok = all(result.ok for result in checks.values())
-    payload = {
-        name: {"ok": result.ok, "detail": result.detail} for name, result in checks.items()
-    }
+    payload = {name: {"ok": result.ok, "detail": result.detail} for name, result in checks.items()}
     return all_ok, payload
 
 
@@ -91,9 +89,7 @@ def log_startup_diagnostics(logger: logging.Logger) -> None:
         "service_name": os.getenv("DOCSGPT_SERVICE_NAME", "docsgpt-backend"),
     }
     if vector_store == "qdrant":
-        diagnostics["qdrant_host"] = _normalize_host(
-            settings.QDRANT_URL or "http://qdrant:6333"
-        )
+        diagnostics["qdrant_host"] = _normalize_host(settings.QDRANT_URL or "http://qdrant:6333")
     logger.info("startup diagnostics: %s", diagnostics)
 
 

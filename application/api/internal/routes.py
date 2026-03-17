@@ -16,9 +16,7 @@ db = mongo[settings.MONGO_DB_NAME]
 conversations_collection = db["conversations"]
 sources_collection = db["sources"]
 
-current_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 internal = Blueprint("internal", __name__)
@@ -48,7 +46,7 @@ def upload_index_files():
     """Upload two files(index.faiss, index.pkl) to the user's folder."""
     if "user" not in request.form:
         return {"status": "no user"}
-    user = request.form["user"] 
+    user = request.form["user"]
     if "name" not in request.form:
         return {"status": "no name"}
     job_name = request.form["name"]
@@ -58,11 +56,11 @@ def upload_index_files():
     type = request.form["type"]
     remote_data = request.form["remote_data"] if "remote_data" in request.form else None
     sync_frequency = request.form["sync_frequency"] if "sync_frequency" in request.form else None
-    
+
     file_path = request.form.get("file_path")
     directory_structure = request.form.get("directory_structure")
     file_name_map = request.form.get("file_name_map")
-    
+
     if directory_structure:
         try:
             directory_structure = json.loads(directory_structure)
@@ -82,7 +80,7 @@ def upload_index_files():
 
     storage = StorageCreator.get_storage()
     index_base_path = f"indexes/{id}"
-    
+
     if settings.VECTOR_STORE == "faiss":
         if "file_faiss" not in request.files:
             logger.error("No file_faiss part")
@@ -102,7 +100,6 @@ def upload_index_files():
         pkl_storage_path = f"{index_base_path}/index.pkl"
         storage.save_file(file_faiss, faiss_storage_path)
         storage.save_file(file_pkl, pkl_storage_path)
-
 
     existing_entry = sources_collection.find_one({"_id": ObjectId(id)})
     if existing_entry:

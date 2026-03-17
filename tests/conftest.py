@@ -55,33 +55,15 @@ def mock_mongo_db(monkeypatch):
     monkeypatch.setattr("application.core.mongo_db.MongoDB.get_client", get_mock_client)
 
     monkeypatch.setattr("application.api.user.base.users_collection", mock_db["users"])
-    monkeypatch.setattr(
-        "application.api.user.base.user_tools_collection", mock_db["user_tools"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.agents_collection", mock_db["agents"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.conversations_collection", mock_db["conversations"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.sources_collection", mock_db["sources"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.prompts_collection", mock_db["prompts"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.feedback_collection", mock_db["feedback"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.token_usage_collection", mock_db["token_usage"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.attachments_collection", mock_db["attachments"]
-    )
-    monkeypatch.setattr(
-        "application.api.user.base.user_logs_collection", mock_db["user_logs"]
-    )
+    monkeypatch.setattr("application.api.user.base.user_tools_collection", mock_db["user_tools"])
+    monkeypatch.setattr("application.api.user.base.agents_collection", mock_db["agents"])
+    monkeypatch.setattr("application.api.user.base.conversations_collection", mock_db["conversations"])
+    monkeypatch.setattr("application.api.user.base.sources_collection", mock_db["sources"])
+    monkeypatch.setattr("application.api.user.base.prompts_collection", mock_db["prompts"])
+    monkeypatch.setattr("application.api.user.base.feedback_collection", mock_db["feedback"])
+    monkeypatch.setattr("application.api.user.base.token_usage_collection", mock_db["token_usage"])
+    monkeypatch.setattr("application.api.user.base.attachments_collection", mock_db["attachments"])
+    monkeypatch.setattr("application.api.user.base.user_logs_collection", mock_db["user_logs"])
     monkeypatch.setattr(
         "application.api.user.base.shared_conversations_collections",
         mock_db["shared_conversations"],
@@ -130,9 +112,7 @@ def log_context():
 
 @pytest.fixture
 def mock_llm_creator(mock_llm, monkeypatch):
-    monkeypatch.setattr(
-        "application.llm.llm_creator.LLMCreator.create_llm", Mock(return_value=mock_llm)
-    )
+    monkeypatch.setattr("application.llm.llm_creator.LLMCreator.create_llm", Mock(return_value=mock_llm))
     return mock_llm
 
 
@@ -172,9 +152,7 @@ def mock_tool():
                 "description": "A test action",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "param1": {"type": "string", "description": "Test parameter"}
-                    },
+                    "properties": {"param1": {"type": "string", "description": "Test parameter"}},
                     "required": ["param1"],
                 },
             }
@@ -187,9 +165,7 @@ def mock_tool():
 def mock_tool_manager(mock_tool, monkeypatch):
     manager = Mock()
     manager.load_tool = Mock(return_value=mock_tool)
-    monkeypatch.setattr(
-        "application.agents.base.ToolManager", Mock(return_value=manager)
-    )
+    monkeypatch.setattr("application.agents.base.ToolManager", Mock(return_value=manager))
     return manager
 
 

@@ -41,28 +41,30 @@ class TestGetArtifact:
         db = mock_mongo_db[settings.MONGO_DB_NAME]
         todo_id_1 = ObjectId()
         todo_id_2 = ObjectId()
-        db["todos"].insert_many([
-            {
-                "_id": todo_id_1,
-                "user_id": decoded_token["sub"],
-                "tool_id": "tool1",
-                "todo_id": 1,
-                "title": "First task",
-                "status": "open",
-                "created_at": datetime(2025, 1, 1),
-                "updated_at": datetime(2025, 1, 1),
-            },
-            {
-                "_id": todo_id_2,
-                "user_id": decoded_token["sub"],
-                "tool_id": "tool1",
-                "todo_id": 2,
-                "title": "Second task",
-                "status": "completed",
-                "created_at": datetime(2025, 1, 1),
-                "updated_at": datetime(2025, 1, 2),
-            },
-        ])
+        db["todos"].insert_many(
+            [
+                {
+                    "_id": todo_id_1,
+                    "user_id": decoded_token["sub"],
+                    "tool_id": "tool1",
+                    "todo_id": 1,
+                    "title": "First task",
+                    "status": "open",
+                    "created_at": datetime(2025, 1, 1),
+                    "updated_at": datetime(2025, 1, 1),
+                },
+                {
+                    "_id": todo_id_2,
+                    "user_id": decoded_token["sub"],
+                    "tool_id": "tool1",
+                    "todo_id": 2,
+                    "title": "Second task",
+                    "status": "completed",
+                    "created_at": datetime(2025, 1, 1),
+                    "updated_at": datetime(2025, 1, 2),
+                },
+            ]
+        )
 
         with flask_app.app_context():
             with flask_app.test_request_context():
@@ -90,28 +92,30 @@ class TestGetArtifact:
         db = mock_mongo_db[settings.MONGO_DB_NAME]
         todo_id_1 = ObjectId()
         todo_id_2 = ObjectId()
-        db["todos"].insert_many([
-            {
-                "_id": todo_id_1,
-                "user_id": decoded_token["sub"],
-                "tool_id": "tool1",
-                "todo_id": 1,
-                "title": "First task",
-                "status": "open",
-                "created_at": datetime(2025, 1, 1),
-                "updated_at": datetime(2025, 1, 1),
-            },
-            {
-                "_id": todo_id_2,
-                "user_id": decoded_token["sub"],
-                "tool_id": "tool1",
-                "todo_id": 2,
-                "title": "Second task",
-                "status": "completed",
-                "created_at": datetime(2025, 1, 1),
-                "updated_at": datetime(2025, 1, 2),
-            },
-        ])
+        db["todos"].insert_many(
+            [
+                {
+                    "_id": todo_id_1,
+                    "user_id": decoded_token["sub"],
+                    "tool_id": "tool1",
+                    "todo_id": 1,
+                    "title": "First task",
+                    "status": "open",
+                    "created_at": datetime(2025, 1, 1),
+                    "updated_at": datetime(2025, 1, 1),
+                },
+                {
+                    "_id": todo_id_2,
+                    "user_id": decoded_token["sub"],
+                    "tool_id": "tool1",
+                    "todo_id": 2,
+                    "title": "Second task",
+                    "status": "completed",
+                    "created_at": datetime(2025, 1, 1),
+                    "updated_at": datetime(2025, 1, 2),
+                },
+            ]
+        )
 
         # Test without query parameter - should return all todos
         with flask_app.app_context():
@@ -127,7 +131,7 @@ class TestGetArtifact:
         assert data["open_count"] == 1
         assert data["completed_count"] == 1
         assert len(data["items"]) == 2
-        
+
         # Test with query parameter (should still return all todos, parameter is ignored)
         with flask_app.app_context():
             with flask_app.test_request_context(query_string={"all": "true"}):

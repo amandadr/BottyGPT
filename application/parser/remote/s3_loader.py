@@ -21,9 +21,7 @@ class S3Loader(BaseRemote):
 
     def __init__(self):
         if boto3 is None:
-            raise ImportError(
-                "boto3 is required for S3Loader. Install it with: pip install boto3"
-            )
+            raise ImportError("boto3 is required for S3Loader. Install it with: pip install boto3")
         self.s3_client = None
 
     def _normalize_endpoint_url(self, endpoint_url: str, bucket: str) -> tuple[str, str]:
@@ -181,10 +179,7 @@ class S3Loader(BaseRemote):
                 return True
 
         mime_type, _ = mimetypes.guess_type(file_path)
-        if mime_type and (
-            mime_type.startswith("text")
-            or mime_type in ["application/json", "application/xml"]
-        ):
+        if mime_type and (mime_type.startswith("text") or mime_type in ["application/json", "application/xml"]):
             return True
 
         return False
@@ -254,9 +249,7 @@ class S3Loader(BaseRemote):
             if error_code == "NoSuchBucket":
                 raise Exception(f"S3 bucket '{bucket}' does not exist")
             elif error_code == "AccessDenied":
-                raise Exception(
-                    f"Access denied to S3 bucket '{bucket}'. Check your credentials and permissions."
-                )
+                raise Exception(f"Access denied to S3 bucket '{bucket}'. Check your credentials and permissions.")
             elif error_code == "NoSuchKey":
                 # This is unusual for ListObjectsV2 - may indicate endpoint/bucket configuration issue
                 logger.error(
@@ -273,9 +266,7 @@ class S3Loader(BaseRemote):
             else:
                 raise Exception(f"S3 error: {e}")
         except NoCredentialsError:
-            raise Exception(
-                "AWS credentials not found. Please provide valid credentials."
-            )
+            raise Exception("AWS credentials not found. Please provide valid credentials.")
 
         return objects
 

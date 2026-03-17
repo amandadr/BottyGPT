@@ -5,14 +5,16 @@ import defusedxml.ElementTree as ET
 from application.parser.remote.base import BaseRemote
 from application.core.url_validation import validate_url, SSRFError
 
+
 class SitemapLoader(BaseRemote):
     def __init__(self, limit=20):
         from langchain_community.document_loaders import WebBaseLoader
+
         self.loader = WebBaseLoader
         self.limit = limit  # Adding limit to control the number of URLs to process
 
     def load_data(self, inputs):
-        sitemap_url= inputs
+        sitemap_url = inputs
         # Check if the input is a list and if it is, use the first element
         if isinstance(sitemap_url, list) and sitemap_url:
             sitemap_url = sitemap_url[0]
@@ -68,27 +70,27 @@ class SitemapLoader(BaseRemote):
             return [sitemap_url]
 
     def _is_sitemap(self, response):
-        content_type = response.headers.get('Content-Type', '')
-        if 'xml' in content_type or response.url.endswith('.xml'):
+        content_type = response.headers.get("Content-Type", "")
+        if "xml" in content_type or response.url.endswith(".xml"):
             return True
 
-        if '<sitemapindex' in response.text or '<urlset' in response.text:
+        if "<sitemapindex" in response.text or "<urlset" in response.text:
             return True
 
         return False
 
     def _parse_sitemap(self, sitemap_content):
         # Remove namespaces
-        sitemap_content = re.sub(' xmlns="[^"]+"', '', sitemap_content.decode('utf-8'), count=1)
+        sitemap_content = re.sub(' xmlns="[^"]+"', "", sitemap_content.decode("utf-8"), count=1)
 
         root = ET.fromstring(sitemap_content)
 
         urls = []
-        for loc in root.findall('.//url/loc'):
+        for loc in root.findall(".//url/loc"):
             urls.append(loc.text)
 
         # Check for nested sitemaps
-        for sitemap in root.findall('.//sitemap/loc'):
+        for sitemap in root.findall(".//sitemap/loc"):
             nested_sitemap_url = sitemap.text
             urls.extend(self._extract_urls(nested_sitemap_url))
 

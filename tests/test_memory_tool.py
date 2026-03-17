@@ -153,9 +153,7 @@ def memory_tool(monkeypatch) -> MemoryTool:
     fake_db = {"memories": fake_collection}
     fake_client = {settings.MONGO_DB_NAME: fake_db}
 
-    monkeypatch.setattr(
-        "application.core.mongo_db.MongoDB.get_client", lambda: fake_client
-    )
+    monkeypatch.setattr("application.core.mongo_db.MongoDB.get_client", lambda: fake_client)
 
     # Return tool with a fixed tool_id for consistency in tests
 
@@ -182,9 +180,7 @@ def test_create_and_view_file(memory_tool: MemoryTool) -> None:
     """Test creating a file and viewing it."""
     # Create a file
 
-    result = memory_tool.execute_action(
-        "create", path="/notes.txt", file_text="Hello world"
-    )
+    result = memory_tool.execute_action("create", path="/notes.txt", file_text="Hello world")
     assert "created" in result.lower()
 
     # View the file
@@ -218,9 +214,7 @@ def test_view_directory_with_files(memory_tool: MemoryTool) -> None:
 
     memory_tool.execute_action("create", path="/file1.txt", file_text="Content 1")
     memory_tool.execute_action("create", path="/file2.txt", file_text="Content 2")
-    memory_tool.execute_action(
-        "create", path="/subdir/file3.txt", file_text="Content 3"
-    )
+    memory_tool.execute_action("create", path="/subdir/file3.txt", file_text="Content 3")
 
     # View directory
 
@@ -240,9 +234,7 @@ def test_view_file_with_line_range(memory_tool: MemoryTool) -> None:
 
     # View lines 2-4
 
-    result = memory_tool.execute_action(
-        "view", path="/multiline.txt", view_range=[2, 4]
-    )
+    result = memory_tool.execute_action("view", path="/multiline.txt", view_range=[2, 4])
     assert "Line 2" in result
     assert "Line 3" in result
     assert "Line 4" in result
@@ -255,15 +247,11 @@ def test_str_replace(memory_tool: MemoryTool) -> None:
     """Test string replacement in a file."""
     # Create a file
 
-    memory_tool.execute_action(
-        "create", path="/replace.txt", file_text="Hello world, hello universe"
-    )
+    memory_tool.execute_action("create", path="/replace.txt", file_text="Hello world, hello universe")
 
     # Replace text
 
-    result = memory_tool.execute_action(
-        "str_replace", path="/replace.txt", old_str="hello", new_str="hi"
-    )
+    result = memory_tool.execute_action("str_replace", path="/replace.txt", old_str="hello", new_str="hi")
     assert "updated" in result.lower()
 
     # Verify replacement
@@ -277,9 +265,7 @@ def test_str_replace_not_found(memory_tool: MemoryTool) -> None:
     """Test string replacement when string not found."""
     memory_tool.execute_action("create", path="/test.txt", file_text="Hello world")
 
-    result = memory_tool.execute_action(
-        "str_replace", path="/test.txt", old_str="goodbye", new_str="hi"
-    )
+    result = memory_tool.execute_action("str_replace", path="/test.txt", old_str="goodbye", new_str="hi")
     assert "not found" in result.lower()
 
 
@@ -288,15 +274,11 @@ def test_insert_line(memory_tool: MemoryTool) -> None:
     """Test inserting text at a line number."""
     # Create a multiline file
 
-    memory_tool.execute_action(
-        "create", path="/insert.txt", file_text="Line 1\nLine 2\nLine 3"
-    )
+    memory_tool.execute_action("create", path="/insert.txt", file_text="Line 1\nLine 2\nLine 3")
 
     # Insert at line 2
 
-    result = memory_tool.execute_action(
-        "insert", path="/insert.txt", insert_line=2, insert_text="Inserted line"
-    )
+    result = memory_tool.execute_action("insert", path="/insert.txt", insert_line=2, insert_text="Inserted line")
     assert "inserted" in result.lower()
 
     # Verify insertion
@@ -312,9 +294,7 @@ def test_insert_invalid_line(memory_tool: MemoryTool) -> None:
     """Test inserting at an invalid line number."""
     memory_tool.execute_action("create", path="/test.txt", file_text="Line 1\nLine 2")
 
-    result = memory_tool.execute_action(
-        "insert", path="/test.txt", insert_line=100, insert_text="Text"
-    )
+    result = memory_tool.execute_action("insert", path="/test.txt", insert_line=100, insert_text="Text")
     assert "invalid" in result.lower()
 
 
@@ -348,12 +328,8 @@ def test_delete_directory(memory_tool: MemoryTool) -> None:
     """Test deleting a directory with files."""
     # Create files in a directory
 
-    memory_tool.execute_action(
-        "create", path="/subdir/file1.txt", file_text="Content 1"
-    )
-    memory_tool.execute_action(
-        "create", path="/subdir/file2.txt", file_text="Content 2"
-    )
+    memory_tool.execute_action("create", path="/subdir/file1.txt", file_text="Content 1")
+    memory_tool.execute_action("create", path="/subdir/file2.txt", file_text="Content 2")
 
     # Delete the directory
 
@@ -375,9 +351,7 @@ def test_rename_file(memory_tool: MemoryTool) -> None:
 
     # Rename it
 
-    result = memory_tool.execute_action(
-        "rename", old_path="/old_name.txt", new_path="/new_name.txt"
-    )
+    result = memory_tool.execute_action("rename", old_path="/old_name.txt", new_path="/new_name.txt")
     assert "renamed" in result.lower()
 
     # Verify old path doesn't exist
@@ -394,9 +368,7 @@ def test_rename_file(memory_tool: MemoryTool) -> None:
 @pytest.mark.unit
 def test_rename_nonexistent_file(memory_tool: MemoryTool) -> None:
     """Test renaming a file that doesn't exist."""
-    result = memory_tool.execute_action(
-        "rename", old_path="/nonexistent.txt", new_path="/new.txt"
-    )
+    result = memory_tool.execute_action("rename", old_path="/nonexistent.txt", new_path="/new.txt")
     assert "not found" in result.lower()
 
 
@@ -410,9 +382,7 @@ def test_rename_to_existing_file(memory_tool: MemoryTool) -> None:
 
     # Try to rename file1 to file2
 
-    result = memory_tool.execute_action(
-        "rename", old_path="/file1.txt", new_path="/file2.txt"
-    )
+    result = memory_tool.execute_action("rename", old_path="/file1.txt", new_path="/file2.txt")
     assert "already exists" in result.lower()
 
 
@@ -429,9 +399,7 @@ def test_path_traversal_protection(memory_tool: MemoryTool) -> None:
     ]
 
     for path in invalid_paths:
-        result = memory_tool.execute_action(
-            "create", path=path, file_text="malicious content"
-        )
+        result = memory_tool.execute_action("create", path=path, file_text="malicious content")
         assert "invalid path" in result.lower()
 
 
@@ -565,9 +533,7 @@ def test_memory_tool_isolation(monkeypatch) -> None:
     fake_db = {"memories": fake_collection}
     fake_client = {settings.MONGO_DB_NAME: fake_db}
 
-    monkeypatch.setattr(
-        "application.core.mongo_db.MongoDB.get_client", lambda: fake_client
-    )
+    monkeypatch.setattr("application.core.mongo_db.MongoDB.get_client", lambda: fake_client)
 
     # Create two memory tools with different tool_ids for the same user
 
@@ -609,9 +575,7 @@ def test_memory_tool_auto_generates_tool_id(monkeypatch) -> None:
     fake_db = {"memories": fake_collection}
     fake_client = {settings.MONGO_DB_NAME: fake_db}
 
-    monkeypatch.setattr(
-        "application.core.mongo_db.MongoDB.get_client", lambda: fake_client
-    )
+    monkeypatch.setattr("application.core.mongo_db.MongoDB.get_client", lambda: fake_client)
 
     # Create two tools without providing tool_id for the same user
 
@@ -663,9 +627,7 @@ def test_paths_without_leading_slash(memory_tool) -> None:
 
     # Test nested path without leading slash
 
-    nested_result = memory_tool.execute_action(
-        "create", path="projects/tasks.txt", file_text="Task 1\nTask 2"
-    )
+    nested_result = memory_tool.execute_action("create", path="projects/tasks.txt", file_text="Task 1\nTask 2")
     assert "created" in nested_result.lower()
 
     view_nested = memory_tool.execute_action("view", path="projects/tasks.txt")
@@ -678,15 +640,11 @@ def test_rename_directory(memory_tool: MemoryTool) -> None:
     # Create files in a directory
 
     memory_tool.execute_action("create", path="/docs/file1.txt", file_text="Content 1")
-    memory_tool.execute_action(
-        "create", path="/docs/sub/file2.txt", file_text="Content 2"
-    )
+    memory_tool.execute_action("create", path="/docs/sub/file2.txt", file_text="Content 2")
 
     # Rename directory (with trailing slash)
 
-    result = memory_tool.execute_action(
-        "rename", old_path="/docs/", new_path="/archive/"
-    )
+    result = memory_tool.execute_action("rename", old_path="/docs/", new_path="/archive/")
     assert "renamed" in result.lower()
     assert "2 files" in result.lower()
 
@@ -710,14 +668,14 @@ def test_rename_directory_without_trailing_slash(memory_tool: MemoryTool) -> Non
     # Create files in a directory
 
     memory_tool.execute_action("create", path="/docs/file1.txt", file_text="Content 1")
-    memory_tool.execute_action(
-        "create", path="/docs/sub/file2.txt", file_text="Content 2"
-    )
+    memory_tool.execute_action("create", path="/docs/sub/file2.txt", file_text="Content 2")
 
     # Rename directory - old path has slash, new path doesn't
 
     result = memory_tool.execute_action(
-        "rename", old_path="/docs/", new_path="/archive"  # Missing trailing slash
+        "rename",
+        old_path="/docs/",
+        new_path="/archive",  # Missing trailing slash
     )
     assert "renamed" in result.lower()
 

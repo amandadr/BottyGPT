@@ -6,7 +6,6 @@ from application.agents.tools.tool_action_parser import ToolActionParser
 
 @pytest.mark.unit
 class TestToolActionParser:
-
     def test_parser_initialization(self):
         parser = ToolActionParser("OpenAILLM")
         assert parser.llm_type == "OpenAILLM"

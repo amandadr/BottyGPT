@@ -80,4 +80,3 @@ class TestRedditPostsLoaderRemote:
             number_posts=3,
         )
         instance.load.assert_called_once()
-

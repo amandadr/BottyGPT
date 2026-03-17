@@ -60,9 +60,7 @@ class TestNormalizeEndpointUrl:
 
     def test_extracts_bucket_from_do_spaces_url(self, s3_loader):
         """Should extract bucket name from DigitalOcean Spaces bucket-prefixed URL."""
-        endpoint, bucket = s3_loader._normalize_endpoint_url(
-            "https://mybucket.nyc3.digitaloceanspaces.com", ""
-        )
+        endpoint, bucket = s3_loader._normalize_endpoint_url("https://mybucket.nyc3.digitaloceanspaces.com", "")
         assert endpoint == "https://nyc3.digitaloceanspaces.com"
         assert bucket == "mybucket"
 
@@ -76,33 +74,25 @@ class TestNormalizeEndpointUrl:
 
     def test_keeps_provided_bucket_when_matches_extracted(self, s3_loader):
         """Should keep bucket when provided matches extracted."""
-        endpoint, bucket = s3_loader._normalize_endpoint_url(
-            "https://mybucket.sfo3.digitaloceanspaces.com", "mybucket"
-        )
+        endpoint, bucket = s3_loader._normalize_endpoint_url("https://mybucket.sfo3.digitaloceanspaces.com", "mybucket")
         assert endpoint == "https://sfo3.digitaloceanspaces.com"
         assert bucket == "mybucket"
 
     def test_returns_unchanged_for_standard_do_endpoint(self, s3_loader):
         """Should return unchanged for standard DO Spaces endpoint."""
-        endpoint, bucket = s3_loader._normalize_endpoint_url(
-            "https://nyc3.digitaloceanspaces.com", "my-bucket"
-        )
+        endpoint, bucket = s3_loader._normalize_endpoint_url("https://nyc3.digitaloceanspaces.com", "my-bucket")
         assert endpoint == "https://nyc3.digitaloceanspaces.com"
         assert bucket == "my-bucket"
 
     def test_returns_unchanged_for_aws_endpoint(self, s3_loader):
         """Should return unchanged for standard AWS S3 endpoints."""
-        endpoint, bucket = s3_loader._normalize_endpoint_url(
-            "https://s3.us-east-1.amazonaws.com", "my-bucket"
-        )
+        endpoint, bucket = s3_loader._normalize_endpoint_url("https://s3.us-east-1.amazonaws.com", "my-bucket")
         assert endpoint == "https://s3.us-east-1.amazonaws.com"
         assert bucket == "my-bucket"
 
     def test_handles_minio_endpoint(self, s3_loader):
         """Should return unchanged for MinIO endpoints."""
-        endpoint, bucket = s3_loader._normalize_endpoint_url(
-            "http://localhost:9000", "my-bucket"
-        )
+        endpoint, bucket = s3_loader._normalize_endpoint_url("http://localhost:9000", "my-bucket")
         assert endpoint == "http://localhost:9000"
         assert bucket == "my-bucket"
 
@@ -209,17 +199,13 @@ class TestIsSupportedDocument:
             "book.epub",
         ]
         for filename in doc_files:
-            assert s3_loader.is_supported_document(
-                filename
-            ), f"{filename} should be document"
+            assert s3_loader.is_supported_document(filename), f"{filename} should be document"
 
     def test_rejects_non_document_extensions(self, s3_loader):
         """Should reject non-document file extensions."""
         non_doc_files = ["image.png", "script.py", "readme.txt", "archive.zip"]
         for filename in non_doc_files:
-            assert not s3_loader.is_supported_document(
-                filename
-            ), f"{filename} should not be document"
+            assert not s3_loader.is_supported_document(filename), f"{filename} should not be document"
 
     def test_case_insensitive_matching(self, s3_loader):
         """Should match extensions case-insensitively."""
@@ -261,9 +247,7 @@ class TestListObjects:
 
         paginator = MagicMock()
         mock_client.get_paginator.return_value = paginator
-        paginator.paginate.return_value = [
-            {"Contents": [{"Key": "docs/readme.md"}, {"Key": "docs/guide.txt"}]}
-        ]
+        paginator.paginate.return_value = [{"Contents": [{"Key": "docs/readme.md"}, {"Key": "docs/guide.txt"}]}]
 
         result = s3_loader.list_objects("test-bucket", "docs/")
 
@@ -324,9 +308,7 @@ class TestListObjects:
 
         paginator = MagicMock()
         mock_client.get_paginator.return_value = paginator
-        paginator.paginate.return_value.__iter__ = MagicMock(
-            side_effect=NoCredentialsError()
-        )
+        paginator.paginate.return_value.__iter__ = MagicMock(side_effect=NoCredentialsError())
 
         with pytest.raises(Exception, match="credentials not found"):
             s3_loader.list_objects("test-bucket", "")
@@ -347,9 +329,7 @@ class TestGetObjectContent:
         result = s3_loader.get_object_content("test-bucket", "readme.txt")
 
         assert result == "Hello, World!"
-        mock_client.get_object.assert_called_once_with(
-            Bucket="test-bucket", Key="readme.txt"
-        )
+        mock_client.get_object.assert_called_once_with(Bucket="test-bucket", Key="readme.txt")
 
     def test_skip_unsupported_file_types(self, s3_loader):
         """Should return None for unsupported file types."""
@@ -422,9 +402,7 @@ class TestGetObjectContent:
         mock_body.read.return_value = b"PDF content"
         mock_client.get_object.return_value = {"Body": mock_body}
 
-        with patch.object(
-            s3_loader, "_process_document", return_value="Extracted text"
-        ) as mock_process:
+        with patch.object(s3_loader, "_process_document", return_value="Extracted text") as mock_process:
             result = s3_loader.get_object_content("test-bucket", "document.pdf")
 
         assert result == "Extracted text"
@@ -442,9 +420,7 @@ class TestLoadData:
         # Setup mock paginator
         paginator = MagicMock()
         mock_client.get_paginator.return_value = paginator
-        paginator.paginate.return_value = [
-            {"Contents": [{"Key": "readme.md"}, {"Key": "guide.txt"}]}
-        ]
+        paginator.paginate.return_value = [{"Contents": [{"Key": "readme.md"}, {"Key": "guide.txt"}]}]
 
         # Setup mock get_object
         def get_object_side_effect(Bucket, Key):
@@ -571,9 +547,7 @@ class TestLoadData:
             s3_loader.load_data({"aws_access_key_id": "test-key"})
 
         with pytest.raises(ValueError, match="Missing required fields"):
-            s3_loader.load_data(
-                {"aws_access_key_id": "test-key", "aws_secret_access_key": "secret"}
-            )
+            s3_loader.load_data({"aws_access_key_id": "test-key", "aws_secret_access_key": "secret"})
 
     def test_load_data_skips_unsupported_files(self, s3_loader, mock_boto3):
         """Should skip unsupported file types."""
@@ -646,9 +620,7 @@ class TestProcessDocument:
         mock_doc = MagicMock()
         mock_doc.text = "Extracted document text"
 
-        with patch(
-            "application.parser.file.bulk.SimpleDirectoryReader"
-        ) as mock_reader_class:
+        with patch("application.parser.file.bulk.SimpleDirectoryReader") as mock_reader_class:
             mock_reader = MagicMock()
             mock_reader.load_data.return_value = [mock_doc]
             mock_reader_class.return_value = mock_reader
@@ -662,17 +634,13 @@ class TestProcessDocument:
 
                 with patch("os.path.exists", return_value=True):
                     with patch("os.unlink"):
-                        result = s3_loader._process_document(
-                            b"PDF content", "document.pdf"
-                        )
+                        result = s3_loader._process_document(b"PDF content", "document.pdf")
 
         assert result == "Extracted document text"
 
     def test_process_document_returns_none_on_error(self, s3_loader):
         """Should return None when document processing fails."""
-        with patch(
-            "application.parser.file.bulk.SimpleDirectoryReader"
-        ) as mock_reader_class:
+        with patch("application.parser.file.bulk.SimpleDirectoryReader") as mock_reader_class:
             mock_reader_class.side_effect = Exception("Parse error")
 
             with patch("tempfile.NamedTemporaryFile") as mock_temp:
@@ -684,17 +652,13 @@ class TestProcessDocument:
 
                 with patch("os.path.exists", return_value=True):
                     with patch("os.unlink"):
-                        result = s3_loader._process_document(
-                            b"PDF content", "document.pdf"
-                        )
+                        result = s3_loader._process_document(b"PDF content", "document.pdf")
 
         assert result is None
 
     def test_process_document_cleans_up_temp_file(self, s3_loader):
         """Should clean up temporary file after processing."""
-        with patch(
-            "application.parser.file.bulk.SimpleDirectoryReader"
-        ) as mock_reader_class:
+        with patch("application.parser.file.bulk.SimpleDirectoryReader") as mock_reader_class:
             mock_reader = MagicMock()
             mock_reader.load_data.return_value = []
             mock_reader_class.return_value = mock_reader

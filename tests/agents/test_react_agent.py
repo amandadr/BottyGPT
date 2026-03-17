@@ -6,19 +6,14 @@ from application.agents.react_agent import ReActAgent
 
 @pytest.mark.unit
 class TestReActAgent:
-
-    def test_react_agent_initialization(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_react_agent_initialization(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         assert isinstance(agent, ReActAgent)
         assert agent.plan == ""
         assert agent.observations == []
 
-    def test_react_agent_inherits_base_properties(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_react_agent_inherits_base_properties(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         assert agent.endpoint == agent_base_params["endpoint"]
@@ -28,10 +23,7 @@ class TestReActAgent:
 
 @pytest.mark.unit
 class TestReActAgentContentExtraction:
-
-    def test_extract_content_from_string(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_extract_content_from_string(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         response = "Simple string response"
@@ -39,9 +31,7 @@ class TestReActAgentContentExtraction:
 
         assert content == "Simple string response"
 
-    def test_extract_content_from_message_object(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_extract_content_from_message_object(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         response = Mock()
@@ -52,9 +42,7 @@ class TestReActAgentContentExtraction:
 
         assert content == "Message content"
 
-    def test_extract_content_from_openai_response(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_extract_content_from_openai_response(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         response = Mock()
@@ -85,9 +73,7 @@ class TestReActAgentContentExtraction:
 
         assert content == "Anthropic content"
 
-    def test_extract_content_from_openai_stream(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_extract_content_from_openai_stream(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         chunk1 = Mock()
@@ -105,9 +91,7 @@ class TestReActAgentContentExtraction:
 
         assert content == "Part 1 Part 2"
 
-    def test_extract_content_from_anthropic_stream(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_extract_content_from_anthropic_stream(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         chunk1 = Mock()
@@ -127,9 +111,7 @@ class TestReActAgentContentExtraction:
 
         assert content == "Stream 1 Stream 2"
 
-    def test_extract_content_from_string_stream(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_extract_content_from_string_stream(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         response = iter(["chunk1", "chunk2", "chunk3"])
@@ -137,9 +119,7 @@ class TestReActAgentContentExtraction:
 
         assert content == "chunk1chunk2chunk3"
 
-    def test_extract_content_handles_none_content(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_extract_content_handles_none_content(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ReActAgent(**agent_base_params)
 
         response = Mock()
@@ -155,7 +135,6 @@ class TestReActAgentContentExtraction:
 
 @pytest.mark.unit
 class TestReActAgentPlanning:
-
     @patch(
         "builtins.open",
         new_callable=mock_open,
@@ -213,7 +192,6 @@ class TestReActAgentPlanning:
 
 @pytest.mark.unit
 class TestReActAgentFinalAnswer:
-
     @patch(
         "builtins.open",
         new_callable=mock_open,
@@ -288,10 +266,7 @@ class TestReActAgentFinalAnswer:
 
 @pytest.mark.unit
 class TestReActAgentGenInner:
-
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data="Prompt template: {query}"
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data="Prompt template: {query}")
     def test_gen_inner_resets_state(
         self,
         mock_file,
@@ -341,9 +316,7 @@ class TestReActAgentGenInner:
             else:
                 yield "SATISFIED - done"
 
-        mock_llm.gen_stream = Mock(
-            side_effect=lambda *args, **kwargs: mock_gen_stream(*args, **kwargs)
-        )
+        mock_llm.gen_stream = Mock(side_effect=lambda *args, **kwargs: mock_gen_stream(*args, **kwargs))
 
         def mock_handler(*args, **kwargs):
             yield "SATISFIED - done"
@@ -374,9 +347,7 @@ class TestReActAgentGenInner:
             call_count += 1
             yield f"Iteration {call_count}"
 
-        mock_llm.gen_stream = Mock(
-            side_effect=lambda *args, **kwargs: mock_gen_stream(*args, **kwargs)
-        )
+        mock_llm.gen_stream = Mock(side_effect=lambda *args, **kwargs: mock_gen_stream(*args, **kwargs))
 
         def mock_handler(*args, **kwargs):
             yield "Continue..."
@@ -470,7 +441,6 @@ class TestReActAgentGenInner:
 
 @pytest.mark.integration
 class TestReActAgentIntegration:
-
     @patch(
         "builtins.open",
         new_callable=mock_open,
@@ -496,9 +466,7 @@ class TestReActAgentIntegration:
             else:
                 yield "SATISFIED final answer"
 
-        mock_llm.gen_stream = Mock(
-            side_effect=lambda *args, **kwargs: mock_gen_stream(*args, **kwargs)
-        )
+        mock_llm.gen_stream = Mock(side_effect=lambda *args, **kwargs: mock_gen_stream(*args, **kwargs))
 
         def mock_handler(*args, **kwargs):
             call_sequence.append("handler")

@@ -3,6 +3,7 @@ from markdownify import markdownify
 from application.agents.tools.base import Tool
 from application.core.url_validation import validate_url, SSRFError
 
+
 class ReadWebpageTool(Tool):
     """
     Read Webpage (browser)
@@ -38,15 +39,14 @@ class ReadWebpageTool(Tool):
             return f"Error: URL validation failed - {e}"
 
         try:
-            response = requests.get(url, timeout=10, headers={'User-Agent': 'DocsGPT-Agent/1.0'})
+            response = requests.get(url, timeout=10, headers={"User-Agent": "DocsGPT-Agent/1.0"})
             response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
-            
+
             html_content = response.text
-            #soup = BeautifulSoup(html_content, 'html.parser')
-            
-            
+            # soup = BeautifulSoup(html_content, 'html.parser')
+
             markdown_content = markdownify(html_content, heading_style="ATX", newline_style="BACKSLASH")
-            
+
             return markdown_content
 
         except requests.exceptions.RequestException as e:

@@ -63,7 +63,7 @@ class MiscTests(DocsGPTTestBase):
                     self.print_success(f"Retrieved {len(models)} models")
                     if models:
                         first = models[0]
-                        name = first.get('name', first) if isinstance(first, dict) else first
+                        name = first.get("name", first) if isinstance(first, dict) else first
                         self.print_info(f"First: {name}")
                 else:
                     self.print_success("Retrieved models data")

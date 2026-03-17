@@ -37,14 +37,10 @@ class WorkflowAgent(BaseAgent):
         self._engine: Optional[WorkflowEngine] = None
 
     @log_activity()
-    def gen(
-        self, query: str, log_context: LogContext = None
-    ) -> Generator[Dict[str, str], None, None]:
+    def gen(self, query: str, log_context: LogContext = None) -> Generator[Dict[str, str], None, None]:
         yield from self._gen_inner(query, log_context)
 
-    def _gen_inner(
-        self, query: str, log_context: LogContext
-    ) -> Generator[Dict[str, str], None, None]:
+    def _gen_inner(self, query: str, log_context: LogContext) -> Generator[Dict[str, str], None, None]:
         graph = self._load_workflow_graph()
         if not graph:
             yield {"type": "error", "error": "Failed to load workflow configuration."}
@@ -112,9 +108,7 @@ class WorkflowAgent(BaseAgent):
             if not owner_id and isinstance(self.decoded_token, dict):
                 owner_id = self.decoded_token.get("sub")
             if not owner_id:
-                logger.error(
-                    f"Workflow owner not available for workflow load: {self.workflow_id}"
-                )
+                logger.error(f"Workflow owner not available for workflow load: {self.workflow_id}")
                 return None
 
             mongo = MongoDB.get_client()
@@ -124,13 +118,9 @@ class WorkflowAgent(BaseAgent):
             workflow_nodes_coll = db["workflow_nodes"]
             workflow_edges_coll = db["workflow_edges"]
 
-            workflow_doc = workflows_coll.find_one(
-                {"_id": ObjectId(self.workflow_id), "user": owner_id}
-            )
+            workflow_doc = workflows_coll.find_one({"_id": ObjectId(self.workflow_id), "user": owner_id})
             if not workflow_doc:
-                logger.error(
-                    f"Workflow {self.workflow_id} not found or inaccessible for user {owner_id}"
-                )
+                logger.error(f"Workflow {self.workflow_id} not found or inaccessible for user {owner_id}")
                 return None
             workflow = Workflow(**workflow_doc)
             graph_version = workflow_doc.get("current_graph_version", 1)
@@ -142,9 +132,7 @@ class WorkflowAgent(BaseAgent):
                 graph_version = 1
 
             nodes_docs = list(
-                workflow_nodes_coll.find(
-                    {"workflow_id": self.workflow_id, "graph_version": graph_version}
-                )
+                workflow_nodes_coll.find({"workflow_id": self.workflow_id, "graph_version": graph_version})
             )
             if not nodes_docs and graph_version == 1:
                 nodes_docs = list(
@@ -158,9 +146,7 @@ class WorkflowAgent(BaseAgent):
             nodes = [WorkflowNode(**doc) for doc in nodes_docs]
 
             edges_docs = list(
-                workflow_edges_coll.find(
-                    {"workflow_id": self.workflow_id, "graph_version": graph_version}
-                )
+                workflow_edges_coll.find({"workflow_id": self.workflow_id, "graph_version": graph_version})
             )
             if not edges_docs and graph_version == 1:
                 edges_docs = list(
@@ -216,10 +202,7 @@ class WorkflowAgent(BaseAgent):
 
     def _serialize_state_value(self, value: Any) -> Any:
         if isinstance(value, dict):
-            return {
-                str(dict_key): self._serialize_state_value(dict_value)
-                for dict_key, dict_value in value.items()
-            }
+            return {str(dict_key): self._serialize_state_value(dict_value) for dict_key, dict_value in value.items()}
         if isinstance(value, list):
             return [self._serialize_state_value(item) for item in value]
         if isinstance(value, tuple):

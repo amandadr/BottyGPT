@@ -36,9 +36,7 @@ class TokenCounter:
         return total_tokens
 
     @staticmethod
-    def count_query_tokens(
-        queries: List[Dict[str, Any]], include_tool_calls: bool = True
-    ) -> int:
+    def count_query_tokens(queries: List[Dict[str, Any]], include_tool_calls: bool = True) -> int:
         """
         Count tokens across multiple query objects.
 
@@ -74,9 +72,7 @@ class TokenCounter:
         return total_tokens
 
     @staticmethod
-    def count_conversation_tokens(
-        conversation: Dict[str, Any], include_system_prompt: bool = False
-    ) -> int:
+    def count_conversation_tokens(conversation: Dict[str, Any], include_system_prompt: bool = False) -> int:
         """
         Calculate total tokens in a conversation.
 

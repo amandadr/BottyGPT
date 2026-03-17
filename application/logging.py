@@ -9,9 +9,7 @@ from typing import Any, Callable, Dict, Generator, List
 from application.core.mongo_db import MongoDB
 from application.core.settings import settings
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 class LogContext:
@@ -36,11 +34,7 @@ def build_stack_data(
     if include_attributes is None:
         include_attributes = []
         for name, value in inspect.getmembers(obj):
-            if (
-                not name.startswith("_")
-                and not inspect.ismethod(value)
-                and not inspect.isfunction(value)
-            ):
+            if not name.startswith("_") and not inspect.ismethod(value) and not inspect.isfunction(value):
                 include_attributes.append(name)
     for attr_name in include_attributes:
         if exclude_attributes and attr_name in exclude_attributes:
@@ -82,9 +76,7 @@ def log_activity() -> Callable:
             context = LogContext(endpoint, activity_id, user, api_key, query)
             kwargs["log_context"] = context
 
-            logging.info(
-                f"Starting activity: {endpoint} - {activity_id} - User: {user}"
-            )
+            logging.info(f"Starting activity: {endpoint} - {activity_id} - User: {user}")
 
             generator = func(*args, **kwargs)
             yield from _consume_and_log(generator, context)
@@ -136,8 +128,6 @@ def _log_to_mongodb(
         mongo = MongoDB.get_client()
         db = mongo[settings.MONGO_DB_NAME]
         user_logs_collection = db["stack_logs"]
-        
-
 
         log_entry = {
             "endpoint": endpoint,
@@ -153,7 +143,7 @@ def _log_to_mongodb(
         for key, value in log_entry.items():
             if isinstance(value, str) and len(value) > 10000:
                 log_entry[key] = value[:10000]
-    
+
         user_logs_collection.insert_one(log_entry)
         logging.debug(f"Logged activity to MongoDB: {activity_id}")
 

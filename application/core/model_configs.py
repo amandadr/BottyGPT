@@ -52,7 +52,7 @@ OPENAI_MODELS = [
             supported_attachment_types=OPENAI_ATTACHMENTS,
             context_window=200000,
         ),
-    )
+    ),
 ]
 
 
@@ -175,9 +175,7 @@ OPENROUTER_MODELS = [
         display_name="Qwen 3 Coder",
         description="Latest Qwen model with high-speed inference",
         capabilities=ModelCapabilities(
-            supports_tools=True,
-            context_window=128000,
-            supported_attachment_types=OPENROUTER_ATTACHMENTS
+            supports_tools=True, context_window=128000, supported_attachment_types=OPENROUTER_ATTACHMENTS
         ),
     ),
     AvailableModel(
@@ -186,9 +184,7 @@ OPENROUTER_MODELS = [
         display_name="Gemma 3 27B",
         description="Latest Gemma model with high-speed inference",
         capabilities=ModelCapabilities(
-            supports_tools=True,
-            context_window=128000,
-            supported_attachment_types=OPENROUTER_ATTACHMENTS
+            supports_tools=True, context_window=128000, supported_attachment_types=OPENROUTER_ATTACHMENTS
         ),
     ),
 ]

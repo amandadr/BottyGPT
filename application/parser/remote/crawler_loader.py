@@ -8,6 +8,7 @@ from application.parser.schema.base import Document
 from application.core.url_validation import validate_url, SSRFError
 from langchain_community.document_loaders import WebBaseLoader
 
+
 class CrawlerLoader(BaseRemote):
     def __init__(self, limit=10):
         self.loader = WebBaseLoader  # Initialize the document loader
@@ -51,22 +52,17 @@ class CrawlerLoader(BaseRemote):
                     metadata = dict(doc.metadata or {})
                     source_url = metadata.get("source") or current_url
                     metadata["file_path"] = self._url_to_virtual_path(source_url)
-                    loaded_content.append(
-                        Document(
-                            doc.page_content,
-                            extra_info=metadata
-                        )
-                    )
+                    loaded_content.append(Document(doc.page_content, extra_info=metadata))
             except Exception as e:
                 logging.error(f"Error processing URL {current_url}: {e}", exc_info=True)
                 continue
 
             # Parse the HTML content to extract all links
-            soup = BeautifulSoup(response.text, 'html.parser')
+            soup = BeautifulSoup(response.text, "html.parser")
             all_links = [
-                urljoin(current_url, a['href'])
-                for a in soup.find_all('a', href=True)
-                if base_url in urljoin(current_url, a['href'])
+                urljoin(current_url, a["href"])
+                for a in soup.find_all("a", href=True)
+                if base_url in urljoin(current_url, a["href"])
             ]
 
             # Add new links to the list of URLs to visit if they haven't been visited yet

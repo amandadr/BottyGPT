@@ -16,6 +16,7 @@ class _Enc:
 def _patch_tokenizer(monkeypatch):
     monkeypatch.setattr(utils, "get_encoding", lambda: _Enc())
 
+
 def test_markdown_init_parser():
     parser = MarkdownParser()
     assert isinstance(parser._init_parser(), dict)

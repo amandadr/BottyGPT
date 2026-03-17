@@ -76,17 +76,11 @@ def get_workflow_graph_version(workflow: Dict) -> int:
 
 def fetch_graph_documents(collection, workflow_id: str, graph_version: int) -> List[Dict]:
     """Fetch graph docs for active version, with fallback for legacy unversioned data."""
-    docs = list(
-        collection.find({"workflow_id": workflow_id, "graph_version": graph_version})
-    )
+    docs = list(collection.find({"workflow_id": workflow_id, "graph_version": graph_version}))
     if docs:
         return docs
     if graph_version == 1:
-        return list(
-            collection.find(
-                {"workflow_id": workflow_id, "graph_version": {"$exists": False}}
-            )
-        )
+        return list(collection.find({"workflow_id": workflow_id, "graph_version": {"$exists": False}}))
     return docs
 
 
@@ -122,9 +116,7 @@ def normalize_agent_node_json_schemas(nodes: List[Dict]) -> List[Dict]:
 
         normalized_config = dict(raw_config)
         try:
-            normalized_config["json_schema"] = normalize_json_schema_payload(
-                raw_config.get("json_schema")
-            )
+            normalized_config["json_schema"] = normalize_json_schema_payload(raw_config.get("json_schema"))
         except JsonSchemaValidationError:
             # Validation runs before normalization; keep original on unexpected shape.
             normalized_config["json_schema"] = raw_config.get("json_schema")
@@ -173,19 +165,13 @@ def validate_workflow_structure(nodes: List[Dict], edges: List[Dict]) -> List[st
         cnode_title = cnode.get("title", cnode_id)
         outgoing = [e for e in edges if e.get("source") == cnode_id]
         if len(outgoing) < 2:
-            errors.append(
-                f"Condition node '{cnode_title}' must have at least 2 outgoing edges"
-            )
+            errors.append(f"Condition node '{cnode_title}' must have at least 2 outgoing edges")
         node_data = cnode.get("data", {}) or {}
         cases = node_data.get("cases", [])
         if not isinstance(cases, list):
             cases = []
-        if not cases or not any(
-            isinstance(c, dict) and str(c.get("expression", "")).strip() for c in cases
-        ):
-            errors.append(
-                f"Condition node '{cnode_title}' must have at least one case with an expression"
-            )
+        if not cases or not any(isinstance(c, dict) and str(c.get("expression", "")).strip() for c in cases):
+            errors.append(f"Condition node '{cnode_title}' must have at least one case with an expression")
 
         case_handles: Set[str] = set()
         duplicate_case_handles: Set[str] = set()
@@ -195,18 +181,14 @@ def validate_workflow_structure(nodes: List[Dict], edges: List[Dict]) -> List[st
             raw_handle = case.get("sourceHandle", "")
             handle = raw_handle.strip() if isinstance(raw_handle, str) else ""
             if not handle:
-                errors.append(
-                    f"Condition node '{cnode_title}' has a case without a branch handle"
-                )
+                errors.append(f"Condition node '{cnode_title}' has a case without a branch handle")
                 continue
             if handle in case_handles:
                 duplicate_case_handles.add(handle)
             case_handles.add(handle)
 
         for handle in duplicate_case_handles:
-            errors.append(
-                f"Condition node '{cnode_title}' has duplicate case handle '{handle}'"
-            )
+            errors.append(f"Condition node '{cnode_title}' has duplicate case handle '{handle}'")
 
         outgoing_by_handle: Dict[str, List[Dict]] = {}
         for out_edge in outgoing:
@@ -216,18 +198,12 @@ def validate_workflow_structure(nodes: List[Dict], edges: List[Dict]) -> List[st
 
         for handle, handle_edges in outgoing_by_handle.items():
             if not handle:
-                errors.append(
-                    f"Condition node '{cnode_title}' has an outgoing edge without sourceHandle"
-                )
+                errors.append(f"Condition node '{cnode_title}' has an outgoing edge without sourceHandle")
                 continue
             if handle != "else" and handle not in case_handles:
-                errors.append(
-                    f"Condition node '{cnode_title}' has a connection from unknown branch '{handle}'"
-                )
+                errors.append(f"Condition node '{cnode_title}' has a connection from unknown branch '{handle}'")
             if len(handle_edges) > 1:
-                errors.append(
-                    f"Condition node '{cnode_title}' has multiple outgoing edges from branch '{handle}'"
-                )
+                errors.append(f"Condition node '{cnode_title}' has multiple outgoing edges from branch '{handle}'")
 
         if "else" not in outgoing_by_handle:
             errors.append(f"Condition node '{cnode_title}' must have an 'else' branch")
@@ -241,18 +217,12 @@ def validate_workflow_structure(nodes: List[Dict], edges: List[Dict]) -> List[st
                 continue
 
             raw_expression = case.get("expression", "")
-            has_expression = isinstance(raw_expression, str) and bool(
-                raw_expression.strip()
-            )
+            has_expression = isinstance(raw_expression, str) and bool(raw_expression.strip())
             has_outgoing = bool(outgoing_by_handle.get(handle))
             if has_expression and not has_outgoing:
-                errors.append(
-                    f"Condition node '{cnode_title}' case '{handle}' has an expression but no outgoing edge"
-                )
+                errors.append(f"Condition node '{cnode_title}' case '{handle}' has an expression but no outgoing edge")
             if not has_expression and has_outgoing:
-                errors.append(
-                    f"Condition node '{cnode_title}' case '{handle}' has an outgoing edge but no expression"
-                )
+                errors.append(f"Condition node '{cnode_title}' case '{handle}' has an outgoing edge but no expression")
 
         for handle, handle_edges in outgoing_by_handle.items():
             if not handle:
@@ -260,10 +230,7 @@ def validate_workflow_structure(nodes: List[Dict], edges: List[Dict]) -> List[st
             for out_edge in handle_edges:
                 target = out_edge.get("target")
                 if target and not _can_reach_end(target, edges, node_map, end_ids):
-                    errors.append(
-                        f"Branch '{handle}' of condition '{cnode_title}' "
-                        f"must eventually reach an end node"
-                    )
+                    errors.append(f"Branch '{handle}' of condition '{cnode_title}' must eventually reach an end node")
 
     agent_nodes = [n for n in nodes if n.get("type") == "agent"]
     for agent_node in agent_nodes:
@@ -272,18 +239,14 @@ def validate_workflow_structure(nodes: List[Dict], edges: List[Dict]) -> List[st
         if not isinstance(raw_config, dict):
             errors.append(f"Agent node '{agent_title}' has invalid configuration")
             continue
-        normalized_schema, schema_error = validate_json_schema_payload(
-            raw_config.get("json_schema")
-        )
+        normalized_schema, schema_error = validate_json_schema_payload(raw_config.get("json_schema"))
         has_json_schema = normalized_schema is not None
 
         model_id = raw_config.get("model_id")
         if has_json_schema and isinstance(model_id, str) and model_id.strip():
             capabilities = get_model_capabilities(model_id.strip())
             if capabilities and not capabilities.get("supports_structured_output", False):
-                errors.append(
-                    f"Agent node '{agent_title}' selected model does not support structured output"
-                )
+                errors.append(f"Agent node '{agent_title}' selected model does not support structured output")
         if schema_error:
             errors.append(f"Agent node '{agent_title}' JSON schema {schema_error}")
 
@@ -296,9 +259,7 @@ def validate_workflow_structure(nodes: List[Dict], edges: List[Dict]) -> List[st
     return errors
 
 
-def _can_reach_end(
-    node_id: str, edges: List[Dict], node_map: Dict, end_ids: set, visited: set = None
-) -> bool:
+def _can_reach_end(node_id: str, edges: List[Dict], node_map: Dict, end_ids: set, visited: set = None) -> bool:
     if visited is None:
         visited = set()
     if node_id in end_ids:
@@ -310,9 +271,7 @@ def _can_reach_end(
     return any(_can_reach_end(t, edges, node_map, end_ids, visited) for t in outgoing if t)
 
 
-def create_workflow_nodes(
-    workflow_id: str, nodes_data: List[Dict], graph_version: int
-) -> None:
+def create_workflow_nodes(workflow_id: str, nodes_data: List[Dict], graph_version: int) -> None:
     """Insert workflow nodes into database."""
     if nodes_data:
         workflow_nodes_collection.insert_many(
@@ -332,9 +291,7 @@ def create_workflow_nodes(
         )
 
 
-def create_workflow_edges(
-    workflow_id: str, edges_data: List[Dict], graph_version: int
-) -> None:
+def create_workflow_edges(workflow_id: str, edges_data: List[Dict], graph_version: int) -> None:
     """Insert workflow edges into database."""
     if edges_data:
         workflow_edges_collection.insert_many(
@@ -355,7 +312,6 @@ def create_workflow_edges(
 
 @workflows_ns.route("/workflows")
 class WorkflowList(Resource):
-
     @require_auth
     @require_fields(["name"])
     def post(self):
@@ -369,9 +325,7 @@ class WorkflowList(Resource):
 
         validation_errors = validate_workflow_structure(nodes_data, edges_data)
         if validation_errors:
-            return error_response(
-                "Workflow validation failed", errors=validation_errors
-            )
+            return error_response("Workflow validation failed", errors=validation_errors)
         nodes_data = normalize_agent_node_json_schemas(nodes_data)
 
         now = datetime.now(timezone.utc)
@@ -407,7 +361,6 @@ class WorkflowList(Resource):
 
 @workflows_ns.route("/workflows/<string:workflow_id>")
 class WorkflowDetail(Resource):
-
     @require_auth
     def get(self, workflow_id: str):
         """Get workflow details with nodes and edges."""
@@ -416,19 +369,13 @@ class WorkflowDetail(Resource):
         if error:
             return error
 
-        workflow, error = check_resource_ownership(
-            workflows_collection, obj_id, user_id, "Workflow"
-        )
+        workflow, error = check_resource_ownership(workflows_collection, obj_id, user_id, "Workflow")
         if error:
             return error
 
         graph_version = get_workflow_graph_version(workflow)
-        nodes = fetch_graph_documents(
-            workflow_nodes_collection, workflow_id, graph_version
-        )
-        edges = fetch_graph_documents(
-            workflow_edges_collection, workflow_id, graph_version
-        )
+        nodes = fetch_graph_documents(workflow_nodes_collection, workflow_id, graph_version)
+        edges = fetch_graph_documents(workflow_edges_collection, workflow_id, graph_version)
 
         return success_response(
             {
@@ -447,9 +394,7 @@ class WorkflowDetail(Resource):
         if error:
             return error
 
-        workflow, error = check_resource_ownership(
-            workflows_collection, obj_id, user_id, "Workflow"
-        )
+        workflow, error = check_resource_ownership(workflows_collection, obj_id, user_id, "Workflow")
         if error:
             return error
 
@@ -460,9 +405,7 @@ class WorkflowDetail(Resource):
 
         validation_errors = validate_workflow_structure(nodes_data, edges_data)
         if validation_errors:
-            return error_response(
-                "Workflow validation failed", errors=validation_errors
-            )
+            return error_response("Workflow validation failed", errors=validation_errors)
         nodes_data = normalize_agent_node_json_schemas(nodes_data)
 
         current_graph_version = get_workflow_graph_version(workflow)
@@ -471,12 +414,8 @@ class WorkflowDetail(Resource):
             create_workflow_nodes(workflow_id, nodes_data, next_graph_version)
             create_workflow_edges(workflow_id, edges_data, next_graph_version)
         except Exception as e:
-            workflow_nodes_collection.delete_many(
-                {"workflow_id": workflow_id, "graph_version": next_graph_version}
-            )
-            workflow_edges_collection.delete_many(
-                {"workflow_id": workflow_id, "graph_version": next_graph_version}
-            )
+            workflow_nodes_collection.delete_many({"workflow_id": workflow_id, "graph_version": next_graph_version})
+            workflow_edges_collection.delete_many({"workflow_id": workflow_id, "graph_version": next_graph_version})
             return error_response(f"Failed to update workflow structure: {str(e)}")
 
         now = datetime.now(timezone.utc)
@@ -495,12 +434,8 @@ class WorkflowDetail(Resource):
             "Failed to update workflow",
         )
         if error:
-            workflow_nodes_collection.delete_many(
-                {"workflow_id": workflow_id, "graph_version": next_graph_version}
-            )
-            workflow_edges_collection.delete_many(
-                {"workflow_id": workflow_id, "graph_version": next_graph_version}
-            )
+            workflow_nodes_collection.delete_many({"workflow_id": workflow_id, "graph_version": next_graph_version})
+            workflow_edges_collection.delete_many({"workflow_id": workflow_id, "graph_version": next_graph_version})
             return error
 
         try:
@@ -511,9 +446,7 @@ class WorkflowDetail(Resource):
                 {"workflow_id": workflow_id, "graph_version": {"$ne": next_graph_version}}
             )
         except Exception as cleanup_err:
-            current_app.logger.warning(
-                f"Failed to clean old workflow graph versions for {workflow_id}: {cleanup_err}"
-            )
+            current_app.logger.warning(f"Failed to clean old workflow graph versions for {workflow_id}: {cleanup_err}")
 
         return success_response()
 
@@ -525,9 +458,7 @@ class WorkflowDetail(Resource):
         if error:
             return error
 
-        workflow, error = check_resource_ownership(
-            workflows_collection, obj_id, user_id, "Workflow"
-        )
+        workflow, error = check_resource_ownership(workflows_collection, obj_id, user_id, "Workflow")
         if error:
             return error
 

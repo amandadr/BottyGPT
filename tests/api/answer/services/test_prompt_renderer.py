@@ -3,7 +3,6 @@ import pytest
 
 @pytest.mark.unit
 class TestTemplateEngine:
-
     def test_render_simple_template(self):
         from application.templates.template_engine import TemplateEngine
 
@@ -20,9 +19,7 @@ class TestTemplateEngine:
             "user": {"name": "Alice", "role": "admin"},
             "system": {"date": "2025-10-22"},
         }
-        result = engine.render(
-            "{{ user.name }} is a {{ user.role }} on {{ system.date }}", context
-        )
+        result = engine.render("{{ user.name }} is a {{ user.role }} on {{ system.date }}", context)
 
         assert result == "Alice is a admin on 2025-10-22"
 
@@ -92,14 +89,11 @@ class TestTemplateEngine:
 
 @pytest.mark.unit
 class TestSystemNamespace:
-
     def test_system_namespace_build(self):
         from application.templates.namespaces import SystemNamespace
 
         builder = SystemNamespace()
-        context = builder.build(
-            request_id="req_123", user_id="user_456", extra_param="ignored"
-        )
+        context = builder.build(request_id="req_123", user_id="user_456", extra_param="ignored")
 
         assert context["request_id"] == "req_123"
         assert context["user_id"] == "user_456"
@@ -136,7 +130,6 @@ class TestSystemNamespace:
 
 @pytest.mark.unit
 class TestPassthroughNamespace:
-
     def test_passthrough_namespace_build(self):
         from application.templates.namespaces import PassthroughNamespace
 
@@ -196,7 +189,6 @@ class TestPassthroughNamespace:
 
 @pytest.mark.unit
 class TestSourceNamespace:
-
     def test_source_namespace_build_with_docs(self):
         from application.templates.namespaces import SourceNamespace
 
@@ -255,14 +247,11 @@ class TestSourceNamespace:
 
 @pytest.mark.unit
 class TestToolsNamespace:
-
     def test_tools_namespace_build_with_memory_data(self):
         from application.templates.namespaces import ToolsNamespace
 
         builder = ToolsNamespace()
-        tools_data = {
-            "memory": {"root": "Files:\n- /notes.txt\n- /tasks.txt", "available": True}
-        }
+        tools_data = {"memory": {"root": "Files:\n- /notes.txt\n- /tasks.txt", "available": True}}
 
         context = builder.build(tools_data=tools_data)
 
@@ -328,7 +317,6 @@ class TestToolsNamespace:
 
 @pytest.mark.unit
 class TestNamespaceManagerWithTools:
-
     def test_namespace_manager_includes_tools_in_context(self):
         from application.templates.namespaces import NamespaceManager
 
@@ -404,7 +392,6 @@ class TestNamespaceManagerWithTools:
 
 @pytest.mark.unit
 class TestPromptRenderer:
-
     def test_render_prompt_with_template_syntax(self):
         from application.api.answer.services.prompt_renderer import PromptRenderer
 
@@ -492,9 +479,7 @@ class TestPromptRenderer:
 
         renderer = PromptRenderer()
         prompt = "Memory contents:\n{{ tools.memory.root }}\n\nStatus: {{ tools.memory.available }}"
-        tools_data = {
-            "memory": {"root": "Files:\n- /notes.txt\n- /tasks.txt", "available": True}
-        }
+        tools_data = {"memory": {"root": "Files:\n- /notes.txt\n- /tasks.txt", "available": True}}
 
         result = renderer.render_prompt(prompt, tools_data=tools_data)
 
@@ -603,7 +588,6 @@ Memory: {{ tools.memory.root }}
 
 @pytest.mark.unit
 class TestPromptRendererIntegration:
-
     def test_render_prompt_real_world_scenario(self):
         from application.api.answer.services.prompt_renderer import PromptRenderer
 
@@ -641,7 +625,6 @@ class TestPromptRendererIntegration:
 
 @pytest.mark.unit
 class TestStreamProcessorPromptRendering:
-
     def test_stream_processor_pre_fetch_docs_none_doc_mode(self, mock_mongo_db):
         from application.api.answer.services.stream_processor import StreamProcessor
 
@@ -696,9 +679,7 @@ class TestStreamProcessorPromptRendering:
         request_data = {"question": "test"}
         processor = StreamProcessor(request_data, {"sub": "user1"})
 
-        with patch(
-            "application.agents.tools.tool_manager.ToolManager"
-        ) as mock_manager_class:
+        with patch("application.agents.tools.tool_manager.ToolManager") as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager_class.return_value = mock_manager
 
@@ -734,9 +715,7 @@ class TestStreamProcessorPromptRendering:
         request_data = {"question": "test"}
         processor = StreamProcessor(request_data, {"sub": "user1"})
 
-        with patch(
-            "application.agents.tools.tool_manager.ToolManager"
-        ) as mock_manager_class:
+        with patch("application.agents.tools.tool_manager.ToolManager") as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager_class.return_value = mock_manager
 
@@ -786,9 +765,7 @@ class TestStreamProcessorPromptRendering:
         request_data = {"question": "test"}
         processor = StreamProcessor(request_data, {"sub": "user1"})
 
-        with patch(
-            "application.agents.tools.tool_manager.ToolManager"
-        ) as mock_manager_class:
+        with patch("application.agents.tools.tool_manager.ToolManager") as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager_class.return_value = mock_manager
 
@@ -827,9 +804,7 @@ class TestStreamProcessorPromptRendering:
         request_data = {"question": "test"}
         processor = StreamProcessor(request_data, {"sub": "user1"})
 
-        with patch(
-            "application.agents.tools.tool_manager.ToolManager"
-        ) as mock_manager_class:
+        with patch("application.agents.tools.tool_manager.ToolManager") as mock_manager_class:
             mock_manager = MagicMock()
             mock_manager_class.return_value = mock_manager
 

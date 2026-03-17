@@ -27,10 +27,7 @@ def test_get_info_from_paths():
     file_path = "tests/test_openapi3.yaml"
     data = parse(file_path)
     path = data.paths[1]
-    assert (
-        OpenAPI3Parser().get_info_from_paths(path)
-        == "\nget=Expected response to a valid request"
-    )
+    assert OpenAPI3Parser().get_info_from_paths(path) == "\nget=Expected response to a valid request"
 
 
 @pytest.mark.unit

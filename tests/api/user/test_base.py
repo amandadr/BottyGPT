@@ -9,7 +9,6 @@ from werkzeug.datastructures import FileStorage
 
 @pytest.mark.unit
 class TestTimeRangeGenerators:
-
     def test_generate_minute_range(self):
         from application.api.user.base import generate_minute_range
 
@@ -61,7 +60,6 @@ class TestTimeRangeGenerators:
 
 @pytest.mark.unit
 class TestEnsureUserDoc:
-
     def test_creates_new_user_with_defaults(self, mock_mongo_db):
         from application.api.user.base import ensure_user_doc
 
@@ -101,9 +99,7 @@ class TestEnsureUserDoc:
         users_collection = mock_mongo_db[settings.MONGO_DB_NAME]["users"]
         user_id = "incomplete_user"
 
-        users_collection.insert_one(
-            {"user_id": user_id, "agent_preferences": {"pinned": ["agent1"]}}
-        )
+        users_collection.insert_one({"user_id": user_id, "agent_preferences": {"pinned": ["agent1"]}})
 
         result = ensure_user_doc(user_id)
 
@@ -113,7 +109,6 @@ class TestEnsureUserDoc:
 
 @pytest.mark.unit
 class TestResolveToolDetails:
-
     def test_resolves_tool_ids_to_details(self, mock_mongo_db):
         from application.api.user.base import resolve_tool_details
         from application.core.settings import settings
@@ -122,12 +117,8 @@ class TestResolveToolDetails:
         tool_id1 = ObjectId()
         tool_id2 = ObjectId()
 
-        user_tools.insert_one(
-            {"_id": tool_id1, "name": "calculator", "displayName": "Calculator Tool"}
-        )
-        user_tools.insert_one(
-            {"_id": tool_id2, "name": "weather", "displayName": "Weather API"}
-        )
+        user_tools.insert_one({"_id": tool_id1, "name": "calculator", "displayName": "Calculator Tool"})
+        user_tools.insert_one({"_id": tool_id2, "name": "weather", "displayName": "Weather API"})
 
         result = resolve_tool_details([str(tool_id1), str(tool_id2)])
 
@@ -160,7 +151,6 @@ class TestResolveToolDetails:
 
 @pytest.mark.unit
 class TestGetVectorStore:
-
     @patch("application.api.user.base.VectorCreator.create_vectorstore")
     def test_creates_vector_store(self, mock_create, mock_mongo_db):
         from application.api.user.base import get_vector_store
@@ -179,7 +169,6 @@ class TestGetVectorStore:
 
 @pytest.mark.unit
 class TestHandleImageUpload:
-
     def test_returns_existing_url_when_no_file(self, flask_app):
         from application.api.user.base import handle_image_upload
 
@@ -189,9 +178,7 @@ class TestHandleImageUpload:
             mock_storage = Mock()
             existing_url = "existing/path/image.jpg"
 
-            url, error = handle_image_upload(
-                mock_request, existing_url, "user123", mock_storage
-            )
+            url, error = handle_image_upload(mock_request, existing_url, "user123", mock_storage)
 
             assert url == existing_url
             assert error is None
@@ -200,17 +187,13 @@ class TestHandleImageUpload:
         from application.api.user.base import handle_image_upload
 
         with flask_app.test_request_context():
-            mock_file = FileStorage(
-                stream=io.BytesIO(b"fake image data"), filename="test_image.png"
-            )
+            mock_file = FileStorage(stream=io.BytesIO(b"fake image data"), filename="test_image.png")
             mock_request = Mock()
             mock_request.files = {"image": mock_file}
             mock_storage = Mock()
             mock_storage.save_file.return_value = {"success": True}
 
-            url, error = handle_image_upload(
-                mock_request, "old_url", "user123", mock_storage
-            )
+            url, error = handle_image_upload(mock_request, "old_url", "user123", mock_storage)
 
             assert error is None
             assert url is not None
@@ -229,9 +212,7 @@ class TestHandleImageUpload:
             mock_storage = Mock()
             existing_url = "existing.jpg"
 
-            url, error = handle_image_upload(
-                mock_request, existing_url, "user123", mock_storage
-            )
+            url, error = handle_image_upload(mock_request, existing_url, "user123", mock_storage)
 
             assert url == existing_url
             assert error is None
@@ -247,9 +228,7 @@ class TestHandleImageUpload:
             mock_storage = Mock()
             mock_storage.save_file.side_effect = Exception("Storage error")
 
-            url, error = handle_image_upload(
-                mock_request, "old.jpg", "user123", mock_storage
-            )
+            url, error = handle_image_upload(mock_request, "old.jpg", "user123", mock_storage)
 
             assert url is None
             assert error is not None
@@ -258,7 +237,6 @@ class TestHandleImageUpload:
 
 @pytest.mark.unit
 class TestRequireAgentDecorator:
-
     def test_validates_webhook_token(self, mock_mongo_db, flask_app):
         from application.api.user.base import require_agent
         from application.core.settings import settings
@@ -268,9 +246,7 @@ class TestRequireAgentDecorator:
             agent_id = ObjectId()
             webhook_token = "valid_webhook_token_123"
 
-            agents_collection.insert_one(
-                {"_id": agent_id, "incoming_webhook_token": webhook_token}
-            )
+            agents_collection.insert_one({"_id": agent_id, "incoming_webhook_token": webhook_token})
 
             @require_agent
             def test_func(webhook_token=None, agent=None, agent_id_str=None):

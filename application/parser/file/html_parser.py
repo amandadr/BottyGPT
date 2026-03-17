@@ -3,6 +3,7 @@
 Contains parser for html files.
 
 """
+
 from pathlib import Path
 from typing import Dict, Union
 
@@ -20,5 +21,5 @@ class HTMLParser(BaseParser):
         from langchain_community.document_loaders import BSHTMLLoader
 
         loader = BSHTMLLoader(file)
-        data = loader.load()        
+        data = loader.load()
         return data

@@ -17,8 +17,7 @@ tool_manager = ToolManager(config=tool_config)
 
 def _encrypt_secret_fields(config, config_requirements, user_id):
     secret_keys = [
-        key for key, spec in config_requirements.items()
-        if spec.get("secret") and key in config and config[key]
+        key for key, spec in config_requirements.items() if spec.get("secret") and key in config and config[key]
     ]
     if not secret_keys:
         return config
@@ -66,19 +65,14 @@ def _merge_secrets_on_update(new_config, existing_config, config_requirements, u
 
     Returns the final ``config`` dict ready for persistence.
     """
-    secret_keys = [
-        key for key, spec in config_requirements.items()
-        if spec.get("secret")
-    ]
+    secret_keys = [key for key, spec in config_requirements.items() if spec.get("secret")]
 
     if not secret_keys:
         return new_config
 
     existing_secrets = {}
     if "encrypted_credentials" in existing_config:
-        existing_secrets = decrypt_credentials(
-            existing_config["encrypted_credentials"], user_id
-        )
+        existing_secrets = decrypt_credentials(existing_config["encrypted_credentials"], user_id)
 
     merged_secrets = existing_secrets.copy()
     for key in secret_keys:
@@ -86,18 +80,11 @@ def _merge_secrets_on_update(new_config, existing_config, config_requirements, u
             merged_secrets[key] = new_config[key]
 
     # Start from existing non-secret values, then overlay incoming non-secrets
-    storage_config = {
-        k: v for k, v in existing_config.items()
-        if k not in secret_keys and k != "encrypted_credentials"
-    }
-    storage_config.update(
-        {k: v for k, v in new_config.items() if k not in secret_keys}
-    )
+    storage_config = {k: v for k, v in existing_config.items() if k not in secret_keys and k != "encrypted_credentials"}
+    storage_config.update({k: v for k, v in new_config.items() if k not in secret_keys})
 
     if merged_secrets:
-        storage_config["encrypted_credentials"] = encrypt_credentials(
-            merged_secrets, user_id
-        )
+        storage_config["encrypted_credentials"] = encrypt_credentials(merged_secrets, user_id)
     else:
         storage_config.pop("encrypted_credentials", None)
 
@@ -149,9 +136,7 @@ class AvailableTools(Resource):
                     }
                 )
         except Exception as err:
-            current_app.logger.error(
-                f"Error getting available tools: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error getting available tools: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify({"success": True, "data": tools_metadata}), 200)
 
@@ -179,9 +164,7 @@ class GetTools(Resource):
                         config_req = tool_instance.get_config_requirements()
                         tool_copy["configRequirements"] = config_req
 
-                has_secrets = any(
-                    spec.get("secret") for spec in config_req.values()
-                ) if config_req else False
+                has_secrets = any(spec.get("secret") for spec in config_req.values()) if config_req else False
                 if has_secrets and "encrypted_credentials" in tool_copy.get("config", {}):
                     tool_copy["config"]["has_encrypted_credentials"] = True
                     tool_copy["config"].pop("encrypted_credentials", None)
@@ -200,21 +183,11 @@ class CreateTool(Resource):
             "CreateToolModel",
             {
                 "name": fields.String(required=True, description="Name of the tool"),
-                "displayName": fields.String(
-                    required=True, description="Display name for the tool"
-                ),
-                "description": fields.String(
-                    required=True, description="Tool description"
-                ),
-                "config": fields.Raw(
-                    required=True, description="Configuration of the tool"
-                ),
-                "customName": fields.String(
-                    required=False, description="Custom name for the tool"
-                ),
-                "status": fields.Boolean(
-                    required=True, description="Status of the tool"
-                ),
+                "displayName": fields.String(required=True, description="Display name for the tool"),
+                "description": fields.String(required=True, description="Tool description"),
+                "config": fields.Raw(required=True, description="Configuration of the tool"),
+                "customName": fields.String(required=False, description="Custom name for the tool"),
+                "status": fields.Boolean(required=True, description="Status of the tool"),
             },
         )
     )
@@ -238,22 +211,16 @@ class CreateTool(Resource):
         try:
             tool_instance = tool_manager.tools.get(data["name"])
             if not tool_instance:
-                return make_response(
-                    jsonify({"success": False, "message": "Tool not found"}), 404
-                )
+                return make_response(jsonify({"success": False, "message": "Tool not found"}), 404)
             actions_metadata = tool_instance.get_actions_metadata()
             transformed_actions = transform_actions(actions_metadata)
         except Exception as err:
-            current_app.logger.error(
-                f"Error getting tool actions: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error getting tool actions: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         try:
             config_requirements = tool_instance.get_config_requirements()
             if config_requirements:
-                validation_errors = _validate_config(
-                    data["config"], config_requirements
-                )
+                validation_errors = _validate_config(data["config"], config_requirements)
                 if validation_errors:
                     return make_response(
                         jsonify(
@@ -265,9 +232,7 @@ class CreateTool(Resource):
                         ),
                         400,
                     )
-            storage_config = _encrypt_secret_fields(
-                data["config"], config_requirements, user
-            )
+            storage_config = _encrypt_secret_fields(data["config"], config_requirements, user)
             new_tool = {
                 "user": user,
                 "name": data["name"],
@@ -299,9 +264,7 @@ class UpdateTool(Resource):
                 "customName": fields.String(description="Custom name for the tool"),
                 "description": fields.String(description="Tool description"),
                 "config": fields.Raw(description="Configuration of the tool"),
-                "actions": fields.List(
-                    fields.Raw, description="Actions the tool can perform"
-                ),
+                "actions": fields.List(fields.Raw, description="Actions the tool can perform"),
                 "status": fields.Boolean(description="Status of the tool"),
             },
         )
@@ -343,9 +306,7 @@ class UpdateTool(Resource):
                                 ),
                                 400,
                             )
-                tool_doc = user_tools_collection.find_one(
-                    {"_id": ObjectId(data["id"]), "user": user}
-                )
+                tool_doc = user_tools_collection.find_one({"_id": ObjectId(data["id"]), "user": user})
                 if not tool_doc:
                     return make_response(
                         jsonify({"success": False, "message": "Tool not found"}),
@@ -353,24 +314,25 @@ class UpdateTool(Resource):
                     )
                 tool_name = tool_doc.get("name", data.get("name"))
                 tool_instance = tool_manager.tools.get(tool_name)
-                config_requirements = (
-                    tool_instance.get_config_requirements() if tool_instance else {}
-                )
+                config_requirements = tool_instance.get_config_requirements() if tool_instance else {}
                 existing_config = tool_doc.get("config", {})
                 has_existing_secrets = "encrypted_credentials" in existing_config
 
                 if config_requirements:
                     validation_errors = _validate_config(
-                        data["config"], config_requirements,
+                        data["config"],
+                        config_requirements,
                         has_existing_secrets=has_existing_secrets,
                     )
                     if validation_errors:
                         return make_response(
-                            jsonify({
-                                "success": False,
-                                "message": "Validation failed",
-                                "errors": validation_errors,
-                            }),
+                            jsonify(
+                                {
+                                    "success": False,
+                                    "message": "Validation failed",
+                                    "errors": validation_errors,
+                                }
+                            ),
                             400,
                         )
 
@@ -396,9 +358,7 @@ class UpdateToolConfig(Resource):
             "UpdateToolConfigModel",
             {
                 "id": fields.String(required=True, description="Tool ID"),
-                "config": fields.Raw(
-                    required=True, description="Configuration of the tool"
-                ),
+                "config": fields.Raw(required=True, description="Configuration of the tool"),
             },
         )
     )
@@ -414,47 +374,42 @@ class UpdateToolConfig(Resource):
         if missing_fields:
             return missing_fields
         try:
-            tool_doc = user_tools_collection.find_one(
-                {"_id": ObjectId(data["id"]), "user": user}
-            )
+            tool_doc = user_tools_collection.find_one({"_id": ObjectId(data["id"]), "user": user})
             if not tool_doc:
                 return make_response(jsonify({"success": False}), 404)
 
             tool_name = tool_doc.get("name")
             tool_instance = tool_manager.tools.get(tool_name)
-            config_requirements = (
-                tool_instance.get_config_requirements() if tool_instance else {}
-            )
+            config_requirements = tool_instance.get_config_requirements() if tool_instance else {}
             existing_config = tool_doc.get("config", {})
             has_existing_secrets = "encrypted_credentials" in existing_config
 
             if config_requirements:
                 validation_errors = _validate_config(
-                    data["config"], config_requirements,
+                    data["config"],
+                    config_requirements,
                     has_existing_secrets=has_existing_secrets,
                 )
                 if validation_errors:
                     return make_response(
-                        jsonify({
-                            "success": False,
-                            "message": "Validation failed",
-                            "errors": validation_errors,
-                        }),
+                        jsonify(
+                            {
+                                "success": False,
+                                "message": "Validation failed",
+                                "errors": validation_errors,
+                            }
+                        ),
                         400,
                     )
 
-            final_config = _merge_secrets_on_update(
-                data["config"], existing_config, config_requirements, user
-            )
+            final_config = _merge_secrets_on_update(data["config"], existing_config, config_requirements, user)
 
             user_tools_collection.update_one(
                 {"_id": ObjectId(data["id"]), "user": user},
                 {"$set": {"config": final_config}},
             )
         except Exception as err:
-            current_app.logger.error(
-                f"Error updating tool config: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error updating tool config: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify({"success": True}), 200)
 
@@ -491,9 +446,7 @@ class UpdateToolActions(Resource):
                 {"$set": {"actions": data["actions"]}},
             )
         except Exception as err:
-            current_app.logger.error(
-                f"Error updating tool actions: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error updating tool actions: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify({"success": True}), 200)
 
@@ -505,9 +458,7 @@ class UpdateToolStatus(Resource):
             "UpdateToolStatusModel",
             {
                 "id": fields.String(required=True, description="Tool ID"),
-                "status": fields.Boolean(
-                    required=True, description="Status of the tool"
-                ),
+                "status": fields.Boolean(required=True, description="Status of the tool"),
             },
         )
     )
@@ -528,9 +479,7 @@ class UpdateToolStatus(Resource):
                 {"$set": {"status": data["status"]}},
             )
         except Exception as err:
-            current_app.logger.error(
-                f"Error updating tool status: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error updating tool status: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify({"success": True}), 200)
 
@@ -555,13 +504,9 @@ class DeleteTool(Resource):
         if missing_fields:
             return missing_fields
         try:
-            result = user_tools_collection.delete_one(
-                {"_id": ObjectId(data["id"]), "user": user}
-            )
+            result = user_tools_collection.delete_one({"_id": ObjectId(data["id"]), "user": user})
             if result.deleted_count == 0:
-                return make_response(
-                    jsonify({"success": False, "message": "Tool not found"}), 404
-                )
+                return make_response(jsonify({"success": False, "message": "Tool not found"}), 404)
         except Exception as err:
             current_app.logger.error(f"Error deleting tool: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
@@ -570,9 +515,7 @@ class DeleteTool(Resource):
 
 @tools_ns.route("/parse_spec")
 class ParseSpec(Resource):
-    @api.doc(
-        description="Parse an API specification (OpenAPI 3.x or Swagger 2.0) and return actions"
-    )
+    @api.doc(description="Parse an API specification (OpenAPI 3.x or Swagger 2.0) and return actions")
     def post(self):
         decoded_token = request.decoded_token
         if not decoded_token:
@@ -580,26 +523,18 @@ class ParseSpec(Resource):
         if "file" in request.files:
             file = request.files["file"]
             if not file.filename:
-                return make_response(
-                    jsonify({"success": False, "message": "No file selected"}), 400
-                )
+                return make_response(jsonify({"success": False, "message": "No file selected"}), 400)
             try:
                 spec_content = file.read().decode("utf-8")
             except UnicodeDecodeError:
-                return make_response(
-                    jsonify({"success": False, "message": "Invalid file encoding"}), 400
-                )
+                return make_response(jsonify({"success": False, "message": "Invalid file encoding"}), 400)
         elif request.is_json:
             data = request.get_json()
             spec_content = data.get("spec_content", "")
         else:
-            return make_response(
-                jsonify({"success": False, "message": "No spec provided"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "No spec provided"}), 400)
         if not spec_content or not spec_content.strip():
-            return make_response(
-                jsonify({"success": False, "message": "Empty spec content"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "Empty spec content"}), 400)
         try:
             metadata, actions = parse_spec(spec_content)
             return make_response(
@@ -622,7 +557,9 @@ class ParseSpec(Resource):
 
 @tools_ns.route("/artifact/<artifact_id>")
 class GetArtifact(Resource):
-    @api.doc(description="Get artifact data by artifact ID. Returns all todos for the tool when fetching a todo artifact.")
+    @api.doc(
+        description="Get artifact data by artifact ID. Returns all todos for the tool when fetching a todo artifact."
+    )
     def get(self, artifact_id: str):
         decoded_token = request.decoded_token
         if not decoded_token:
@@ -632,9 +569,7 @@ class GetArtifact(Resource):
         try:
             obj_id = ObjectId(artifact_id)
         except Exception:
-            return make_response(
-                jsonify({"success": False, "message": "Invalid artifact ID"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "Invalid artifact ID"}), 400)
 
         from application.core.mongo_db import MongoDB
         from application.core.settings import settings
@@ -650,11 +585,7 @@ class GetArtifact(Resource):
                 "data": {
                     "content": content,
                     "line_count": line_count,
-                    "updated_at": (
-                        note_doc["updated_at"].isoformat()
-                        if note_doc.get("updated_at")
-                        else None
-                    ),
+                    "updated_at": (note_doc["updated_at"].isoformat() if note_doc.get("updated_at") else None),
                 },
             }
             return make_response(jsonify({"success": True, "artifact": artifact}), 200)
@@ -673,17 +604,15 @@ class GetArtifact(Resource):
                     open_count += 1
                 elif status == "completed":
                     completed_count += 1
-                items.append({
-                    "todo_id": t.get("todo_id"),
-                    "title": t.get("title", ""),
-                    "status": status,
-                    "created_at": (
-                        t["created_at"].isoformat() if t.get("created_at") else None
-                    ),
-                    "updated_at": (
-                        t["updated_at"].isoformat() if t.get("updated_at") else None
-                    ),
-                })
+                items.append(
+                    {
+                        "todo_id": t.get("todo_id"),
+                        "title": t.get("title", ""),
+                        "status": status,
+                        "created_at": (t["created_at"].isoformat() if t.get("created_at") else None),
+                        "updated_at": (t["updated_at"].isoformat() if t.get("updated_at") else None),
+                    }
+                )
             artifact = {
                 "artifact_type": "todo_list",
                 "data": {
@@ -695,6 +624,4 @@ class GetArtifact(Resource):
             }
             return make_response(jsonify({"success": True, "artifact": artifact}), 200)
 
-        return make_response(
-            jsonify({"success": False, "message": "Artifact not found"}), 404
-        )
+        return make_response(jsonify({"success": False, "message": "Artifact not found"}), 404)

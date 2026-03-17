@@ -54,7 +54,7 @@ class NotesTool(Tool):
             A human-readable string result.
         """
         if not self.user_id:
-             return "Error: NotesTool requires a valid user_id."
+            return "Error: NotesTool requires a valid user_id."
 
         self._last_artifact_id = None
 
@@ -88,9 +88,7 @@ class NotesTool(Tool):
                 "description": "Replace the entire note content (creates if doesn't exist).",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "text": {"type": "string", "description": "New note content."}
-                    },
+                    "properties": {"text": {"type": "string", "description": "New note content."}},
                     "required": ["text"],
                 },
             },
@@ -101,7 +99,7 @@ class NotesTool(Tool):
                     "type": "object",
                     "properties": {
                         "old_str": {"type": "string", "description": "String to find."},
-                        "new_str": {"type": "string", "description": "String to replace with."}
+                        "new_str": {"type": "string", "description": "String to replace with."},
                     },
                     "required": ["old_str", "new_str"],
                 },
@@ -113,7 +111,7 @@ class NotesTool(Tool):
                     "type": "object",
                     "properties": {
                         "line_number": {"type": "integer", "description": "Line number to insert at (1-indexed)."},
-                        "text": {"type": "string", "description": "Text to insert."}
+                        "text": {"type": "string", "description": "Text to insert."},
                     },
                     "required": ["line_number", "text"],
                 },
@@ -173,6 +171,7 @@ class NotesTool(Tool):
 
         # Case-insensitive replacement
         import re
+
         updated_note = re.sub(re.escape(old_str), new_str, current_note, flags=re.IGNORECASE)
 
         result = self.collection.find_one_and_update(
@@ -213,9 +212,7 @@ class NotesTool(Tool):
         return "Text inserted."
 
     def _delete_note(self) -> str:
-        doc = self.collection.find_one_and_delete(
-            {"user_id": self.user_id, "tool_id": self.tool_id}
-        )
+        doc = self.collection.find_one_and_delete({"user_id": self.user_id, "tool_id": self.tool_id})
         if not doc:
             return "No note found to delete."
         if doc.get("_id") is not None:

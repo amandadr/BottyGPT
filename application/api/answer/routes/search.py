@@ -27,22 +27,14 @@ class SearchResource(Resource):
     search_model = answer_ns.model(
         "SearchModel",
         {
-            "question": fields.String(
-                required=True, description="Search query"
-            ),
-            "api_key": fields.String(
-                required=True, description="API key for authentication"
-            ),
-            "chunks": fields.Integer(
-                required=False, default=5, description="Number of results to return"
-            ),
+            "question": fields.String(required=True, description="Search query"),
+            "api_key": fields.String(required=True, description="API key for authentication"),
+            "chunks": fields.Integer(required=False, default=5, description="Number of results to return"),
         },
     )
 
     def _get_sources_from_api_key(self, api_key: str) -> List[str]:
-        """Get source IDs connected to the API key/agent.
-
-        """
+        """Get source IDs connected to the API key/agent."""
         agent_data = self.agents_collection.find_one({"key": api_key})
         if not agent_data:
             return []
@@ -74,9 +66,7 @@ class SearchResource(Resource):
 
         return source_ids
 
-    def _search_vectorstores(
-        self, query: str, source_ids: List[str], chunks: int
-    ) -> List[Dict[str, Any]]:
+    def _search_vectorstores(self, query: str, source_ids: List[str], chunks: int) -> List[Dict[str, Any]]:
         """Search across vectorstores and return results"""
         if not source_ids:
             return []
@@ -90,9 +80,7 @@ class SearchResource(Resource):
                 continue
 
             try:
-                docsearch = VectorCreator.create_vectorstore(
-                    settings.VECTOR_STORE, source_id, settings.EMBEDDINGS_KEY
-                )
+                docsearch = VectorCreator.create_vectorstore(settings.VECTOR_STORE, source_id, settings.EMBEDDINGS_KEY)
                 docs = docsearch.search(query, k=chunks_per_source * 2)
 
                 for doc in docs:
@@ -112,9 +100,7 @@ class SearchResource(Resource):
                         continue
                     seen_texts.add(text_hash)
 
-                    title = metadata.get(
-                        "title", metadata.get("post_title", "")
-                    )
+                    title = metadata.get("title", metadata.get("post_title", ""))
                     if not isinstance(title, str):
                         title = str(title) if title else ""
 
@@ -127,11 +113,13 @@ class SearchResource(Resource):
 
                     source = metadata.get("source", source_id)
 
-                    results.append({
-                        "text": page_content,
-                        "title": title,
-                        "source": source,
-                    })
+                    results.append(
+                        {
+                            "text": page_content,
+                            "title": title,
+                            "source": source,
+                        }
+                    )
 
                 if len(results) >= chunks:
                     break

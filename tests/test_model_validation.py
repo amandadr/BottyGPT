@@ -1,6 +1,7 @@
 """
 Tests for model validation and base_url functionality
 """
+
 import pytest
 from application.core.model_settings import (
     AvailableModel,

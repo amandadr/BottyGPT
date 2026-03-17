@@ -30,9 +30,7 @@ class ClassicRAG(BaseRetriever):
             try:
                 self.chunks = int(chunks)
             except ValueError:
-                logging.warning(
-                    f"Invalid chunks value '{chunks}', using default value 2"
-                )
+                logging.warning(f"Invalid chunks value '{chunks}', using default value 2")
                 self.chunks = 2
         else:
             self.chunks = chunks
@@ -71,14 +69,10 @@ class ClassicRAG(BaseRetriever):
         if not self.vectorstores:
             logging.warning("No vectorstores configured for retrieval")
             return
-        invalid_ids = [
-            vs_id for vs_id in self.vectorstores if not vs_id or not vs_id.strip()
-        ]
+        invalid_ids = [vs_id for vs_id in self.vectorstores if not vs_id or not vs_id.strip()]
         if invalid_ids:
             logging.warning(f"Found invalid vectorstore IDs: {invalid_ids}")
-            self.vectorstores = [
-                vs_id for vs_id in self.vectorstores if vs_id and vs_id.strip()
-            ]
+            self.vectorstores = [vs_id for vs_id in self.vectorstores if vs_id and vs_id.strip()]
 
     def _rephrase_query(self):
         """Rephrase user query with chat history context for better retrieval"""
@@ -129,9 +123,7 @@ class ClassicRAG(BaseRetriever):
                     docsearch = VectorCreator.create_vectorstore(
                         settings.VECTOR_STORE, vectorstore_id, settings.EMBEDDINGS_KEY
                     )
-                    docs_temp = docsearch.search(
-                        self.question, k=max(chunks_per_source * 2, 20)
-                    )
+                    docs_temp = docsearch.search(self.question, k=max(chunks_per_source * 2, 20))
 
                     for doc in docs_temp:
                         if cumulative_tokens >= token_budget:
@@ -144,18 +136,12 @@ class ClassicRAG(BaseRetriever):
                             page_content = doc.get("text", doc.get("page_content", ""))
                             metadata = doc.get("metadata", {})
 
-                        title = metadata.get(
-                            "title", metadata.get("post_title", page_content)
-                        )
+                        title = metadata.get("title", metadata.get("post_title", page_content))
                         if not isinstance(title, str):
                             title = str(title)
                         title = title.split("/")[-1]
 
-                        filename = (
-                            metadata.get("filename")
-                            or metadata.get("file_name")
-                            or metadata.get("source")
-                        )
+                        filename = metadata.get("filename") or metadata.get("file_name") or metadata.get("source")
                         if isinstance(filename, str):
                             filename = os.path.basename(filename) or filename
                         else:

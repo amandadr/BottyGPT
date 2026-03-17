@@ -50,9 +50,7 @@ def _sanitize_remote_config(source_type: str, config: dict) -> dict:
     return {k: config.get(k) for k in allowed if k in config}
 
 
-sources_upload_ns = Namespace(
-    "sources", description="Source document management operations", path="/api"
-)
+sources_upload_ns = Namespace("sources", description="Source document management operations", path="/api")
 
 
 @sources_upload_ns.route("/upload")
@@ -125,24 +123,15 @@ class UploadFile(Resource):
 
                                 for root, _, files in os.walk(temp_dir):
                                     for extracted_file in files:
-                                        if (
-                                            os.path.join(root, extracted_file)
-                                            == temp_file_path
-                                        ):
+                                        if os.path.join(root, extracted_file) == temp_file_path:
                                             continue
-                                        rel_path = os.path.relpath(
-                                            os.path.join(root, extracted_file), temp_dir
-                                        )
+                                        rel_path = os.path.relpath(os.path.join(root, extracted_file), temp_dir)
                                         storage_path = f"{base_path}/{rel_path}"
 
-                                        with open(
-                                            os.path.join(root, extracted_file), "rb"
-                                        ) as f:
+                                        with open(os.path.join(root, extracted_file), "rb") as f:
                                             storage.save_file(f, storage_path)
                         except Exception as e:
-                            current_app.logger.error(
-                                f"Error extracting zip: {e}", exc_info=True
-                            )
+                            current_app.logger.error(f"Error extracting zip: {e}", exc_info=True)
                             # If zip extraction fails, save the original zip file
 
                             file_path = f"{base_path}/{safe_file}"
@@ -192,9 +181,7 @@ class UploadRemote(Resource):
             "RemoteUploadModel",
             {
                 "user": fields.String(required=True, description="User ID"),
-                "source": fields.String(
-                    required=True, description="Source of the data"
-                ),
+                "source": fields.String(required=True, description="Source of the data"),
                 "name": fields.String(required=True, description="Job name"),
                 "data": fields.String(required=True, description="Data to process"),
                 "repo_url": fields.String(description="GitHub repository URL"),
@@ -261,9 +248,7 @@ class UploadRemote(Resource):
 
                 folder_ids = config.get("folder_ids", [])
                 if isinstance(folder_ids, str):
-                    folder_ids = [
-                        id.strip() for id in folder_ids.split(",") if id.strip()
-                    ]
+                    folder_ids = [id.strip() for id in folder_ids.split(",") if id.strip()]
                 elif not isinstance(folder_ids, list):
                     folder_ids = []
                 config["file_ids"] = file_ids
@@ -279,9 +264,7 @@ class UploadRemote(Resource):
                     recursive=config.get("recursive", False),
                     retriever=config.get("retriever", "classic"),
                 )
-                return make_response(
-                    jsonify({"success": True, "task_id": task.id}), 200
-                )
+                return make_response(jsonify({"success": True, "task_id": task.id}), 200)
             # Fallback for other remote types (e.g. sitemap): pass only URL string to avoid unknown args
             if source_data is None and isinstance(config, dict):
                 source_data = config.get("url") or config.get("repo_url")
@@ -315,10 +298,12 @@ class UploadRemote(Resource):
                 exc_info=True,
             )
             return make_response(
-                jsonify({
-                    "success": False,
-                    "error": str(err),
-                }),
+                jsonify(
+                    {
+                        "success": False,
+                        "error": str(err),
+                    }
+                ),
                 400,
             )
         return make_response(jsonify({"success": True, "task_id": task.id}), 200)
@@ -330,9 +315,7 @@ class ManageSourceFiles(Resource):
         api.model(
             "ManageSourceFilesModel",
             {
-                "source_id": fields.String(
-                    required=True, description="Source ID to modify"
-                ),
+                "source_id": fields.String(required=True, description="Source ID to modify"),
                 "operation": fields.String(
                     required=True,
                     description="Operation: 'add', 'remove', or 'remove_directory'",
@@ -346,9 +329,7 @@ class ManageSourceFiles(Resource):
                     required=False,
                     description="Directory path to remove (for remove_directory operation)",
                 ),
-                "file": fields.Raw(
-                    required=False, description="Files to add (for add operation)"
-                ),
+                "file": fields.Raw(required=False, description="Files to add (for add operation)"),
                 "parent_dir": fields.String(
                     required=False,
                     description="Parent directory path relative to source root",
@@ -362,9 +343,7 @@ class ManageSourceFiles(Resource):
     def post(self):
         decoded_token = request.decoded_token
         if not decoded_token:
-            return make_response(
-                jsonify({"success": False, "message": "Unauthorized"}), 401
-            )
+            return make_response(jsonify({"success": False, "message": "Unauthorized"}), 401)
         user = decoded_token.get("sub")
         source_id = request.form.get("source_id")
         operation = request.form.get("operation")
@@ -392,13 +371,9 @@ class ManageSourceFiles(Resource):
         try:
             ObjectId(source_id)
         except Exception:
-            return make_response(
-                jsonify({"success": False, "message": "Invalid source ID format"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "Invalid source ID format"}), 400)
         try:
-            source = sources_collection.find_one(
-                {"_id": ObjectId(source_id), "user": user}
-            )
+            source = sources_collection.find_one({"_id": ObjectId(source_id), "user": user})
             if not source:
                 return make_response(
                     jsonify(
@@ -411,9 +386,7 @@ class ManageSourceFiles(Resource):
                 )
         except Exception as err:
             current_app.logger.error(f"Error finding source: {err}", exc_info=True)
-            return make_response(
-                jsonify({"success": False, "message": "Database error"}), 500
-            )
+            return make_response(jsonify({"success": False, "message": "Database error"}), 500)
         try:
             storage = StorageCreator.get_storage()
             source_file_path = source.get("file_path", "")
@@ -429,9 +402,7 @@ class ManageSourceFiles(Resource):
 
             if parent_dir and (parent_dir.startswith("/") or ".." in parent_dir):
                 return make_response(
-                    jsonify(
-                        {"success": False, "message": "Invalid parent directory path"}
-                    ),
+                    jsonify({"success": False, "message": "Invalid parent directory path"}),
                     400,
                 )
             if operation == "add":
@@ -463,11 +434,7 @@ class ManageSourceFiles(Resource):
                         storage.save_file(file, file_path)
                         added_files.append(safe_filename_str)
                         if original_filename:
-                            relative_key = (
-                                f"{parent_dir}/{safe_filename_str}"
-                                if parent_dir
-                                else safe_filename_str
-                            )
+                            relative_key = f"{parent_dir}/{safe_filename_str}" if parent_dir else safe_filename_str
                             file_name_map[relative_key] = original_filename
                             map_updated = True
 
@@ -507,16 +474,10 @@ class ManageSourceFiles(Resource):
                         400,
                     )
                 try:
-                    file_paths = (
-                        json.loads(file_paths_str)
-                        if isinstance(file_paths_str, str)
-                        else file_paths_str
-                    )
+                    file_paths = json.loads(file_paths_str) if isinstance(file_paths_str, str) else file_paths_str
                 except Exception:
                     return make_response(
-                        jsonify(
-                            {"success": False, "message": "Invalid file_paths format"}
-                        ),
+                        jsonify({"success": False, "message": "Invalid file_paths format"}),
                         400,
                     )
                 # Remove files from storage and directory structure
@@ -577,16 +538,10 @@ class ManageSourceFiles(Resource):
                         f"User: {user}, Source ID: {source_id}, Directory path: {directory_path}"
                     )
                     return make_response(
-                        jsonify(
-                            {"success": False, "message": "Invalid directory path"}
-                        ),
+                        jsonify({"success": False, "message": "Invalid directory path"}),
                         400,
                     )
-                full_directory_path = (
-                    f"{source_file_path}/{directory_path}"
-                    if directory_path
-                    else source_file_path
-                )
+                full_directory_path = f"{source_file_path}/{directory_path}" if directory_path else source_file_path
 
                 if not storage.is_directory(full_directory_path):
                     current_app.logger.warning(
@@ -612,9 +567,7 @@ class ManageSourceFiles(Resource):
                         f"Full path: {full_directory_path}"
                     )
                     return make_response(
-                        jsonify(
-                            {"success": False, "message": "Failed to remove directory"}
-                        ),
+                        jsonify({"success": False, "message": "Failed to remove directory"}),
                         500,
                     )
                 current_app.logger.info(
@@ -625,9 +578,7 @@ class ManageSourceFiles(Resource):
                 if directory_path and file_name_map:
                     prefix = f"{directory_path.rstrip('/')}/"
                     keys_to_remove = [
-                        key
-                        for key in file_name_map.keys()
-                        if key == directory_path or key.startswith(prefix)
+                        key for key in file_name_map.keys() if key == directory_path or key.startswith(prefix)
                     ]
                     if keys_to_remove:
                         for key in keys_to_remove:
@@ -665,12 +616,8 @@ class ManageSourceFiles(Resource):
             elif operation == "add":
                 parent_dir = request.form.get("parent_dir", "")
                 error_context += f", parent_dir={parent_dir}"
-            current_app.logger.error(
-                f"Error managing source files: {err} ({error_context})", exc_info=True
-            )
-            return make_response(
-                jsonify({"success": False, "message": "Operation failed"}), 500
-            )
+            current_app.logger.error(f"Error managing source files: {err} ({error_context})", exc_info=True)
+            return make_response(jsonify({"success": False, "message": "Operation failed"}), 500)
 
 
 @sources_upload_ns.route("/task_status")
@@ -685,9 +632,7 @@ class TaskStatus(Resource):
     def get(self):
         task_id = request.args.get("task_id")
         if not task_id:
-            return make_response(
-                jsonify({"success": False, "message": "Task ID is required"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "Task ID is required"}), 400)
         try:
             from application.celery_init import celery
 
@@ -701,15 +646,11 @@ class TaskStatus(Resource):
                 if not active_workers:
                     raise ConnectionError("Service unavailable")
 
-            if not isinstance(
-                task_meta, (dict, list, str, int, float, bool, type(None))
-            ):
+            if not isinstance(task_meta, (dict, list, str, int, float, bool, type(None))):
                 task_meta = str(task_meta)  # Convert to a string representation
         except ConnectionError as err:
             current_app.logger.error(f"Connection error getting task status: {err}")
-            return make_response(
-                jsonify({"success": False, "message": "Service unavailable"}), 503
-            )
+            return make_response(jsonify({"success": False, "message": "Service unavailable"}), 503)
         except Exception as err:
             current_app.logger.error(f"Error getting task status: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)

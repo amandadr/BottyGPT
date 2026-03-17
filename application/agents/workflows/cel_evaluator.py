@@ -20,9 +20,7 @@ def _convert_value(value: Any) -> Any:
     if isinstance(value, list):
         return celpy.celtypes.ListType([_convert_value(item) for item in value])
     if isinstance(value, dict):
-        return celpy.celtypes.MapType(
-            {celpy.celtypes.StringType(k): _convert_value(v) for k, v in value.items()}
-        )
+        return celpy.celtypes.MapType({celpy.celtypes.StringType(k): _convert_value(v) for k, v in value.items()})
     if value is None:
         return celpy.celtypes.BoolType(False)
     return celpy.celtypes.StringType(str(value))

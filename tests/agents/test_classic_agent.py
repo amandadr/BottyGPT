@@ -6,10 +6,7 @@ from application.agents.classic_agent import ClassicAgent
 
 @pytest.mark.unit
 class TestClassicAgent:
-
-    def test_classic_agent_initialization(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_classic_agent_initialization(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         assert isinstance(agent, ClassicAgent)
@@ -188,7 +185,6 @@ class TestClassicAgent:
 
 @pytest.mark.integration
 class TestClassicAgentIntegration:
-
     def test_gen_method_with_logging(
         self,
         agent_base_params,

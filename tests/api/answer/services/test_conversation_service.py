@@ -6,7 +6,6 @@ from bson import ObjectId
 
 @pytest.mark.unit
 class TestConversationServiceGet:
-
     def test_returns_none_when_no_conversation_id(self, mock_mongo_db):
         from application.api.answer.services.conversation_service import (
             ConversationService,
@@ -61,9 +60,7 @@ class TestConversationServiceGet:
         collection = mock_mongo_db[settings.MONGO_DB_NAME]["conversations"]
 
         conv_id = ObjectId()
-        collection.insert_one(
-            {"_id": conv_id, "user": "owner_123", "name": "Private Conv"}
-        )
+        collection.insert_one({"_id": conv_id, "user": "owner_123", "name": "Private Conv"})
 
         result = service.get_conversation(str(conv_id), "hacker_456")
 
@@ -89,7 +86,6 @@ class TestConversationServiceGet:
 
 @pytest.mark.unit
 class TestConversationServiceSave:
-
     def test_raises_error_when_no_user_in_token(self, mock_mongo_db):
         """Test validation: user ID required"""
         from application.api.answer.services.conversation_service import (

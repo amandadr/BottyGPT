@@ -95,13 +95,9 @@ class LLMHandler(ABC):
         if stream:
             return self.handle_streaming(agent, initial_response, tools_dict, messages)
         else:
-            return self.handle_non_streaming(
-                agent, initial_response, tools_dict, messages
-            )
+            return self.handle_non_streaming(agent, initial_response, tools_dict, messages)
 
-    def prepare_messages(
-        self, agent, messages: List[Dict], attachments: Optional[List] = None
-    ) -> List[Dict]:
+    def prepare_messages(self, agent, messages: List[Dict], attachments: Optional[List] = None) -> List[Dict]:
         """
         Prepare messages with attachments and provider-specific formatting.
 
@@ -130,49 +126,31 @@ class LLMHandler(ABC):
 
             # Synthetic PDF support: convert PDF to images if LLM supports images but not PDF
             if mime_type == "application/pdf" and supports_images and not supports_pdf:
-                logger.info(
-                    f"Converting PDF to images for synthetic PDF support: {attachment.get('path', 'unknown')}"
-                )
+                logger.info(f"Converting PDF to images for synthetic PDF support: {attachment.get('path', 'unknown')}")
                 try:
                     converted_images = self._convert_pdf_to_images(attachment)
                     processed_attachments.extend(converted_images)
-                    logger.info(
-                        f"Converted PDF to {len(converted_images)} images"
-                    )
+                    logger.info(f"Converted PDF to {len(converted_images)} images")
                 except Exception as e:
-                    logger.error(
-                        f"Failed to convert PDF to images, falling back to text: {e}"
-                    )
+                    logger.error(f"Failed to convert PDF to images, falling back to text: {e}")
                     # Fall back to treating as unsupported (text extraction)
                     processed_attachments.append(attachment)
             else:
                 processed_attachments.append(attachment)
 
-        supported_attachments = [
-            a for a in processed_attachments if a.get("mime_type") in supported_types
-        ]
-        unsupported_attachments = [
-            a for a in processed_attachments if a.get("mime_type") not in supported_types
-        ]
+        supported_attachments = [a for a in processed_attachments if a.get("mime_type") in supported_types]
+        unsupported_attachments = [a for a in processed_attachments if a.get("mime_type") not in supported_types]
 
         # Process supported attachments with the LLM's custom method
 
         if supported_attachments:
-            logger.info(
-                f"Processing {len(supported_attachments)} supported attachments"
-            )
-            messages = agent.llm.prepare_messages_with_attachments(
-                messages, supported_attachments
-            )
+            logger.info(f"Processing {len(supported_attachments)} supported attachments")
+            messages = agent.llm.prepare_messages_with_attachments(messages, supported_attachments)
         # Process unsupported attachments with default method
 
         if unsupported_attachments:
-            logger.info(
-                f"Processing {len(unsupported_attachments)} unsupported attachments"
-            )
-            messages = self._append_unsupported_attachments(
-                messages, unsupported_attachments
-            )
+            logger.info(f"Processing {len(unsupported_attachments)} unsupported attachments")
+            messages = self._append_unsupported_attachments(messages, unsupported_attachments)
         return messages
 
     def _convert_pdf_to_images(self, attachment: Dict) -> List[Dict]:
@@ -206,9 +184,7 @@ class LLMHandler(ABC):
 
         return images_data
 
-    def _append_unsupported_attachments(
-        self, messages: List[Dict], attachments: List[Dict]
-    ) -> List[Dict]:
+    def _append_unsupported_attachments(self, messages: List[Dict], attachments: List[Dict]) -> List[Dict]:
         """
         Default method to append unsupported attachment content to system prompt.
 
@@ -225,9 +201,7 @@ class LLMHandler(ABC):
         for attachment in attachments:
             logger.info(f"Adding attachment {attachment.get('id')} to context")
             if "content" in attachment:
-                attachment_texts.append(
-                    f"Attached file content:\n\n{attachment['content']}"
-                )
+                attachment_texts.append(f"Attached file content:\n\n{attachment['content']}")
         if attachment_texts:
             combined_text = "\n\n".join(attachment_texts)
 
@@ -410,9 +384,7 @@ class LLMHandler(ABC):
             include_tool_calls=include_tool_calls,
         )
 
-    def _perform_mid_execution_compression(
-        self, agent, messages: List[Dict]
-    ) -> tuple[bool, Optional[List[Dict]]]:
+    def _perform_mid_execution_compression(self, agent, messages: List[Dict]) -> tuple[bool, Optional[List[Dict]]]:
         """
         Perform compression during tool execution and rebuild messages.
 
@@ -437,9 +409,7 @@ class LLMHandler(ABC):
             orchestrator = CompressionOrchestrator(conversation_service)
 
             # Get conversation from database (may be None for new sessions)
-            conversation = conversation_service.get_conversation(
-                agent.conversation_id, agent.initial_user_id
-            )
+            conversation = conversation_service.get_conversation(agent.conversation_id, agent.initial_user_id)
 
             if conversation:
                 # Merge current in-flight messages (including tool calls)
@@ -447,9 +417,7 @@ class LLMHandler(ABC):
                 if conversation_from_msgs:
                     conversation = conversation_from_msgs
             else:
-                logger.warning(
-                    "Could not load conversation for compression; attempting in-memory compression"
-                )
+                logger.warning("Could not load conversation for compression; attempting in-memory compression")
                 return self._perform_in_memory_compression(agent, messages)
 
             # Use orchestrator to perform compression
@@ -478,9 +446,7 @@ class LLMHandler(ABC):
             # Check if compression actually reduced tokens
             if result.metadata:
                 if result.metadata.compressed_token_count >= result.metadata.original_token_count:
-                    logger.warning(
-                        "Compression did not reduce token count; falling back to minimal pruning"
-                    )
+                    logger.warning("Compression did not reduce token count; falling back to minimal pruning")
                     pruned = self._prune_messages_minimal(messages)
                     if pruned:
                         agent.context_limit_reached = False
@@ -495,9 +461,7 @@ class LLMHandler(ABC):
 
             # Also store the compression summary as a visible message
             if result.metadata:
-                conversation_service.append_compression_message(
-                    agent.conversation_id, result.metadata.to_dict()
-                )
+                conversation_service.append_compression_message(agent.conversation_id, result.metadata.to_dict())
 
             # Update agent's compressed summary for downstream persistence
             agent.compressed_summary = result.compressed_summary
@@ -523,14 +487,10 @@ class LLMHandler(ABC):
             return True, rebuilt_messages
 
         except Exception as e:
-            logger.error(
-                f"Error performing mid-execution compression: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error performing mid-execution compression: {str(e)}", exc_info=True)
             return False, None
 
-    def _perform_in_memory_compression(
-        self, agent, messages: List[Dict]
-    ) -> tuple[bool, Optional[List[Dict]]]:
+    def _perform_in_memory_compression(self, agent, messages: List[Dict]) -> tuple[bool, Optional[List[Dict]]]:
         """
         Fallback compression path when the conversation is not yet persisted.
 
@@ -549,15 +509,11 @@ class LLMHandler(ABC):
 
             conversation = self._build_conversation_from_messages(messages)
             if not conversation:
-                logger.warning(
-                    "Cannot perform in-memory compression: no user/assistant turns found"
-                )
+                logger.warning("Cannot perform in-memory compression: no user/assistant turns found")
                 return False, None
 
             compression_model = (
-                settings.COMPRESSION_MODEL_OVERRIDE
-                if settings.COMPRESSION_MODEL_OVERRIDE
-                else agent.model_id
+                settings.COMPRESSION_MODEL_OVERRIDE if settings.COMPRESSION_MODEL_OVERRIDE else agent.model_id
             )
             provider = get_provider_from_model_id(compression_model)
             api_key = get_api_key_for_provider(provider)
@@ -590,13 +546,8 @@ class LLMHandler(ABC):
             )
 
             # If compression doesn't reduce tokens, fall back to minimal pruning
-            if (
-                metadata.compressed_token_count
-                >= metadata.original_token_count
-            ):
-                logger.warning(
-                    "In-memory compression did not reduce token count; falling back to minimal pruning"
-                )
+            if metadata.compressed_token_count >= metadata.original_token_count:
+                logger.warning("In-memory compression did not reduce token count; falling back to minimal pruning")
                 pruned = self._prune_messages_minimal(messages)
                 if pruned:
                     agent.context_limit_reached = False
@@ -610,9 +561,7 @@ class LLMHandler(ABC):
                 "compression_points": [metadata.to_dict()],
             }
 
-            compressed_summary, recent_queries = (
-                compression_service.get_compressed_context(conversation)
-            )
+            compressed_summary, recent_queries = compression_service.get_compressed_context(conversation)
 
             agent.compressed_summary = compressed_summary
             agent.compression_metadata = metadata.to_dict()
@@ -637,14 +586,10 @@ class LLMHandler(ABC):
             return True, rebuilt_messages
 
         except Exception as e:
-            logger.error(
-                f"Error performing in-memory compression: {str(e)}", exc_info=True
-            )
+            logger.error(f"Error performing in-memory compression: {str(e)}", exc_info=True)
             return False, None
 
-    def handle_tool_calls(
-        self, agent, tool_calls: List[ToolCall], tools_dict: Dict, messages: List[Dict]
-    ) -> Generator:
+    def handle_tool_calls(self, agent, tool_calls: List[ToolCall], tools_dict: Dict, messages: List[Dict]) -> Generator:
         """
         Execute tool calls and update conversation history.
 
@@ -661,13 +606,14 @@ class LLMHandler(ABC):
 
         for i, call in enumerate(tool_calls):
             # Check context limit before executing tool call
-            if hasattr(agent, '_check_context_limit') and agent._check_context_limit(updated_messages):
+            if hasattr(agent, "_check_context_limit") and agent._check_context_limit(updated_messages):
                 # Context limit reached - attempt mid-execution compression
                 compression_attempted = False
                 compression_successful = False
 
                 try:
                     from application.core.settings import settings
+
                     compression_enabled = settings.ENABLE_CONVERSATION_COMPRESSION
                 except Exception:
                     compression_enabled = False
@@ -694,7 +640,7 @@ class LLMHandler(ABC):
                                 "type": "info",
                                 "data": {
                                     "message": "Context window limit reached. Compressed conversation history to continue processing."
-                                }
+                                },
                             }
 
                             logger.info(
@@ -755,8 +701,8 @@ class LLMHandler(ABC):
                                 "action_name": remaining_call.name,
                                 "arguments": {},
                                 "result": "Skipped: Context limit reached. Too many tool calls in conversation.",
-                                "status": "skipped"
-                            }
+                                "status": "skipped",
+                            },
                         }
                         yield skip_message
 
@@ -772,7 +718,7 @@ class LLMHandler(ABC):
                     except StopIteration as e:
                         tool_response, call_id = e.value
                         break
-                    
+
                 function_call_content = {
                     "function_call": {
                         "name": call.name,
@@ -791,13 +737,10 @@ class LLMHandler(ABC):
                     }
                 )
 
-
                 updated_messages.append(self.create_tool_message(call, tool_response))
             except Exception as e:
                 logger.error(f"Error executing tool: {str(e)}", exc_info=True)
-                error_call = ToolCall(
-                    id=call.id, name=call.name, arguments=call.arguments
-                )
+                error_call = ToolCall(id=call.id, name=call.name, arguments=call.arguments)
                 error_response = f"Error executing tool: {str(e)}"
                 error_message = self.create_tool_message(error_call, error_response)
                 updated_messages.append(error_message)
@@ -825,9 +768,7 @@ class LLMHandler(ABC):
                 }
         return updated_messages
 
-    def handle_non_streaming(
-        self, agent, response: Any, tools_dict: Dict, messages: List[Dict]
-    ) -> Generator:
+    def handle_non_streaming(self, agent, response: Any, tools_dict: Dict, messages: List[Dict]) -> Generator:
         """
         Handle non-streaming response flow.
 
@@ -844,25 +785,19 @@ class LLMHandler(ABC):
         self.llm_calls.append(build_stack_data(agent.llm))
 
         while parsed.requires_tool_call:
-            tool_handler_gen = self.handle_tool_calls(
-                agent, parsed.tool_calls, tools_dict, messages
-            )
+            tool_handler_gen = self.handle_tool_calls(agent, parsed.tool_calls, tools_dict, messages)
             while True:
                 try:
                     yield next(tool_handler_gen)
                 except StopIteration as e:
                     messages = e.value
                     break
-            response = agent.llm.gen(
-                model=agent.model_id, messages=messages, tools=agent.tools
-            )
+            response = agent.llm.gen(model=agent.model_id, messages=messages, tools=agent.tools)
             parsed = self.parse_response(response)
             self.llm_calls.append(build_stack_data(agent.llm))
         return parsed.content
 
-    def handle_streaming(
-        self, agent, response: Any, tools_dict: Dict, messages: List[Dict]
-    ) -> Generator:
+    def handle_streaming(self, agent, response: Any, tools_dict: Dict, messages: List[Dict]) -> Generator:
         """
         Handle streaming response flow.
 
@@ -906,9 +841,7 @@ class LLMHandler(ABC):
                         if call.thought_signature:
                             existing.thought_signature = call.thought_signature
             if parsed.finish_reason == "tool_calls":
-                tool_handler_gen = self.handle_tool_calls(
-                    agent, list(tool_calls.values()), tools_dict, messages
-                )
+                tool_handler_gen = self.handle_tool_calls(agent, list(tool_calls.values()), tools_dict, messages)
                 while True:
                     try:
                         yield next(tool_handler_gen)
@@ -918,20 +851,24 @@ class LLMHandler(ABC):
                 tool_calls = {}
 
                 # Check if context limit was reached during tool execution
-                if hasattr(agent, 'context_limit_reached') and agent.context_limit_reached:
+                if hasattr(agent, "context_limit_reached") and agent.context_limit_reached:
                     # Add system message warning about context limit
-                    messages.append({
-                        "role": "system",
-                        "content": (
-                            "WARNING: Context window limit has been reached. "
-                            "Please provide a final response to the user without making additional tool calls. "
-                            "Summarize the work completed so far."
-                        )
-                    })
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "WARNING: Context window limit has been reached. "
+                                "Please provide a final response to the user without making additional tool calls. "
+                                "Summarize the work completed so far."
+                            ),
+                        }
+                    )
                     logger.info("Context limit reached - instructing agent to wrap up")
 
                 response = agent.llm.gen_stream(
-                    model=agent.model_id, messages=messages, tools=agent.tools if not agent.context_limit_reached else None
+                    model=agent.model_id,
+                    messages=messages,
+                    tools=agent.tools if not agent.context_limit_reached else None,
                 )
                 self.llm_calls.append(build_stack_data(agent.llm))
 

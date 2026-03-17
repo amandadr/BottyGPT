@@ -68,10 +68,7 @@ class TodoListTool(Tool):
             return self._get(kwargs.get("todo_id"))
 
         if action_name == "update":
-            return self._update(
-                kwargs.get("todo_id"),
-                kwargs.get("title", "")
-            )
+            return self._update(kwargs.get("todo_id"), kwargs.get("title", ""))
 
         if action_name == "complete":
             return self._complete(kwargs.get("todo_id"))
@@ -94,12 +91,7 @@ class TodoListTool(Tool):
                 "description": "Create a new todo item.",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "title": {
-                            "type": "string",
-                            "description": "Title of the todo item."
-                        }
-                    },
+                    "properties": {"title": {"type": "string", "description": "Title of the todo item."}},
                     "required": ["title"],
                 },
             },
@@ -108,12 +100,7 @@ class TodoListTool(Tool):
                 "description": "Get a specific todo by ID.",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "todo_id": {
-                            "type": "integer",
-                            "description": "The ID of the todo to retrieve."
-                        }
-                    },
+                    "properties": {"todo_id": {"type": "integer", "description": "The ID of the todo to retrieve."}},
                     "required": ["todo_id"],
                 },
             },
@@ -123,14 +110,8 @@ class TodoListTool(Tool):
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "todo_id": {
-                            "type": "integer",
-                            "description": "The ID of the todo to update."
-                        },
-                        "title": {
-                            "type": "string",
-                            "description": "The new title for the todo."
-                        }
+                        "todo_id": {"type": "integer", "description": "The ID of the todo to update."},
+                        "title": {"type": "string", "description": "The new title for the todo."},
                     },
                     "required": ["todo_id", "title"],
                 },
@@ -141,10 +122,7 @@ class TodoListTool(Tool):
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "todo_id": {
-                            "type": "integer",
-                            "description": "The ID of the todo to mark as completed."
-                        }
+                        "todo_id": {"type": "integer", "description": "The ID of the todo to mark as completed."}
                     },
                     "required": ["todo_id"],
                 },
@@ -154,12 +132,7 @@ class TodoListTool(Tool):
                 "description": "Delete a specific todo by ID.",
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        "todo_id": {
-                            "type": "integer",
-                            "description": "The ID of the todo to delete."
-                        }
-                    },
+                    "properties": {"todo_id": {"type": "integer", "description": "The ID of the todo to delete."}},
                     "required": ["todo_id"],
                 },
             },

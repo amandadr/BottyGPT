@@ -10,9 +10,7 @@ from application.api import api
 from application.api.user.base import attachments_collection, conversations_collection
 from application.utils import check_required_fields
 
-conversations_ns = Namespace(
-    "conversations", description="Conversation management operations", path="/api"
-)
+conversations_ns = Namespace("conversations", description="Conversation management operations", path="/api")
 
 
 @conversations_ns.route("/delete_conversation")
@@ -27,17 +25,11 @@ class DeleteConversation(Resource):
             return make_response(jsonify({"success": False}), 401)
         conversation_id = request.args.get("id")
         if not conversation_id:
-            return make_response(
-                jsonify({"success": False, "message": "ID is required"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "ID is required"}), 400)
         try:
-            conversations_collection.delete_one(
-                {"_id": ObjectId(conversation_id), "user": decoded_token["sub"]}
-            )
+            conversations_collection.delete_one({"_id": ObjectId(conversation_id), "user": decoded_token["sub"]})
         except Exception as err:
-            current_app.logger.error(
-                f"Error deleting conversation: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error deleting conversation: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify({"success": True}), 200)
 
@@ -55,9 +47,7 @@ class DeleteAllConversations(Resource):
         try:
             conversations_collection.delete_many({"user": user_id})
         except Exception as err:
-            current_app.logger.error(
-                f"Error deleting all conversations: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error deleting all conversations: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify({"success": True}), 200)
 
@@ -97,9 +87,7 @@ class GetConversations(Resource):
                 for conversation in conversations
             ]
         except Exception as err:
-            current_app.logger.error(
-                f"Error retrieving conversations: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error retrieving conversations: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify(list_conversations), 200)
 
@@ -116,9 +104,7 @@ class GetSingleConversation(Resource):
             return make_response(jsonify({"success": False}), 401)
         conversation_id = request.args.get("id")
         if not conversation_id:
-            return make_response(
-                jsonify({"success": False, "message": "ID is required"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "ID is required"}), 400)
         try:
             conversation = conversations_collection.find_one(
                 {"_id": ObjectId(conversation_id), "user": decoded_token.get("sub")}
@@ -133,16 +119,12 @@ class GetSingleConversation(Resource):
                     attachment_details = []
                     for attachment_id in query["attachments"]:
                         try:
-                            attachment = attachments_collection.find_one(
-                                {"_id": ObjectId(attachment_id)}
-                            )
+                            attachment = attachments_collection.find_one({"_id": ObjectId(attachment_id)})
                             if attachment:
                                 attachment_details.append(
                                     {
                                         "id": str(attachment["_id"]),
-                                        "fileName": attachment.get(
-                                            "filename", "Unknown file"
-                                        ),
+                                        "fileName": attachment.get("filename", "Unknown file"),
                                     }
                                 )
                         except Exception as e:
@@ -152,9 +134,7 @@ class GetSingleConversation(Resource):
                             )
                     query["attachments"] = attachment_details
         except Exception as err:
-            current_app.logger.error(
-                f"Error retrieving conversation: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error retrieving conversation: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         data = {
             "queries": queries,
@@ -172,9 +152,7 @@ class UpdateConversationName(Resource):
             "UpdateConversationModel",
             {
                 "id": fields.String(required=True, description="Conversation ID"),
-                "name": fields.String(
-                    required=True, description="New name of the conversation"
-                ),
+                "name": fields.String(required=True, description="New name of the conversation"),
             },
         )
     )
@@ -196,9 +174,7 @@ class UpdateConversationName(Resource):
                 {"$set": {"name": data["name"]}},
             )
         except Exception as err:
-            current_app.logger.error(
-                f"Error updating conversation name: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error updating conversation name: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
         return make_response(jsonify({"success": True}), 200)
 
@@ -209,18 +185,14 @@ class SubmitFeedback(Resource):
         api.model(
             "FeedbackModel",
             {
-                "question": fields.String(
-                    required=False, description="The user question"
-                ),
+                "question": fields.String(required=False, description="The user question"),
                 "answer": fields.String(required=False, description="The AI answer"),
                 "feedback": fields.String(required=True, description="User feedback"),
                 "question_index": fields.Integer(
                     required=True,
                     description="The question number in that particular conversation",
                 ),
-                "conversation_id": fields.String(
-                    required=True, description="id of the particular conversation"
-                ),
+                "conversation_id": fields.String(required=True, description="id of the particular conversation"),
                 "api_key": fields.String(description="Optional API key"),
             },
         )
@@ -265,9 +237,7 @@ class SubmitFeedback(Resource):
                     },
                     {
                         "$set": {
-                            f"queries.{data['question_index']}.feedback": data[
-                                "feedback"
-                            ],
+                            f"queries.{data['question_index']}.feedback": data["feedback"],
                             f"queries.{data['question_index']}.feedback_timestamp": datetime.datetime.now(
                                 datetime.timezone.utc
                             ),

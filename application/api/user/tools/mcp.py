@@ -69,9 +69,7 @@ class TestMCPServerConfig(Resource):
         api.model(
             "MCPServerTestModel",
             {
-                "config": fields.Raw(
-                    required=True, description="MCP server configuration to test"
-                ),
+                "config": fields.Raw(required=True, description="MCP server configuration to test"),
             },
         )
     )
@@ -108,9 +106,7 @@ class TestMCPServerConfig(Resource):
                 return make_response(jsonify(result), 200)
 
             if not result.get("success") and "message" in result:
-                current_app.logger.error(
-                    f"MCP connection test failed: {result.get('message')}"
-                )
+                current_app.logger.error(f"MCP connection test failed: {result.get('message')}")
                 result["message"] = "Connection test failed"
 
             return make_response(jsonify(result), 200)
@@ -128,18 +124,10 @@ class MCPServerSave(Resource):
         api.model(
             "MCPServerSaveModel",
             {
-                "id": fields.String(
-                    required=False, description="Tool ID for updates (optional)"
-                ),
-                "displayName": fields.String(
-                    required=True, description="Display name for the MCP server"
-                ),
-                "config": fields.Raw(
-                    required=True, description="MCP server configuration"
-                ),
-                "status": fields.Boolean(
-                    required=False, default=True, description="Tool status"
-                ),
+                "id": fields.String(required=False, description="Tool ID for updates (optional)"),
+                "displayName": fields.String(required=True, description="Display name for the MCP server"),
+                "config": fields.Raw(required=True, description="MCP server configuration"),
+                "status": fields.Boolean(required=False, default=True, description="Tool status"),
             },
         )
     )
@@ -200,9 +188,7 @@ class MCPServerSave(Resource):
                 mcp_tool.discover_tools()
                 actions_metadata = mcp_tool.get_actions_metadata()
             else:
-                raise Exception(
-                    "No valid credentials provided for the selected authentication type"
-                )
+                raise Exception("No valid credentials provided for the selected authentication type")
             storage_config = config.copy()
 
             tool_id = data.get("id")
@@ -212,18 +198,14 @@ class MCPServerSave(Resource):
                     {"_id": ObjectId(tool_id), "user": user, "name": "mcp_tool"}
                 )
                 if existing_doc:
-                    existing_encrypted = existing_doc.get("config", {}).get(
-                        "encrypted_credentials"
-                    )
+                    existing_encrypted = existing_doc.get("config", {}).get("encrypted_credentials")
 
             if auth_credentials:
                 if existing_encrypted:
                     existing_secrets = decrypt_credentials(existing_encrypted, user)
                     existing_secrets.update(auth_credentials)
                     auth_credentials = existing_secrets
-                storage_config["encrypted_credentials"] = encrypt_credentials(
-                    auth_credentials, user
-                )
+                storage_config["encrypted_credentials"] = encrypt_credentials(auth_credentials, user)
             elif existing_encrypted:
                 storage_config["encrypted_credentials"] = existing_encrypted
 
@@ -295,15 +277,11 @@ class MCPOAuthCallback(Resource):
             {
                 "code": fields.String(required=True, description="Authorization code"),
                 "state": fields.String(required=True, description="State parameter"),
-                "error": fields.String(
-                    required=False, description="Error message (if any)"
-                ),
+                "error": fields.String(required=False, description="Error message (if any)"),
             },
         )
     )
-    @api.doc(
-        description="Handle OAuth callback by providing the authorization code and state"
-    )
+    @api.doc(description="Handle OAuth callback by providing the authorization code and state")
     def get(self):
         code = request.args.get("code")
         state = request.args.get("state")
@@ -337,9 +315,7 @@ class MCPOAuthCallback(Resource):
                     "/api/connectors/callback-status?status=error&message=OAuth+callback+failed.&provider=mcp_tool"
                 )
         except Exception as e:
-            current_app.logger.error(
-                f"Error handling MCP OAuth callback: {str(e)}", exc_info=True
-            )
+            current_app.logger.error(f"Error handling MCP OAuth callback: {str(e)}", exc_info=True)
             return redirect(
                 "/api/connectors/callback-status?status=error&message=Internal+server+error.&provider=mcp_tool"
             )
@@ -363,9 +339,7 @@ class MCPOAuthStatus(Resource):
                         }
                         for t in status["tools"]
                     ]
-                return make_response(
-                    jsonify({"success": True, "task_id": task_id, **status})
-                )
+                return make_response(jsonify({"success": True, "task_id": task_id, **status}))
             else:
                 return make_response(
                     jsonify(
@@ -442,8 +416,7 @@ class MCPAuthStatus(Resource):
                     )
                 )
                 url_has_tokens = {
-                    doc["server_url"]: bool(doc.get("tokens", {}).get("access_token"))
-                    for doc in sessions
+                    doc["server_url"]: bool(doc.get("tokens", {}).get("access_token")) for doc in sessions
                 }
                 for tool_id, base_url in oauth_server_urls.items():
                     if url_has_tokens.get(base_url):
@@ -453,9 +426,7 @@ class MCPAuthStatus(Resource):
 
             return make_response(jsonify({"success": True, "statuses": statuses}), 200)
         except Exception as e:
-            current_app.logger.error(
-                "Error checking MCP auth status: %s", e, exc_info=True
-            )
+            current_app.logger.error("Error checking MCP auth status: %s", e, exc_info=True)
             return make_response(
                 jsonify({"success": False, "error": "Failed to check auth status"}),
                 500,

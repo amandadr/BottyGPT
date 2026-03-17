@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicLLM(BaseLLM):
-
     def __init__(self, api_key=None, user_api_key=None, base_url=None, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -127,9 +126,7 @@ class AnthropicLLM(BaseLLM):
         # Convert content to list format if it's a string
         if isinstance(prepared_messages[user_message_index].get("content"), str):
             text_content = prepared_messages[user_message_index]["content"]
-            prepared_messages[user_message_index]["content"] = [
-                {"type": "text", "text": text_content}
-            ]
+            prepared_messages[user_message_index]["content"] = [{"type": "text", "text": text_content}]
         elif not isinstance(prepared_messages[user_message_index].get("content"), list):
             prepared_messages[user_message_index]["content"] = []
 
@@ -158,9 +155,7 @@ class AnthropicLLM(BaseLLM):
                     )
 
                 except Exception as e:
-                    logger.error(
-                        f"Error processing image attachment: {e}", exc_info=True
-                    )
+                    logger.error(f"Error processing image attachment: {e}", exc_info=True)
                     if "content" in attachment:
                         prepared_messages[user_message_index]["content"].append(
                             {

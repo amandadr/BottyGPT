@@ -1,10 +1,12 @@
 """PPT parser.
 Contains parsers for presentation (.pptx) files to extract slide text.
 """
+
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
 from application.parser.file.base_parser import BaseParser
+
 
 class PPTXParser(BaseParser):
     r"""PPTX (.pptx) parser for extracting text from PowerPoint slides.
@@ -18,13 +20,7 @@ class PPTXParser(BaseParser):
         Refer to https://python-pptx.readthedocs.io/en/latest/ for more information.
     """
 
-    def __init__(
-        self,
-        *args: Any,
-        concat_slides: bool = True,
-        slide_separator: str = "\n",
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, *args: Any, concat_slides: bool = True, slide_separator: str = "\n", **kwargs: Any) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
         self._concat_slides = concat_slides
@@ -52,17 +48,17 @@ class PPTXParser(BaseParser):
 
         try:
             presentation = Presentation(file)
-            slide_texts=[]
+            slide_texts = []
 
             # Iterate over each slide in the presentation
             for slide in presentation.slides:
-                slide_text=""
+                slide_text = ""
 
                 # Iterate over each shape in the slide
                 for shape in slide.shapes:
                     # Check if the shape has a 'text' attribute and append that to the slide_text
-                    if hasattr(shape,"text"):
-                        slide_text+=shape.text
+                    if hasattr(shape, "text"):
+                        slide_text += shape.text
 
                 slide_texts.append(slide_text.strip())
 

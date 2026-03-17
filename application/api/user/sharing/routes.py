@@ -17,9 +17,7 @@ from application.api.user.base import (
 )
 from application.utils import check_required_fields
 
-sharing_ns = Namespace(
-    "sharing", description="Conversation sharing operations", path="/api"
-)
+sharing_ns = Namespace("sharing", description="Conversation sharing operations", path="/api")
 
 
 @sharing_ns.route("/share")
@@ -27,9 +25,7 @@ class ShareConversation(Resource):
     share_conversation_model = api.model(
         "ShareConversationModel",
         {
-            "conversation_id": fields.String(
-                required=True, description="Conversation ID"
-            ),
+            "conversation_id": fields.String(required=True, description="Conversation ID"),
             "user": fields.String(description="User ID (optional)"),
             "prompt_id": fields.String(description="Prompt ID (optional)"),
             "chunks": fields.Integer(description="Chunks count (optional)"),
@@ -50,15 +46,11 @@ class ShareConversation(Resource):
             return missing_fields
         is_promptable = request.args.get("isPromptable", type=inputs.boolean)
         if is_promptable is None:
-            return make_response(
-                jsonify({"success": False, "message": "isPromptable is required"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "isPromptable is required"}), 400)
         conversation_id = data["conversation_id"]
 
         try:
-            conversation = conversations_collection.find_one(
-                {"_id": ObjectId(conversation_id)}
-            )
+            conversation = conversations_collection.find_one({"_id": ObjectId(conversation_id)})
             if conversation is None:
                 return make_response(
                     jsonify(
@@ -70,9 +62,7 @@ class ShareConversation(Resource):
                     404,
                 )
             current_n_queries = len(conversation["queries"])
-            explicit_binary = Binary.from_uuid(
-                uuid.uuid4(), UuidRepresentation.STANDARD
-            )
+            explicit_binary = Binary.from_uuid(uuid.uuid4(), UuidRepresentation.STANDARD)
 
             if is_promptable:
                 prompt_id = data.get("prompt_id", "default")
@@ -86,9 +76,7 @@ class ShareConversation(Resource):
                 }
 
                 if "source" in data and ObjectId.is_valid(data["source"]):
-                    new_api_key_data["source"] = DBRef(
-                        "sources", ObjectId(data["source"])
-                    )
+                    new_api_key_data["source"] = DBRef("sources", ObjectId(data["source"]))
                 if "retriever" in data:
                     new_api_key_data["retriever"] = data["retriever"]
                 pre_existing_api_document = agents_collection.find_one(new_api_key_data)
@@ -139,9 +127,7 @@ class ShareConversation(Resource):
                     new_api_key_data["name"] = name
 
                     if "source" in data and ObjectId.is_valid(data["source"]):
-                        new_api_key_data["source"] = DBRef(
-                            "sources", ObjectId(data["source"])
-                        )
+                        new_api_key_data["source"] = DBRef("sources", ObjectId(data["source"]))
                     if "retriever" in data:
                         new_api_key_data["retriever"] = data["retriever"]
                     agents_collection.insert_one(new_api_key_data)
@@ -193,15 +179,11 @@ class ShareConversation(Resource):
                     }
                 )
                 return make_response(
-                    jsonify(
-                        {"success": True, "identifier": str(explicit_binary.as_uuid())}
-                    ),
+                    jsonify({"success": True, "identifier": str(explicit_binary.as_uuid())}),
                     201,
                 )
         except Exception as err:
-            current_app.logger.error(
-                f"Error sharing conversation: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error sharing conversation: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)
 
 
@@ -210,16 +192,11 @@ class GetPubliclySharedConversations(Resource):
     @api.doc(description="Get publicly shared conversations by identifier")
     def get(self, identifier: str):
         try:
-            query_uuid = Binary.from_uuid(
-                uuid.UUID(identifier), UuidRepresentation.STANDARD
-            )
+            query_uuid = Binary.from_uuid(uuid.UUID(identifier), UuidRepresentation.STANDARD)
             shared = shared_conversations_collections.find_one({"uuid": query_uuid})
             conversation_queries = []
 
-            if (
-                shared
-                and "conversation_id" in shared
-            ):
+            if shared and "conversation_id" in shared:
                 # Handle DBRef (legacy), ObjectId, dict, and string formats for conversation_id
                 conversation_id = shared["conversation_id"]
                 if isinstance(conversation_id, DBRef):
@@ -237,9 +214,7 @@ class GetPubliclySharedConversations(Resource):
                         conversation_id = ObjectId(conversation_id["_id"])
                 elif isinstance(conversation_id, str):
                     conversation_id = ObjectId(conversation_id)
-                conversation = conversations_collection.find_one(
-                    {"_id": conversation_id}
-                )
+                conversation = conversations_collection.find_one({"_id": conversation_id})
                 if conversation is None:
                     return make_response(
                         jsonify(
@@ -250,25 +225,19 @@ class GetPubliclySharedConversations(Resource):
                         ),
                         404,
                     )
-                conversation_queries = conversation["queries"][
-                    : (shared["first_n_queries"])
-                ]
+                conversation_queries = conversation["queries"][: (shared["first_n_queries"])]
 
                 for query in conversation_queries:
                     if "attachments" in query and query["attachments"]:
                         attachment_details = []
                         for attachment_id in query["attachments"]:
                             try:
-                                attachment = attachments_collection.find_one(
-                                    {"_id": ObjectId(attachment_id)}
-                                )
+                                attachment = attachments_collection.find_one({"_id": ObjectId(attachment_id)})
                                 if attachment:
                                     attachment_details.append(
                                         {
                                             "id": str(attachment["_id"]),
-                                            "fileName": attachment.get(
-                                                "filename", "Unknown file"
-                                            ),
+                                            "fileName": attachment.get("filename", "Unknown file"),
                                         }
                                     )
                             except Exception as e:
@@ -298,7 +267,5 @@ class GetPubliclySharedConversations(Resource):
                 res["api_key"] = shared["api_key"]
             return make_response(jsonify(res), 200)
         except Exception as err:
-            current_app.logger.error(
-                f"Error getting shared conversation: {err}", exc_info=True
-            )
+            current_app.logger.error(f"Error getting shared conversation: {err}", exc_info=True)
             return make_response(jsonify({"success": False}), 400)

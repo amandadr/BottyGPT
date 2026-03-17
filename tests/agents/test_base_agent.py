@@ -7,10 +7,7 @@ from application.core.settings import settings
 
 @pytest.mark.unit
 class TestBaseAgentInitialization:
-
-    def test_agent_initialization(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_agent_initialization(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         assert agent.endpoint == agent_base_params["endpoint"]
@@ -49,9 +46,7 @@ class TestBaseAgentInitialization:
         assert agent.decoded_token == {}
         assert agent.user is None
 
-    def test_agent_user_extracted_from_token(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_agent_user_extracted_from_token(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent_base_params["decoded_token"] = {"sub": "user123"}
         agent = ClassicAgent(**agent_base_params)
         assert agent.user == "user123"
@@ -59,10 +54,7 @@ class TestBaseAgentInitialization:
 
 @pytest.mark.unit
 class TestBaseAgentBuildMessages:
-
-    def test_build_messages_basic(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_build_messages_basic(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
         system_prompt = "System prompt content"
         query = "What is Python?"
@@ -129,9 +121,7 @@ class TestBaseAgentBuildMessages:
         assert messages[0]["role"] == "system"
         assert messages[0]["content"] == "System prompt"
 
-    def test_build_messages_uses_title_as_fallback(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_build_messages_uses_title_as_fallback(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         agent._build_messages("System prompt", "query")
@@ -146,7 +136,6 @@ class TestBaseAgentBuildMessages:
 
 @pytest.mark.unit
 class TestBaseAgentTools:
-
     def test_get_user_tools(
         self,
         agent_base_params,
@@ -155,12 +144,8 @@ class TestBaseAgentTools:
         mock_llm_handler_creator,
     ):
         user_tools = mock_mongo_db[settings.MONGO_DB_NAME]["user_tools"]
-        user_tools.insert_one(
-            {"_id": "1", "user": "test_user", "name": "tool1", "status": True}
-        )
-        user_tools.insert_one(
-            {"_id": "2", "user": "test_user", "name": "tool2", "status": True}
-        )
+        user_tools.insert_one({"_id": "1", "user": "test_user", "name": "tool1", "status": True})
+        user_tools.insert_one({"_id": "2", "user": "test_user", "name": "tool2", "status": True})
 
         agent = ClassicAgent(**agent_base_params)
         tools = agent._get_user_tools("test_user")
@@ -177,12 +162,8 @@ class TestBaseAgentTools:
         mock_llm_handler_creator,
     ):
         user_tools = mock_mongo_db[settings.MONGO_DB_NAME]["user_tools"]
-        user_tools.insert_one(
-            {"_id": "1", "user": "test_user", "name": "tool1", "status": True}
-        )
-        user_tools.insert_one(
-            {"_id": "2", "user": "test_user", "name": "tool2", "status": False}
-        )
+        user_tools.insert_one({"_id": "1", "user": "test_user", "name": "tool1", "status": True})
+        user_tools.insert_one({"_id": "2", "user": "test_user", "name": "tool2", "status": False})
 
         agent = ClassicAgent(**agent_base_params)
         tools = agent._get_user_tools("test_user")
@@ -217,9 +198,7 @@ class TestBaseAgentTools:
 
         assert tool_id in tools
 
-    def test_build_tool_parameters(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_build_tool_parameters(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         action = {
@@ -247,9 +226,7 @@ class TestBaseAgentTools:
         assert "param1" in params["required"]
         assert "filled_by_llm" not in params["properties"]["param1"]
 
-    def test_prepare_tools_with_api_tool(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_prepare_tools_with_api_tool(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         tools_dict = {
@@ -276,9 +253,7 @@ class TestBaseAgentTools:
         assert agent.tools[0]["type"] == "function"
         assert agent.tools[0]["function"]["name"] == "get_data_1"
 
-    def test_prepare_tools_with_regular_tool(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_prepare_tools_with_regular_tool(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         tools_dict = {
@@ -333,7 +308,6 @@ class TestBaseAgentTools:
 
 @pytest.mark.unit
 class TestBaseAgentToolExecution:
-
     def test_execute_tool_action_success(
         self,
         agent_base_params,
@@ -369,9 +343,7 @@ class TestBaseAgentToolExecution:
         assert results[0]["data"]["status"] == "pending"
         assert results[-1]["data"]["status"] == "completed"
 
-    def test_execute_tool_action_invalid_tool_name(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_execute_tool_action_invalid_tool_name(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         call = Mock()
@@ -385,14 +357,9 @@ class TestBaseAgentToolExecution:
 
         assert results[0]["type"] == "tool_call"
         assert results[0]["data"]["status"] == "error"
-        assert (
-            "Failed to parse" in results[0]["data"]["result"]
-            or "not found" in results[0]["data"]["result"]
-        )
+        assert "Failed to parse" in results[0]["data"]["result"] or "not found" in results[0]["data"]["result"]
 
-    def test_execute_tool_action_tool_not_found(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_execute_tool_action_tool_not_found(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         call = Mock()
@@ -446,9 +413,7 @@ class TestBaseAgentToolExecution:
         assert results[-1]["data"]["status"] == "completed"
         assert results[-1]["data"]["arguments"]["param1"] == "value1"
 
-    def test_get_truncated_tool_calls(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator
-    ):
+    def test_get_truncated_tool_calls(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator):
         agent = ClassicAgent(**agent_base_params)
 
         agent.tool_calls = [
@@ -470,7 +435,6 @@ class TestBaseAgentToolExecution:
 
 @pytest.mark.unit
 class TestBaseAgentLLMGeneration:
-
     def test_llm_gen_basic(
         self,
         agent_base_params,
@@ -516,9 +480,7 @@ class TestBaseAgentLLMGeneration:
         log_context,
     ):
         mock_llm._supports_structured_output = Mock(return_value=True)
-        mock_llm.prepare_structured_output_format = Mock(
-            return_value={"schema": "test"}
-        )
+        mock_llm.prepare_structured_output_format = Mock(return_value={"schema": "test"})
 
         agent_base_params["json_schema"] = {"type": "object"}
         agent_base_params["llm_name"] = "openai"
@@ -533,10 +495,7 @@ class TestBaseAgentLLMGeneration:
 
 @pytest.mark.unit
 class TestBaseAgentHandleResponse:
-
-    def test_handle_response_string(
-        self, agent_base_params, mock_llm_creator, mock_llm_handler_creator, log_context
-    ):
+    def test_handle_response_string(self, agent_base_params, mock_llm_creator, mock_llm_handler_creator, log_context):
         agent = ClassicAgent(**agent_base_params)
 
         response = "Simple string response"

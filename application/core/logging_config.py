@@ -7,9 +7,7 @@ from logging.config import dictConfig
 
 from flask import has_request_context, request
 
-request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
-    "request_id", default="-"
-)
+request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
 
 
 def set_request_id(request_id: str) -> None:
@@ -51,14 +49,8 @@ def setup_logging() -> None:
         {
             "version": 1,
             "disable_existing_loggers": False,
-            "filters": {
-                "request_context": {
-                    "()": "application.core.logging_config.RequestContextFilter"
-                }
-            },
-            "formatters": {
-                "structured": {"()": "application.core.logging_config.JsonFormatter"}
-            },
+            "filters": {"request_context": {"()": "application.core.logging_config.RequestContextFilter"}},
+            "formatters": {"structured": {"()": "application.core.logging_config.JsonFormatter"}},
             "handlers": {
                 "console": {
                     "class": "logging.StreamHandler",

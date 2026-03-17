@@ -21,9 +21,7 @@ class EmbeddingsWrapper:
                 **kwargs,
             )
             if self.model is None or self.model._first_module() is None:
-                raise ValueError(
-                    f"SentenceTransformer model failed to load properly for: {model_name}"
-                )
+                raise ValueError(f"SentenceTransformer model failed to load properly for: {model_name}")
             self.dimension = self.model.get_sentence_embedding_dimension()
             logging.info(f"Successfully loaded model with dimension: {self.dimension}")
         except Exception as e:

@@ -8,7 +8,6 @@ class GoogleTTS(BaseTTS):
     def __init__(self):
         pass
 
-
     def text_to_speech(self, text):
         lang = "en"
         audio_fp = io.BytesIO()

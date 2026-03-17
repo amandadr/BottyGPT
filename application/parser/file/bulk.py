@@ -1,4 +1,5 @@
 """Simple reader that reads files of different formats from a directory."""
+
 import logging
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
@@ -40,6 +41,7 @@ def get_default_file_extractor(
             DoclingVTTParser,
             DoclingXMLParser,
         )
+
         if ocr_enabled is None:
             ocr_enabled = settings.DOCLING_OCR_ENABLED
         return {
@@ -130,16 +132,16 @@ class SimpleDirectoryReader(BaseReader):
     """
 
     def __init__(
-            self,
-            input_dir: Optional[str] = None,
-            input_files: Optional[List] = None,
-            exclude_hidden: bool = True,
-            errors: str = "ignore",
-            recursive: bool = True,
-            required_exts: Optional[List[str]] = None,
-            file_extractor: Optional[Dict[str, BaseParser]] = None,
-            num_files_limit: Optional[int] = None,
-            file_metadata: Optional[Callable[[str], Dict]] = None,
+        self,
+        input_dir: Optional[str] = None,
+        input_files: Optional[List] = None,
+        exclude_hidden: bool = True,
+        errors: str = "ignore",
+        recursive: bool = True,
+        required_exts: Optional[List[str]] = None,
+        file_extractor: Optional[Dict[str, BaseParser]] = None,
+        num_files_limit: Optional[int] = None,
+        file_metadata: Optional[Callable[[str], Dict]] = None,
     ) -> None:
         """Initialize with parameters."""
         super().__init__()
@@ -152,9 +154,7 @@ class SimpleDirectoryReader(BaseReader):
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
         # Normalize extensions to lowercase for case-insensitive matching
-        self.required_exts = (
-            [ext.lower() for ext in required_exts] if required_exts else None
-        )
+        self.required_exts = [ext.lower() for ext in required_exts] if required_exts else None
         self.num_files_limit = num_files_limit
 
         if input_files:
@@ -181,10 +181,7 @@ class SimpleDirectoryReader(BaseReader):
                     dirs_to_explore.append(input_file)
             elif self.exclude_hidden and input_file.name.startswith("."):
                 continue
-            elif (
-                    self.required_exts is not None
-                    and input_file.suffix.lower() not in self.required_exts
-            ):
+            elif self.required_exts is not None and input_file.suffix.lower() not in self.required_exts:
                 continue
             else:
                 new_input_files.append(input_file)
@@ -194,12 +191,10 @@ class SimpleDirectoryReader(BaseReader):
             new_input_files.extend(sub_input_files)
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0: self.num_files_limit]
+            new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
-        logging.debug(
-            f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}"
-        )
+        logging.debug(f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}")
 
         return new_input_files
 
@@ -218,7 +213,7 @@ class SimpleDirectoryReader(BaseReader):
         data_list: List[str] = []
         metadata_list = []
         self.file_token_counts = {}
-        
+
         for input_file in self.input_files:
             suffix_lower = input_file.suffix.lower()
             if suffix_lower in self.file_extractor:
@@ -230,29 +225,29 @@ class SimpleDirectoryReader(BaseReader):
                 # do standard read
                 with open(input_file, "r", errors=self.errors) as f:
                     data = f.read()
-            
+
             # Calculate token count for this file
             if isinstance(data, List):
                 file_tokens = sum(num_tokens_from_string(str(d)) for d in data)
             else:
                 file_tokens = num_tokens_from_string(str(data))
-            
+
             full_path = str(input_file.resolve())
             self.file_token_counts[full_path] = file_tokens
-            
+
             base_metadata = {
-                'title': input_file.name,
-                'token_count': file_tokens,
+                "title": input_file.name,
+                "token_count": file_tokens,
             }
-            
-            if hasattr(self, 'input_dir'):
+
+            if hasattr(self, "input_dir"):
                 try:
                     relative_path = str(input_file.relative_to(self.input_dir))
-                    base_metadata['source'] = relative_path
+                    base_metadata["source"] = relative_path
                 except ValueError:
-                    base_metadata['source'] = str(input_file)
+                    base_metadata["source"] = str(input_file)
             else:
-                base_metadata['source'] = str(input_file)
+                base_metadata["source"] = str(input_file)
 
             if self.file_metadata is not None:
                 custom_metadata = self.file_metadata(input_file.name)
@@ -265,9 +260,9 @@ class SimpleDirectoryReader(BaseReader):
             else:
                 data_list.append(str(data))
                 metadata_list.append(base_metadata)
-        
+
         # Build directory structure if input_dir is provided
-        if hasattr(self, 'input_dir'):
+        if hasattr(self, "input_dir"):
             self.directory_structure = self.build_directory_structure(self.input_dir)
             logging.info("Directory structure built successfully")
         else:
@@ -290,15 +285,15 @@ class SimpleDirectoryReader(BaseReader):
             dict: A nested dictionary representing the directory structure.
         """
         import mimetypes
-        
+
         def build_tree(path):
             """Helper function to recursively build the directory tree."""
             result = {}
-            
+
             for item in path.iterdir():
-                if self.exclude_hidden and item.name.startswith('.'):
+                if self.exclude_hidden and item.name.startswith("."):
                     continue
-                    
+
                 if item.is_dir():
                     subtree = build_tree(item)
                     if subtree:
@@ -306,21 +301,18 @@ class SimpleDirectoryReader(BaseReader):
                 else:
                     if self.required_exts is not None and item.suffix.lower() not in self.required_exts:
                         continue
-                    
+
                     full_path = str(item.resolve())
                     file_size_bytes = item.stat().st_size
                     mime_type = mimetypes.guess_type(item.name)[0] or "application/octet-stream"
-                    
-                    file_info = {
-                        "type": mime_type,
-                        "size_bytes": file_size_bytes
-                    }
-                    
-                    if hasattr(self, 'file_token_counts') and full_path in self.file_token_counts:
+
+                    file_info = {"type": mime_type, "size_bytes": file_size_bytes}
+
+                    if hasattr(self, "file_token_counts") and full_path in self.file_token_counts:
                         file_info["token_count"] = self.file_token_counts[full_path]
-                        
+
                     result[item.name] = file_info
-                    
+
             return result
-        
+
         return build_tree(Path(base_path))

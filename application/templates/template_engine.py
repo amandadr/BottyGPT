@@ -106,9 +106,7 @@ class TemplateEngine:
             logger.debug(f"Cannot extract variables: {type(e).__name__}")
             return set()
 
-    def extract_tool_usages(
-        self, template_content: str
-    ) -> Dict[str, Set[Optional[str]]]:
+    def extract_tool_usages(self, template_content: str) -> Dict[str, Set[Optional[str]]]:
         """Extract tool and action references from a template"""
         if not template_content:
             return {}

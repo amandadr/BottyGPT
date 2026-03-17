@@ -21,4 +21,3 @@ def test_google_tts_text_to_speech(monkeypatch):
     assert captured["args"] == {"text": "hello world", "lang": "en", "slow": False}
     assert lang == "en"
     assert base64.b64decode(audio_base64.encode()) == b"synthetic-audio"
-

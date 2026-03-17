@@ -94,29 +94,17 @@ class ModelRegistry:
             or settings.OPENAI_BASE_URL
         ):
             self._add_openai_models(settings)
-        if settings.OPENAI_API_BASE or (
-            settings.LLM_PROVIDER == "azure_openai" and settings.API_KEY
-        ):
+        if settings.OPENAI_API_BASE or (settings.LLM_PROVIDER == "azure_openai" and settings.API_KEY):
             self._add_azure_openai_models(settings)
-        if settings.ANTHROPIC_API_KEY or (
-            settings.LLM_PROVIDER == "anthropic" and settings.API_KEY
-        ):
+        if settings.ANTHROPIC_API_KEY or (settings.LLM_PROVIDER == "anthropic" and settings.API_KEY):
             self._add_anthropic_models(settings)
-        if settings.GOOGLE_API_KEY or (
-            settings.LLM_PROVIDER == "google" and settings.API_KEY
-        ):
+        if settings.GOOGLE_API_KEY or (settings.LLM_PROVIDER == "google" and settings.API_KEY):
             self._add_google_models(settings)
-        if settings.GROQ_API_KEY or (
-            settings.LLM_PROVIDER == "groq" and settings.API_KEY
-        ):
+        if settings.GROQ_API_KEY or (settings.LLM_PROVIDER == "groq" and settings.API_KEY):
             self._add_groq_models(settings)
-        if settings.OPEN_ROUTER_API_KEY or (
-            settings.LLM_PROVIDER == "openrouter" and settings.API_KEY
-        ):
+        if settings.OPEN_ROUTER_API_KEY or (settings.LLM_PROVIDER == "openrouter" and settings.API_KEY):
             self._add_openrouter_models(settings)
-        if settings.HUGGINGFACE_API_KEY or (
-            settings.LLM_PROVIDER == "huggingface" and settings.API_KEY
-        ):
+        if settings.HUGGINGFACE_API_KEY or (settings.LLM_PROVIDER == "huggingface" and settings.API_KEY):
             self._add_huggingface_models(settings)
         # Default model selection
         if settings.LLM_NAME:
@@ -140,9 +128,7 @@ class ModelRegistry:
 
         if not self.default_model_id and self.models:
             self.default_model_id = next(iter(self.models.keys()))
-        logger.info(
-            f"ModelRegistry loaded {len(self.models)} models, default: {self.default_model_id}"
-        )
+        logger.info(f"ModelRegistry loaded {len(self.models)} models, default: {self.default_model_id}")
 
     def _add_openai_models(self, settings):
         from application.core.model_configs import (
@@ -151,9 +137,7 @@ class ModelRegistry:
         )
 
         # Check if using local OpenAI-compatible endpoint (Ollama, LM Studio, etc.)
-        using_local_endpoint = bool(
-            settings.OPENAI_BASE_URL and settings.OPENAI_BASE_URL.strip()
-        )
+        using_local_endpoint = bool(settings.OPENAI_BASE_URL and settings.OPENAI_BASE_URL.strip())
 
         if using_local_endpoint:
             # When OPENAI_BASE_URL is set, ONLY register custom models from LLM_NAME
@@ -161,13 +145,9 @@ class ModelRegistry:
             if settings.LLM_NAME:
                 model_names = self._parse_model_names(settings.LLM_NAME)
                 for model_name in model_names:
-                    custom_model = create_custom_openai_model(
-                        model_name, settings.OPENAI_BASE_URL
-                    )
+                    custom_model = create_custom_openai_model(model_name, settings.OPENAI_BASE_URL)
                     self.models[model_name] = custom_model
-                    logger.info(
-                        f"Registered custom OpenAI model: {model_name} at {settings.OPENAI_BASE_URL}"
-                    )
+                    logger.info(f"Registered custom OpenAI model: {model_name} at {settings.OPENAI_BASE_URL}")
         else:
             # Standard OpenAI API usage - add standard models if API key is valid
             if settings.OPENAI_API_KEY:
@@ -229,7 +209,7 @@ class ModelRegistry:
                     return
         for model in GROQ_MODELS:
             self.models[model.id] = model
-    
+
     def _add_openrouter_models(self, settings):
         from application.core.model_configs import OPENROUTER_MODELS
 

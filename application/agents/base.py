@@ -64,9 +64,7 @@ class BaseAgent(ABC):
             agent_id=agent_id,
         )
         self.retrieved_docs = retrieved_docs or []
-        self.llm_handler = LLMHandlerCreator.create_handler(
-            llm_name if llm_name else "default"
-        )
+        self.llm_handler = LLMHandlerCreator.create_handler(llm_name if llm_name else "default")
         self.attachments = attachments or []
         self.json_schema = None
         if json_schema is not None:
@@ -83,15 +81,11 @@ class BaseAgent(ABC):
         self.context_limit_reached = False
 
     @log_activity()
-    def gen(
-        self, query: str, log_context: LogContext = None
-    ) -> Generator[Dict, None, None]:
+    def gen(self, query: str, log_context: LogContext = None) -> Generator[Dict, None, None]:
         yield from self._gen_inner(query, log_context)
 
     @abstractmethod
-    def _gen_inner(
-        self, query: str, log_context: LogContext
-    ) -> Generator[Dict, None, None]:
+    def _gen_inner(self, query: str, log_context: LogContext) -> Generator[Dict, None, None]:
         pass
 
     def _get_tools(self, api_key: str = None) -> Dict[str, Dict]:
@@ -103,13 +97,7 @@ class BaseAgent(ABC):
         agent_data = agents_collection.find_one({"key": api_key or self.user_api_key})
         tool_ids = agent_data.get("tools", []) if agent_data else []
 
-        tools = (
-            tools_collection.find(
-                {"_id": {"$in": [ObjectId(tool_id) for tool_id in tool_ids]}}
-            )
-            if tool_ids
-            else []
-        )
+        tools = tools_collection.find({"_id": {"$in": [ObjectId(tool_id) for tool_id in tool_ids]}}) if tool_ids else []
         tools = list(tools)
         tools_by_id = {str(tool["_id"]): tool for tool in tools} if tools else {}
 
@@ -131,9 +119,7 @@ class BaseAgent(ABC):
                 for k, v in action[param_type]["properties"].items():
                     if v.get("filled_by_llm", True):
                         params["properties"][k] = {
-                            key: value
-                            for key, value in v.items()
-                            if key not in ("filled_by_llm", "value", "required")
+                            key: value for key, value in v.items() if key not in ("filled_by_llm", "value", "required")
                         }
                         if v.get("required", False):
                             params["required"].append(k)
@@ -154,11 +140,7 @@ class BaseAgent(ABC):
                 (tool["name"] == "api_tool" and "actions" in tool.get("config", {}))
                 or (tool["name"] != "api_tool" and "actions" in tool)
             )
-            for action in (
-                tool["config"]["actions"].values()
-                if tool["name"] == "api_tool"
-                else tool["actions"]
-            )
+            for action in (tool["config"]["actions"].values() if tool["name"] == "api_tool" else tool["actions"])
             if action.get("active", True)
         ]
 
@@ -214,11 +196,7 @@ class BaseAgent(ABC):
         action_data = (
             tool_data["config"]["actions"][action_name]
             if tool_data["name"] == "api_tool"
-            else next(
-                action
-                for action in tool_data["actions"]
-                if action["name"] == action_name
-            )
+            else next(action for action in tool_data["actions"] if action["name"] == action_name)
         )
 
         query_params, headers, body, parameters = {}, {}, {}, {}
@@ -232,17 +210,11 @@ class BaseAgent(ABC):
         for param_type, target_dict in param_types.items():
             if param_type in action_data and action_data[param_type].get("properties"):
                 for param, details in action_data[param_type]["properties"].items():
-                    if (
-                        param not in call_args
-                        and "value" in details
-                        and details["value"]
-                    ):
+                    if param not in call_args and "value" in details and details["value"]:
                         target_dict[param] = details["value"]
         for param, value in call_args.items():
             for param_type, target_dict in param_types.items():
-                if param_type in action_data and param in action_data[param_type].get(
-                    "properties", {}
-                ):
+                if param_type in action_data and param in action_data[param_type].get("properties", {}):
                     target_dict[param] = value
         tm = ToolManager(config={})
 
@@ -257,18 +229,12 @@ class BaseAgent(ABC):
                 "query_params": query_params,
             }
             if "body_content_type" in action_config:
-                tool_config["body_content_type"] = action_config.get(
-                    "body_content_type", "application/json"
-                )
-                tool_config["body_encoding_rules"] = action_config.get(
-                    "body_encoding_rules", {}
-                )
+                tool_config["body_content_type"] = action_config.get("body_content_type", "application/json")
+                tool_config["body_encoding_rules"] = action_config.get("body_encoding_rules", {})
         else:
             tool_config = tool_data["config"].copy() if tool_data["config"] else {}
             if tool_config.get("encrypted_credentials") and self.user:
-                decrypted = decrypt_credentials(
-                    tool_config["encrypted_credentials"], self.user
-                )
+                decrypted = decrypt_credentials(tool_config["encrypted_credentials"], self.user)
                 tool_config.update(decrypted)
                 tool_config["auth_credentials"] = decrypted
                 tool_config.pop("encrypted_credentials", None)
@@ -296,11 +262,7 @@ class BaseAgent(ABC):
             logger.debug(f"Executing tool: {action_name} with args: {call_args}")
             result = tool.execute_action(action_name, **parameters)
 
-        get_artifact_id = (
-            getattr(tool, "get_artifact_id", None)
-            if tool_data["name"] != "api_tool"
-            else None
-        )
+        get_artifact_id = getattr(tool, "get_artifact_id", None) if tool_data["name"] != "api_tool" else None
 
         artifact_id = None
         if callable(get_artifact_id):
@@ -319,14 +281,10 @@ class BaseAgent(ABC):
         result_full = str(result)
         tool_call_data["resolved_arguments"] = resolved_arguments
         tool_call_data["result_full"] = result_full
-        tool_call_data["result"] = (
-            f"{result_full[:50]}..." if len(result_full) > 50 else result_full
-        )
+        tool_call_data["result"] = f"{result_full[:50]}..." if len(result_full) > 50 else result_full
 
         stream_tool_call_data = {
-            key: value
-            for key, value in tool_call_data.items()
-            if key not in {"result_full", "resolved_arguments"}
+            key: value for key, value in tool_call_data.items() if key not in {"result_full", "resolved_arguments"}
         }
         yield {"type": "tool_call", "data": {**stream_tool_call_data, "status": "completed"}}
         self.tool_calls.append(tool_call_data)
@@ -342,9 +300,7 @@ class BaseAgent(ABC):
                 "arguments": tool_call.get("arguments"),
                 "artifact_id": tool_call.get("artifact_id"),
                 "result": (
-                    f"{str(tool_call['result'])[:50]}..."
-                    if len(str(tool_call["result"])) > 50
-                    else tool_call["result"]
+                    f"{str(tool_call['result'])[:50]}..." if len(str(tool_call["result"])) > 50 else tool_call["result"]
                 ),
                 "status": "completed",
             }
@@ -395,7 +351,7 @@ class BaseAgent(ABC):
             if current_tokens >= threshold:
                 logger.warning(
                     f"Context limit approaching: {current_tokens}/{context_limit} tokens "
-                    f"({(current_tokens/context_limit)*100:.1f}%)"
+                    f"({(current_tokens / context_limit) * 100:.1f}%)"
                 )
                 return True
 
@@ -426,13 +382,8 @@ class BaseAgent(ABC):
                 f"Context at limit: {current_tokens:,}/{context_limit:,} tokens "
                 f"({percentage:.1f}%). Model: {self.model_id}"
             )
-        elif current_tokens >= int(
-            context_limit * settings.COMPRESSION_THRESHOLD_PERCENTAGE
-        ):
-            logger.info(
-                f"Context approaching limit: {current_tokens:,}/{context_limit:,} tokens "
-                f"({percentage:.1f}%)"
-            )
+        elif current_tokens >= int(context_limit * settings.COMPRESSION_THRESHOLD_PERCENTAGE):
+            logger.info(f"Context approaching limit: {current_tokens:,}/{context_limit:,} tokens ({percentage:.1f}%)")
 
     def _truncate_text_middle(self, text: str, max_tokens: int) -> str:
         """
@@ -466,10 +417,7 @@ class BaseAgent(ABC):
 
         truncated = text[:start_chars] + truncation_marker + text[-end_chars:]
 
-        logger.info(
-            f"Truncated text from {current_tokens:,} to ~{max_tokens:,} tokens "
-            f"(removed middle section)"
-        )
+        logger.info(f"Truncated text from {current_tokens:,} to ~{max_tokens:,} tokens (removed middle section)")
 
         return truncated
 
@@ -543,12 +491,8 @@ class BaseAgent(ABC):
                         }
                     }
 
-                    messages.append(
-                        {"role": "assistant", "content": [function_call_dict]}
-                    )
-                    messages.append(
-                        {"role": "tool", "content": [function_response_dict]}
-                    )
+                    messages.append({"role": "assistant", "content": [function_call_dict]})
+                    messages.append({"role": "tool", "content": [function_response_dict]})
         messages.append({"role": "user", "content": query})
         return messages
 
@@ -616,20 +560,14 @@ class BaseAgent(ABC):
             # Usage accounting only; stripped before provider invocation.
             gen_kwargs["_usage_attachments"] = self.attachments
 
-        if (
-            hasattr(self.llm, "_supports_tools")
-            and self.llm._supports_tools
-            and self.tools
-        ):
+        if hasattr(self.llm, "_supports_tools") and self.llm._supports_tools and self.tools:
             gen_kwargs["tools"] = self.tools
         if (
             self.json_schema
             and hasattr(self.llm, "_supports_structured_output")
             and self.llm._supports_structured_output()
         ):
-            structured_format = self.llm.prepare_structured_output_format(
-                self.json_schema
-            )
+            structured_format = self.llm.prepare_structured_output_format(self.json_schema)
             if structured_format:
                 if self.llm_name == "openai":
                     gen_kwargs["response_format"] = structured_format
@@ -650,9 +588,7 @@ class BaseAgent(ABC):
         log_context: Optional[LogContext] = None,
         attachments: Optional[List[Dict]] = None,
     ):
-        resp = self.llm_handler.process_message_flow(
-            self, resp, tools_dict, messages, attachments, True
-        )
+        resp = self.llm_handler.process_message_flow(self, resp, tools_dict, messages, attachments, True)
         if log_context:
             data = build_stack_data(self.llm_handler, exclude_attributes=["tool_calls"])
             log_context.stacks.append({"component": "llm_handler", "data": data})
@@ -679,9 +615,7 @@ class BaseAgent(ABC):
                 answer_data["schema"] = self.json_schema
             yield answer_data
             return
-        processed_response_gen = self._llm_handler(
-            response, tools_dict, messages, log_context, self.attachments
-        )
+        processed_response_gen = self._llm_handler(response, tools_dict, messages, log_context, self.attachments)
 
         for event in processed_response_gen:
             if isinstance(event, str):

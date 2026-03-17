@@ -3,6 +3,7 @@ import pytest
 
 from application.llm.google_ai import GoogleLLM
 
+
 class _FakePart:
     def __init__(self, text=None, function_call=None, file_data=None, thought=False):
         self.text = text
@@ -90,6 +91,7 @@ class FakeClient:
 def patch_google_modules(monkeypatch):
     # Patch the types module used by GoogleLLM
     import application.llm.google_ai as gmod
+
     monkeypatch.setattr(gmod, "types", FakeTypesModule)
     monkeypatch.setattr(gmod.genai, "Client", FakeClient)
 
@@ -98,11 +100,14 @@ def test_clean_messages_google_basic():
     llm = GoogleLLM(api_key="key")
     msgs = [
         {"role": "assistant", "content": "hi"},
-        {"role": "user", "content": [
-            {"text": "hello"},
-            {"files": [{"file_uri": "gs://x", "mime_type": "image/png"}]},
-            {"function_call": {"name": "fn", "args": {"a": 1}}},
-        ]},
+        {
+            "role": "user",
+            "content": [
+                {"text": "hello"},
+                {"files": [{"file_uri": "gs://x", "mime_type": "image/png"}]},
+                {"function_call": {"name": "fn", "args": {"a": 1}}},
+            ],
+        },
     ]
     cleaned, system_instruction = llm._clean_messages_google(msgs)
 
@@ -156,11 +161,7 @@ def test_raw_gen_stream_emits_thought_events(monkeypatch):
         thought=False,
     )
     chunk = types.SimpleNamespace(
-        candidates=[
-            types.SimpleNamespace(
-                content=types.SimpleNamespace(parts=[thought_part, answer_part])
-            )
-        ]
+        candidates=[types.SimpleNamespace(content=types.SimpleNamespace(parts=[thought_part, answer_part]))]
     )
 
     monkeypatch.setattr(
@@ -186,11 +187,7 @@ def test_raw_gen_stream_keeps_prefix_like_text_as_answer(monkeypatch):
         thought=False,
     )
     chunk = types.SimpleNamespace(
-        candidates=[
-            types.SimpleNamespace(
-                content=types.SimpleNamespace(parts=[answer_part])
-            )
-        ]
+        candidates=[types.SimpleNamespace(content=types.SimpleNamespace(parts=[answer_part]))]
     )
 
     monkeypatch.setattr(
@@ -224,8 +221,7 @@ def test_prepare_structured_output_format_type_mapping():
 def test_prepare_messages_with_attachments_appends_files(monkeypatch):
     llm = GoogleLLM(api_key="key")
     llm.storage = types.SimpleNamespace(
-        file_exists=lambda path: True,
-        process_file=lambda path, processor_func, **kwargs: "gs://file_uri"
+        file_exists=lambda path: True, process_file=lambda path, processor_func, **kwargs: "gs://file_uri"
     )
     monkeypatch.setattr(llm, "_upload_file_to_google", lambda att: "gs://file_uri")
 

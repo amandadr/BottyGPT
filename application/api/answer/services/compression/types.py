@@ -77,7 +77,4 @@ class CompressionResult:
         Returns:
             List of prompt/response dicts
         """
-        return [
-            {"prompt": q["prompt"], "response": q["response"]}
-            for q in self.recent_queries
-        ]
+        return [{"prompt": q["prompt"], "response": q["response"]} for q in self.recent_queries]

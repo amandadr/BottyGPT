@@ -11,9 +11,7 @@ class TestSearchResourceValidation:
         from application.api.answer.routes.search import SearchResource
 
         with flask_app.app_context():
-            with flask_app.test_request_context(
-                json={"api_key": "test_key"}
-            ):
+            with flask_app.test_request_context(json={"api_key": "test_key"}):
                 resource = SearchResource()
                 result = resource.post()
 
@@ -24,9 +22,7 @@ class TestSearchResourceValidation:
         from application.api.answer.routes.search import SearchResource
 
         with flask_app.app_context():
-            with flask_app.test_request_context(
-                json={"question": "test query"}
-            ):
+            with flask_app.test_request_context(json={"question": "test query"}):
                 resource = SearchResource()
                 result = resource.post()
 
@@ -37,9 +33,7 @@ class TestSearchResourceValidation:
         from application.api.answer.routes.search import SearchResource
 
         with flask_app.app_context():
-            with flask_app.test_request_context(
-                json={"question": "test query", "api_key": "invalid_key"}
-            ):
+            with flask_app.test_request_context(json={"question": "test query", "api_key": "invalid_key"}):
                 resource = SearchResource()
                 result = resource.post()
 
@@ -68,9 +62,7 @@ class TestGetSourcesFromApiKey:
             agent_id = ObjectId()
 
             sources_collection = mock_mongo_db[settings.MONGO_DB_NAME]["sources"]
-            sources_collection.insert_one(
-                {"_id": source_id, "name": "Test Source"}
-            )
+            sources_collection.insert_one({"_id": source_id, "name": "Test Source"})
 
             agents_collection = mock_mongo_db[settings.MONGO_DB_NAME]["agents"]
             agents_collection.insert_one(
@@ -88,9 +80,7 @@ class TestGetSourcesFromApiKey:
             assert len(result) == 1
             assert result[0] == str(source_id)
 
-    def test_returns_multiple_sources_from_sources_array(
-        self, mock_mongo_db, flask_app
-    ):
+    def test_returns_multiple_sources_from_sources_array(self, mock_mongo_db, flask_app):
         from application.api.answer.routes.search import SearchResource
         from application.core.settings import settings
 
@@ -171,9 +161,7 @@ class TestGetSourcesFromApiKey:
 
             assert result == []
 
-    def test_falls_back_to_legacy_source_when_sources_empty(
-        self, mock_mongo_db, flask_app
-    ):
+    def test_falls_back_to_legacy_source_when_sources_empty(self, mock_mongo_db, flask_app):
         from application.api.answer.routes.search import SearchResource
         from application.core.settings import settings
 
@@ -243,9 +231,7 @@ class TestSearchVectorstores:
         with flask_app.app_context():
             resource = SearchResource()
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_vectorstore = MagicMock()
                 mock_vectorstore.search.return_value = []
                 mock_create.return_value = mock_vectorstore
@@ -270,9 +256,7 @@ class TestSearchVectorstores:
                 },
             }
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_vectorstore = MagicMock()
                 mock_vectorstore.search.return_value = [mock_doc]
                 mock_create.return_value = mock_vectorstore
@@ -294,9 +278,7 @@ class TestSearchVectorstores:
             mock_doc.page_content = "Langchain content"
             mock_doc.metadata = {"title": "LC Title", "source": "/lc/path"}
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_vectorstore = MagicMock()
                 mock_vectorstore.search.return_value = [mock_doc]
                 mock_create.return_value = mock_vectorstore
@@ -313,14 +295,9 @@ class TestSearchVectorstores:
         with flask_app.app_context():
             resource = SearchResource()
 
-            mock_docs = [
-                {"text": f"Content {i}", "metadata": {"title": f"Title {i}"}}
-                for i in range(10)
-            ]
+            mock_docs = [{"text": f"Content {i}", "metadata": {"title": f"Title {i}"}} for i in range(10)]
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_vectorstore = MagicMock()
                 mock_vectorstore.search.return_value = mock_docs
                 mock_create.return_value = mock_vectorstore
@@ -342,9 +319,7 @@ class TestSearchVectorstores:
                 {"text": "Unique content", "metadata": {"title": "Title 3"}},
             ]
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_vectorstore = MagicMock()
                 mock_vectorstore.search.return_value = mock_docs
                 mock_create.return_value = mock_vectorstore
@@ -359,9 +334,7 @@ class TestSearchVectorstores:
         with flask_app.app_context():
             resource = SearchResource()
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_create.side_effect = Exception("Vectorstore error")
 
                 result = resource._search_vectorstores("test query", ["source_id"], 5)
@@ -379,9 +352,7 @@ class TestSearchVectorstores:
                 "metadata": {"filename": "document.pdf"},
             }
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_vectorstore = MagicMock()
                 mock_vectorstore.search.return_value = [mock_doc]
                 mock_create.return_value = mock_vectorstore
@@ -401,9 +372,7 @@ class TestSearchVectorstores:
                 "metadata": {},
             }
 
-            with patch(
-                "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-            ) as mock_create:
+            with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                 mock_vectorstore = MagicMock()
                 mock_vectorstore.search.return_value = [mock_doc]
                 mock_create.return_value = mock_vectorstore
@@ -433,9 +402,7 @@ class TestSearchEndpoint:
                 }
             )
 
-            with flask_app.test_request_context(
-                json={"question": "test query", "api_key": "test_api_key"}
-            ):
+            with flask_app.test_request_context(json={"question": "test query", "api_key": "test_api_key"}):
                 resource = SearchResource()
                 result = resource.post()
 
@@ -471,9 +438,7 @@ class TestSearchEndpoint:
             with flask_app.test_request_context(
                 json={"question": "test query", "api_key": "test_api_key", "chunks": 5}
             ):
-                with patch(
-                    "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-                ) as mock_create:
+                with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                     mock_vectorstore = MagicMock()
                     mock_vectorstore.search.return_value = [mock_doc]
                     mock_create.return_value = mock_vectorstore
@@ -507,12 +472,8 @@ class TestSearchEndpoint:
                 }
             )
 
-            with flask_app.test_request_context(
-                json={"question": "test query", "api_key": "test_api_key"}
-            ):
-                with patch(
-                    "application.api.answer.routes.search.VectorCreator.create_vectorstore"
-                ) as mock_create:
+            with flask_app.test_request_context(json={"question": "test query", "api_key": "test_api_key"}):
+                with patch("application.api.answer.routes.search.VectorCreator.create_vectorstore") as mock_create:
                     mock_vectorstore = MagicMock()
                     mock_vectorstore.search.return_value = []
                     mock_create.return_value = mock_vectorstore
@@ -545,14 +506,10 @@ class TestSearchEndpoint:
                 }
             )
 
-            with flask_app.test_request_context(
-                json={"question": "test query", "api_key": "test_api_key"}
-            ):
+            with flask_app.test_request_context(json={"question": "test query", "api_key": "test_api_key"}):
                 resource = SearchResource()
 
-                with patch.object(
-                    resource, "_get_sources_from_api_key"
-                ) as mock_get_sources:
+                with patch.object(resource, "_get_sources_from_api_key") as mock_get_sources:
                     mock_get_sources.side_effect = Exception("Database error")
 
                     result = resource.post()

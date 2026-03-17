@@ -7,4 +7,4 @@ This module provides authentication and document loading capabilities for Share 
 from .auth import SharePointAuth
 from .loader import SharePointLoader
 
-__all__ = ['SharePointAuth', 'SharePointLoader']
+__all__ = ["SharePointAuth", "SharePointLoader"]

@@ -14,9 +14,7 @@ from application.tts.tts_creator import TTSCreator
 from application.utils import safe_filename
 
 
-attachments_ns = Namespace(
-    "attachments", description="File attachments and media operations", path="/api"
-)
+attachments_ns = Namespace("attachments", description="File attachments and media operations", path="/api")
 
 
 @attachments_ns.route("/store_attachment")
@@ -26,9 +24,7 @@ class StoreAttachment(Resource):
             "AttachmentModel",
             {
                 "file": fields.Raw(required=True, description="File(s) to upload"),
-                "api_key": fields.String(
-                    required=False, description="API key (optional)"
-                ),
+                "api_key": fields.String(required=False, description="API key (optional)"),
             },
         )
     )
@@ -38,44 +34,42 @@ class StoreAttachment(Resource):
     def post(self):
         decoded_token = getattr(request, "decoded_token", None)
         api_key = request.form.get("api_key") or request.args.get("api_key")
-        
+
         files = request.files.getlist("file")
         if not files:
             single_file = request.files.get("file")
             if single_file:
                 files = [single_file]
-        
+
         if not files or all(f.filename == "" for f in files):
             return make_response(
                 jsonify({"status": "error", "message": "Missing file(s)"}),
                 400,
             )
-        
+
         user = None
         if decoded_token:
             user = safe_filename(decoded_token.get("sub"))
         elif api_key:
             agent = agents_collection.find_one({"key": api_key})
             if not agent:
-                return make_response(
-                    jsonify({"success": False, "message": "Invalid API key"}), 401
-                )
+                return make_response(jsonify({"success": False, "message": "Invalid API key"}), 401)
             user = safe_filename(agent.get("user"))
         else:
-            return make_response(
-                jsonify({"success": False, "message": "Authentication required"}), 401
-            )
-        
+            return make_response(jsonify({"success": False, "message": "Authentication required"}), 401)
+
         try:
             tasks = []
             errors = []
             original_file_count = len(files)
-            
+
             for idx, file in enumerate(files):
                 try:
                     attachment_id = ObjectId()
                     original_filename = safe_filename(os.path.basename(file.filename))
-                    relative_path = f"{settings.UPLOAD_FOLDER}/{user}/attachments/{str(attachment_id)}/{original_filename}"
+                    relative_path = (
+                        f"{settings.UPLOAD_FOLDER}/{user}/attachments/{str(attachment_id)}/{original_filename}"
+                    )
 
                     metadata = storage.save_file(file, relative_path)
                     file_info = {
@@ -86,24 +80,25 @@ class StoreAttachment(Resource):
                     }
 
                     task = store_attachment.delay(file_info, user)
-                    tasks.append({
-                        "task_id": task.id,
-                        "filename": original_filename,
-                        "attachment_id": str(attachment_id),
-                    })
+                    tasks.append(
+                        {
+                            "task_id": task.id,
+                            "filename": original_filename,
+                            "attachment_id": str(attachment_id),
+                        }
+                    )
                 except Exception as file_err:
-                    current_app.logger.error(f"Error processing file {idx} ({file.filename}): {file_err}", exc_info=True)
-                    errors.append({
-                        "filename": file.filename,
-                        "error": str(file_err)
-                    })
-            
+                    current_app.logger.error(
+                        f"Error processing file {idx} ({file.filename}): {file_err}", exc_info=True
+                    )
+                    errors.append({"filename": file.filename, "error": str(file_err)})
+
             if not tasks:
                 return make_response(
                     jsonify({"status": "error", "message": "No valid files to upload"}),
                     400,
                 )
-            
+
             if original_file_count == 1 and len(tasks) == 1:
                 current_app.logger.info("Returning single task_id response")
                 return make_response(
@@ -125,7 +120,7 @@ class StoreAttachment(Resource):
                 if errors:
                     response_data["errors"] = errors
                     response_data["message"] += f" {len(errors)} file(s) failed."
-                
+
                 return make_response(
                     jsonify(response_data),
                     200,
@@ -151,14 +146,10 @@ class ServeImage(Resource):
 
             return response
         except FileNotFoundError:
-            return make_response(
-                jsonify({"success": False, "message": "Image not found"}), 404
-            )
+            return make_response(jsonify({"success": False, "message": "Image not found"}), 404)
         except Exception as e:
             current_app.logger.error(f"Error serving image: {e}")
-            return make_response(
-                jsonify({"success": False, "message": "Error retrieving image"}), 500
-            )
+            return make_response(jsonify({"success": False, "message": "Error retrieving image"}), 500)
 
 
 @attachments_ns.route("/tts")
@@ -166,9 +157,7 @@ class TextToSpeech(Resource):
     tts_model = api.model(
         "TextToSpeechModel",
         {
-            "text": fields.String(
-                required=True, description="Text to be synthesized as audio"
-            ),
+            "text": fields.String(required=True, description="Text to be synthesized as audio"),
         },
     )
 

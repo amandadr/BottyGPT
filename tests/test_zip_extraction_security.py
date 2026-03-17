@@ -264,6 +264,7 @@ class TestZipBombProtection:
 
             # Create a zip with random-ish content that doesn't compress well
             import random
+
             random.seed(42)
             random_content = "".join(
                 random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=10240)

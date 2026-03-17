@@ -170,4 +170,3 @@ def test_load_data_returns_empty_on_ssrf_validation_failure(monkeypatch):
     result = loader.load_data("http://192.168.1.1")
 
     assert result == []
-

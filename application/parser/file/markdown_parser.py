@@ -3,6 +3,7 @@
 Contains parser for md files.
 
 """
+
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
@@ -20,13 +21,13 @@ class MarkdownParser(BaseParser):
     """
 
     def __init__(
-            self,
-            *args: Any,
-            remove_hyperlinks: bool = True,
-            remove_images: bool = True,
-            max_tokens: int = 2048,
-            # remove_tables: bool = True,
-            **kwargs: Any,
+        self,
+        *args: Any,
+        remove_hyperlinks: bool = True,
+        remove_images: bool = True,
+        max_tokens: int = 2048,
+        # remove_tables: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
@@ -35,12 +36,13 @@ class MarkdownParser(BaseParser):
         self._max_tokens = max_tokens
         # self._remove_tables = remove_tables
 
-    def tups_chunk_append(self, tups: List[Tuple[Optional[str], str]], current_header: Optional[str],
-                          current_text: str):
+    def tups_chunk_append(
+        self, tups: List[Tuple[Optional[str], str]], current_header: Optional[str], current_text: str
+    ):
         """Append to tups chunk."""
         num_tokens = num_tokens_from_string(current_text)
         if num_tokens > self._max_tokens:
-            chunks = [current_text[i:i + self._max_tokens] for i in range(0, len(current_text), self._max_tokens)]
+            chunks = [current_text[i : i + self._max_tokens] for i in range(0, len(current_text), self._max_tokens)]
             for chunk in chunks:
                 tups.append((current_header, chunk))
         else:
@@ -76,13 +78,10 @@ class MarkdownParser(BaseParser):
         if current_header is not None:
             # pass linting, assert keys are defined
             markdown_tups = [
-                (re.sub(r"#", "", cast(str, key)).strip(), re.sub(r"<.*?>", "", value))
-                for key, value in markdown_tups
+                (re.sub(r"#", "", cast(str, key)).strip(), re.sub(r"<.*?>", "", value)) for key, value in markdown_tups
             ]
         else:
-            markdown_tups = [
-                (key, re.sub("\n", "", value)) for key, value in markdown_tups
-            ]
+            markdown_tups = [(key, re.sub("\n", "", value)) for key, value in markdown_tups]
 
         return markdown_tups
 
@@ -115,9 +114,7 @@ class MarkdownParser(BaseParser):
         """Initialize the parser with the config."""
         return {}
 
-    def parse_tups(
-            self, filepath: Path, errors: str = "ignore"
-    ) -> List[Tuple[Optional[str], str]]:
+    def parse_tups(self, filepath: Path, errors: str = "ignore") -> List[Tuple[Optional[str], str]]:
         """Parse file into tuples."""
         with open(filepath, "r") as f:
             content = f.read()
@@ -130,9 +127,7 @@ class MarkdownParser(BaseParser):
         markdown_tups = self.markdown_to_tups(content)
         return markdown_tups
 
-    def parse_file(
-            self, filepath: Path, errors: str = "ignore"
-    ) -> Union[str, List[str]]:
+    def parse_file(self, filepath: Path, errors: str = "ignore") -> Union[str, List[str]]:
         """Parse file into string."""
         tups = self.parse_tups(filepath, errors=errors)
         results = []

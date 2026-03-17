@@ -22,9 +22,7 @@ class AnswerResource(Resource, BaseAnswerResource):
     answer_model = answer_ns.model(
         "AnswerModel",
         {
-            "question": fields.String(
-                required=True, description="Question to be asked"
-            ),
+            "question": fields.String(required=True, description="Question to be asked"),
             "history": fields.List(
                 fields.String,
                 required=False,
@@ -34,21 +32,13 @@ class AnswerResource(Resource, BaseAnswerResource):
                 required=False,
                 description="Existing conversation ID (loads history)",
             ),
-            "prompt_id": fields.String(
-                required=False, default="default", description="Prompt ID"
-            ),
-            "chunks": fields.Integer(
-                required=False, default=2, description="Number of chunks"
-            ),
+            "prompt_id": fields.String(required=False, default="default", description="Prompt ID"),
+            "chunks": fields.Integer(required=False, default=2, description="Number of chunks"),
             "retriever": fields.String(required=False, description="Retriever type"),
             "api_key": fields.String(required=False, description="API key"),
             "agent_id": fields.String(required=False, description="Agent ID"),
-            "active_docs": fields.String(
-                required=False, description="Active documents"
-            ),
-            "isNoneDoc": fields.Boolean(
-                required=False, description="Flag indicating if no document is used"
-            ),
+            "active_docs": fields.String(required=False, description="Active documents"),
+            "isNoneDoc": fields.Boolean(required=False, description="Flag indicating if no document is used"),
             "save_conversation": fields.Boolean(
                 required=False,
                 default=True,
@@ -78,9 +68,7 @@ class AnswerResource(Resource, BaseAnswerResource):
             if not processor.decoded_token:
                 return make_response({"error": "Unauthorized"}, 401)
 
-            docs_together, docs_list = processor.pre_fetch_docs(
-                data.get("question", "")
-            )
+            docs_together, docs_list = processor.pre_fetch_docs(data.get("question", ""))
             tools_data = processor.pre_fetch_tools()
 
             agent = processor.create_agent(
@@ -119,9 +107,7 @@ class AnswerResource(Resource, BaseAnswerResource):
                     structured_info,
                 ) = stream_result
             else:
-                conversation_id, response, sources, tool_calls, thought, error = (
-                    stream_result
-                )
+                conversation_id, response, sources, tool_calls, thought, error = stream_result
                 structured_info = None
 
             if error:

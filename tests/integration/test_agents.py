@@ -86,6 +86,7 @@ class AgentTests(DocsGPTTestBase):
                 # Wait briefly for task to start
                 if task_id:
                     import time as time_module
+
                     time_module.sleep(2)
                     # Get sources again
                     sources_resp = self.get("/api/sources", timeout=10)

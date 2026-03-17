@@ -20,9 +20,7 @@ from application.api.user.base import (
 )
 from application.utils import generate_image_url
 
-agents_sharing_ns = Namespace(
-    "agents", description="Agent management operations", path="/api"
-)
+agents_sharing_ns = Namespace("agents", description="Agent management operations", path="/api")
 
 
 @agents_sharing_ns.route("/shared_agent")
@@ -37,9 +35,7 @@ class SharedAgent(Resource):
         shared_token = request.args.get("token")
 
         if not shared_token:
-            return make_response(
-                jsonify({"success": False, "message": "Token or ID is required"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "Token or ID is required"}), 400)
         try:
             query = {
                 "shared_publicly": True,
@@ -56,11 +52,7 @@ class SharedAgent(Resource):
                 "id": agent_id,
                 "user": shared_agent.get("user", ""),
                 "name": shared_agent.get("name", ""),
-                "image": (
-                    generate_image_url(shared_agent["image"])
-                    if shared_agent.get("image")
-                    else ""
-                ),
+                "image": (generate_image_url(shared_agent["image"]) if shared_agent.get("image") else ""),
                 "description": shared_agent.get("description", ""),
                 "source": (
                     str(source_doc["_id"])
@@ -122,14 +114,10 @@ class SharedAgents(Resource):
             user_id = decoded_token.get("sub")
 
             user_doc = ensure_user_doc(user_id)
-            shared_with_ids = user_doc.get("agent_preferences", {}).get(
-                "shared_with_me", []
-            )
+            shared_with_ids = user_doc.get("agent_preferences", {}).get("shared_with_me", [])
             shared_object_ids = [ObjectId(id) for id in shared_with_ids]
 
-            shared_agents_cursor = agents_collection.find(
-                {"_id": {"$in": shared_object_ids}, "shared_publicly": True}
-            )
+            shared_agents_cursor = agents_collection.find({"_id": {"$in": shared_object_ids}, "shared_publicly": True})
             shared_agents = list(shared_agents_cursor)
 
             found_ids_set = {str(agent["_id"]) for agent in shared_agents}
@@ -146,9 +134,7 @@ class SharedAgents(Resource):
                     "id": str(agent["_id"]),
                     "name": agent.get("name", ""),
                     "description": agent.get("description", ""),
-                    "image": (
-                        generate_image_url(agent["image"]) if agent.get("image") else ""
-                    ),
+                    "image": (generate_image_url(agent["image"]) if agent.get("image") else ""),
                     "tools": agent.get("tools", []),
                     "tool_details": resolve_tool_details(agent.get("tools", [])),
                     "agent_type": agent.get("agent_type", ""),
@@ -181,12 +167,8 @@ class ShareAgent(Resource):
             "ShareAgentModel",
             {
                 "id": fields.String(required=True, description="ID of the agent"),
-                "shared": fields.Boolean(
-                    required=True, description="Share or unshare the agent"
-                ),
-                "username": fields.String(
-                    required=False, description="Name of the user"
-                ),
+                "shared": fields.Boolean(required=True, description="Share or unshare the agent"),
+                "username": fields.String(required=False, description="Name of the user"),
             },
         )
     )
@@ -199,17 +181,13 @@ class ShareAgent(Resource):
 
         data = request.get_json()
         if not data:
-            return make_response(
-                jsonify({"success": False, "message": "Missing JSON body"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "Missing JSON body"}), 400)
         agent_id = data.get("id")
         shared = data.get("shared")
         username = data.get("username", "")
 
         if not agent_id:
-            return make_response(
-                jsonify({"success": False, "message": "ID is required"}), 400
-            )
+            return make_response(jsonify({"success": False, "message": "ID is required"}), 400)
         if shared is None:
             return make_response(
                 jsonify(
@@ -224,14 +202,10 @@ class ShareAgent(Resource):
             try:
                 agent_oid = ObjectId(agent_id)
             except Exception:
-                return make_response(
-                    jsonify({"success": False, "message": "Invalid agent ID"}), 400
-                )
+                return make_response(jsonify({"success": False, "message": "Invalid agent ID"}), 400)
             agent = agents_collection.find_one({"_id": agent_oid, "user": user})
             if not agent:
-                return make_response(
-                    jsonify({"success": False, "message": "Agent not found"}), 404
-                )
+                return make_response(jsonify({"success": False, "message": "Agent not found"}), 404)
             if shared:
                 shared_metadata = {
                     "shared_by": username,
@@ -258,6 +232,4 @@ class ShareAgent(Resource):
             current_app.logger.error(f"Error sharing/unsharing agent: {err}", exc_info=True)
             return make_response(jsonify({"success": False, "error": "Failed to update agent sharing status"}), 400)
         shared_token = shared_token if shared else None
-        return make_response(
-            jsonify({"success": True, "shared_token": shared_token}), 200
-        )
+        return make_response(jsonify({"success": True, "shared_token": shared_token}), 200)

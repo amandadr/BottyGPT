@@ -164,10 +164,7 @@ def test_validate_workflow_structure_rejects_invalid_agent_json_schema():
 
     errors = validate_workflow_structure(nodes, edges)
 
-    assert any(
-        "Agent node 'Agent' JSON schema must be a valid JSON object" in err
-        for err in errors
-    )
+    assert any("Agent node 'Agent' JSON schema must be a valid JSON object" in err for err in errors)
 
 
 def test_validate_workflow_structure_accepts_valid_agent_json_schema():
@@ -265,11 +262,7 @@ def test_validate_workflow_structure_rejects_unsupported_structured_output_model
 
     errors = validate_workflow_structure(nodes, edges)
 
-    assert any(
-        "Agent node 'Agent' selected model does not support structured output"
-        in err
-        for err in errors
-    )
+    assert any("Agent node 'Agent' selected model does not support structured output" in err for err in errors)
 
 
 def test_execute_agent_node_raises_when_structured_output_violates_schema(monkeypatch):

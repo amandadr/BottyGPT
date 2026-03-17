@@ -39,9 +39,7 @@ class PostgresTool(Tool):
             conn.commit()
 
             if sql_query.strip().lower().startswith("select"):
-                column_names = (
-                    [desc[0] for desc in cur.description] if cur.description else []
-                )
+                column_names = [desc[0] for desc in cur.description] if cur.description else []
                 results = []
                 rows = cur.fetchall()
                 for row in rows:
@@ -49,9 +47,7 @@ class PostgresTool(Tool):
                 response_data = {"data": results, "column_names": column_names}
             else:
                 row_count = cur.rowcount
-                response_data = {
-                    "message": f"Query executed successfully, {row_count} rows affected."
-                }
+                response_data = {"message": f"Query executed successfully, {row_count} rows affected."}
 
             cur.close()
             return {
